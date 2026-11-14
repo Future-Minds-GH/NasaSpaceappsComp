@@ -15,12 +15,15 @@ import match as M  # noqa: E402
 from surface_fractions import surface_fractions  # noqa: E402
 
 BODIES = ["earth", "moon", "mars"]
+CUTS = (0.005, 0.012, 0.03)  # fixed test cuts: dust_full, sand_peak, rock_full
 DATA = ROOT / "web/public/data"
-pytestmark = pytest.mark.skipif(not (DATA / "earth.json").exists(), reason="run make_fake_tables + export_web")
+HAVE_DATA = (DATA / "earth.json").exists()
 
 
 @pytest.fixture(scope="module")
 def T():
+    if not HAVE_DATA:
+        pytest.skip("run make_fake_tables + export_web")
     return {b: M.Table.from_path(DATA / f"{b}.json") for b in BODIES}
 
 
@@ -33,10 +36,10 @@ def test_surface_fractions_sum_and_null():
     a = np.array([0.1, 0.3, 0.5, np.nan])
     ati = np.array([0.003, 0.012, 0.04, 0.01])
     ice = np.array([0.0, 0.2, 1.0, 0.0])
-    d, s, r, i = surface_fractions(a, ati, ice)
+    d, s, r, i = surface_fractions(a, ati, ice, CUTS)
     assert np.allclose((d + s + r + i)[:3], 1.0)
     assert np.isnan([d[3], s[3], r[3], i[3]]).all()
-    assert surface_fractions(0.2, 0.012, np.nan)[0] != surface_fractions(0.2, 0.012, np.nan)[0]  # NaN
+    assert surface_fractions(0.2, 0.012, np.nan, CUTS)[0] != surface_fractions(0.2, 0.012, np.nan, CUTS)[0]  # NaN
 
 
 def test_fake_tables_flagged_and_columns(T):
