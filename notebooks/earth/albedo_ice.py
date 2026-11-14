@@ -183,22 +183,29 @@ print("snow valid cells:", np.isfinite(snow).sum())
 # so the notebook bins it in chunks of 500 rows to keep memory low.
 
 # %%
+import hashlib
 import requests
 import xarray as xr
 
 PF_BASE = "https://data.ceda.ac.uk/neodc/esacci/permafrost/data/permafrost_extent/L4/area4/pp/v05.0/"
-PF_FILES = {   # local name -> (url path, max bytes)
-    "nh2023.nc": ("northern_hemisphere/2023/ESACCI-PERMAFROST-L4-PFR-MODISLST_CRYOGRID-AREA4_PP-2023-fv05.0.nc", 50_000_000),
-    "ant2023.nc": ("Antarctica/2023/ESACCI-PERMAFROST-L4-PFR-MODISLST_CRYOGRID-AREA27_PP-2023-fv05.0.nc", 10_000_000),
+PF_FILES = {   # local name -> (url path, max bytes, SHA-256 of the file checked on 2026-11-14)
+    "nh2023.nc": ("northern_hemisphere/2023/ESACCI-PERMAFROST-L4-PFR-MODISLST_CRYOGRID-AREA4_PP-2023-fv05.0.nc", 50_000_000,
+                  "be024ac8fda10f124932122271d4c41ba2685a0bb1b3c4768866ad382dc50f36"),
+    "ant2023.nc": ("Antarctica/2023/ESACCI-PERMAFROST-L4-PFR-MODISLST_CRYOGRID-AREA27_PP-2023-fv05.0.nc", 10_000_000,
+                   "7d482e56dd6ef4fba10f197bb15b6e72dea611099078098c85a3a76c6f89554b"),
 }
 PF_DIR = RAW / "permafrost"
 PF_DIR.mkdir(parents=True, exist_ok=True)
-for local, (path, max_bytes) in PF_FILES.items():
+for local, (path, max_bytes, sha256) in PF_FILES.items():
     if not (PF_DIR / local).exists():
-        r = requests.get(PF_BASE + path + "?download=1", timeout=300)
+        r = requests.get(PF_BASE + path + "?download=1", timeout=300, stream=True)
         r.raise_for_status()
-        assert len(r.content) < max_bytes, f"{local} is {len(r.content)} bytes"
-        (PF_DIR / local).write_bytes(r.content)
+        buf = bytearray()
+        for chunk in r.iter_content(1 << 20):          # stop at the size cap, do not read the whole body first
+            buf += chunk
+            assert len(buf) <= max_bytes, f"{local} is larger than {max_bytes} bytes"
+        assert hashlib.sha256(buf).hexdigest() == sha256, f"{local} changed: check the download"
+        (PF_DIR / local).write_bytes(bytes(buf))
 
 perm = np.full((NROWS, NCOLS), np.nan)
 for local in PF_FILES:
