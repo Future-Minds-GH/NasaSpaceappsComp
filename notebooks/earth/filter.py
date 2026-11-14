@@ -121,7 +121,7 @@ f_ndvi = earthaccess.download(g_ndvi, str(RAW / "mod13c2"))
 f_lc = earthaccess.download(g_lc, str(RAW / "mcd12c1"))
 
 # %%
-# Land fraction: mean over the 12 monthly MOD11C3 files (a static layer, so one file would do).
+# Land fraction: read from the first MOD11C3 file only (it is a static layer, the same in every month).
 land = read_sds(f_lst[0], "Percent_land_in_grid").astype("float64")
 land[land > 100] = np.nan
 land_pct = block_mean(land)
