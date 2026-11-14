@@ -9,13 +9,14 @@
 # | --- | --- | --- | --- |
 # | Land fraction | MOD11C3 v061 | `Percent_land_in_grid` (uint8, 0-100) | fill 0, valid 1-100 (checked on a real granule); 0 = ocean/fill, counted as not land |
 # | NDVI | MOD13C2 v061 (12 months of 2023) | `CMG 0.05 Deg Monthly NDVI` (int16, scale 0.0001) | fill -3000, valid -2000..10000 |
-# | Land cover | MCD12C1 v061 (year 2023) | `Majority_Land_Cover_Type_1` (uint8, IGBP) | fill 255; urban class = 13 |
+# | Land cover | MCD12C1 v061 (year 2023) | `Majority_Land_Cover_Type_1` (uint8, IGBP) | fill 255; urban class = 13 (IGBP), snow/ice = 15, barren = 16 |
 #
 # Rule: `analog_ok = land_pct > 50 and ndvi_mean < 0.3 and not urban`.
 # - NDVI: mean of the 12 monthly values per 0.05 deg pixel (ignoring fill), then mean of each 5 x 5 block.
 # - Land fraction: mean of each 5 x 5 block of `Percent_land_in_grid`.
-# - Urban (finer grid to 0.25 deg cell): the cell is urban if **any** 0.05 deg pixel in its 5 x 5 block has class 13. This is simple and cautious. If all 25 pixels are fill (255), urban is missing.
-# - Missing input (land, NDVI or urban is NaN) gives `analog_ok = null`, never false.
+# - Urban (finer grid to 0.25 deg cell): the cell is urban if at least 20% of its valid 0.05 deg pixels (5 x 5 block) have class 13. One small town in a 28 km cell does not remove it (for example Calama in the Atacama). If all 25 pixels are fill (255), urban is missing.
+# - Snow/ice (class 15) and barren (class 16) cells skip the NDVI test: MODIS NDVI is often missing over ice, and polar sites would otherwise drop out. A cell counts as snow/ice or barren when at least 50% of its valid pixels are class 15 or 16.
+# - False when a known input already fails (ocean, too green, urban). Null when nothing known fails but an input is missing.
 # - `cave_km` is null on Earth.
 
 # %%
@@ -35,7 +36,10 @@ for p in (RAW, OUT):
 CELL = 0.25
 NROWS, NCOLS = 720, 1440
 PERIOD = ("2023-01-01", "2023-12-31")
-URBAN_CLASS = 13        # IGBP "Urban and Built-up Lands" in Majority_Land_Cover_Type_1  # UNVERIFIED: code not on LP DAAC catalog page; check MCD12 user guide
+URBAN_CLASS = 13        # IGBP "Urban and Built-up Lands" in Majority_Land_Cover_Type_1
+URBAN_MIN_FRAC = 0.2    # share of valid pixels in the cell that must be urban
+BARE_CLASSES = (15, 16) # IGBP snow/ice and barren
+BARE_MIN_FRAC = 0.5
 LAND_MIN_PCT = 50
 NDVI_MAX = 0.3
 
@@ -56,25 +60,32 @@ def block_mean(a):
     return np.where(n > 0, s / np.maximum(n, 1), np.nan)
 
 
-def block_urban(lc, urban_class=URBAN_CLASS, fill=255):
-    # Rule: cell is urban if any 0.05 deg pixel in the 5x5 block is the urban class.
-    # All 25 pixels fill -> NaN (missing). Returns float array: 1.0, 0.0 or NaN.
+def block_class_frac(lc, classes, min_frac, fill=255):
+    # Share of the valid 0.05 deg pixels of each 5x5 block that are in `classes`.
+    # Returns 1.0 when the share >= min_frac, else 0.0; NaN when all 25 pixels are fill.
     assert lc.shape == (NROWS * 5, NCOLS * 5), lc.shape
     b = lc.reshape(NROWS, 5, NCOLS, 5)
-    valid = (b != fill).any(axis=(1, 3))
-    urban = (b == urban_class).any(axis=(1, 3))
-    return np.where(valid, urban.astype("float64"), np.nan)
+    n_valid = (b != fill).sum(axis=(1, 3))
+    n_in = np.isin(b, classes).sum(axis=(1, 3))
+    frac = n_in / np.maximum(n_valid, 1)
+    return np.where(n_valid > 0, (frac >= min_frac).astype("float64"), np.nan)
 
 
-def analog_rule(land_pct, ndvi, urban):
-    # Inputs: float arrays (same shape), NaN = missing. urban is 1.0 / 0.0 / NaN.
+def block_urban(lc, urban_class=URBAN_CLASS, min_frac=URBAN_MIN_FRAC, fill=255):
+    return block_class_frac(lc, [urban_class], min_frac, fill)
+
+
+def analog_rule(land_pct, ndvi, urban, bare):
+    # Inputs: float arrays (same shape), NaN = missing. urban and bare are 1.0 / 0.0 / NaN.
     # Returns object array of True / False / None.
     # False: some known input already fails (ocean, too green, urban), even if another is missing.
     # None: nothing known fails, but an input is missing. True: all inputs known and pass.
-    land_pct, ndvi, urban = (np.asarray(x, dtype="float64") for x in (land_pct, ndvi, urban))
+    # Snow/ice and barren cells (bare == 1) skip the NDVI test, so a missing NDVI over ice is not a gap.
+    land_pct, ndvi, urban, bare = (np.asarray(x, dtype="float64") for x in (land_pct, ndvi, urban, bare))
+    skip_ndvi = bare == 1
     with np.errstate(invalid="ignore"):
-        fail = (land_pct <= LAND_MIN_PCT) | (ndvi >= NDVI_MAX) | (urban == 1)
-    missing = np.isnan(land_pct) | np.isnan(ndvi) | np.isnan(urban)
+        fail = (land_pct <= LAND_MIN_PCT) | ((ndvi >= NDVI_MAX) & ~skip_ndvi) | (urban == 1)
+    missing = np.isnan(land_pct) | (np.isnan(ndvi) & ~skip_ndvi) | np.isnan(urban)
     out = np.full(land_pct.shape, True, dtype=object)
     out[missing] = None
     out[fail] = False
@@ -126,13 +137,15 @@ for f in f_ndvi:
 ndvi = block_mean(np.where(cnt > 0, tot / np.maximum(cnt, 1), np.nan))
 
 # Land cover (IGBP majority class).
-urban = block_urban(read_sds(f_lc[0], "Majority_Land_Cover_Type_1"))
+lc = read_sds(f_lc[0], "Majority_Land_Cover_Type_1")
+urban = block_urban(lc)
+bare = block_class_frac(lc, BARE_CLASSES, BARE_MIN_FRAC)
 
 # %% [markdown]
 # ## 3. Save
 
 # %%
-ok = analog_rule(land_pct.ravel(), ndvi.ravel(), urban.ravel())
+ok = analog_rule(land_pct.ravel(), ndvi.ravel(), urban.ravel(), bare.ravel())
 part = pd.DataFrame({
     "cell_id": np.arange(NROWS * NCOLS),
     "analog_ok": pd.array(ok, dtype="boolean"),
