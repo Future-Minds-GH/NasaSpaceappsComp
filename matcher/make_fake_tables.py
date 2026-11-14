@@ -12,7 +12,7 @@ import pandas as pd
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "src"))
-from surface_fractions import surface_fractions  # noqa: E402  (single shared copy, PR #3)
+from surface_fractions import surface_fractions, ati_cuts  # noqa: E402
 RADIUS = {"earth": 6371.0, "moon": 1737.4, "mars": 3389.5}
 STEP = {"earth": 1.0, "moon": 2.0, "mars": 2.0}
 MIN_COLS = ["min_mafic", "min_feldspathic", "min_ironox", "min_sulfate", "min_clay", "min_carbonate"]
@@ -61,7 +61,7 @@ def make(body, seed):
     ati = (1 - albedo) / (t_day - t_night)
     polar = np.abs(lat) > 70
     ice = np.clip(p["ice"] + polar * rng.uniform(0.3, 0.9, n) + rng.normal(0, 0.01, n), 0, 1)
-    dust, sand, rock, sice = surface_fractions(albedo, ati, ice)
+    dust, sand, rock, sice = surface_fractions(albedo, ati, ice, ati_cuts(ati))
     mins = rng.dirichlet(np.array(p["alpha"]) + 0.05, n)
     df = pd.DataFrame({"cell_id": np.arange(n), "lat": lat, "lon": lon, "t_day_k": t_day,
                        "t_night_k": t_night, "t_swing_k": swing, "sun_wm2": sun,
