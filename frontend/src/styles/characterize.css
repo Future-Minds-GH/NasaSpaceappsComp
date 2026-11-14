@@ -1,0 +1,80 @@
+/* Characterize mode: famous-site buttons and the Earth map on the left, the picked place's report card on the right
+   (stacked on phones). Match rows carry a Mars-rust or Moon-slate edge, like unit boxes on a geologic map legend. */
+
+.characterize-layout { display: grid; gap: 28px; margin-top: 24px; }
+.characterize-explore { display: grid; gap: 24px; min-width: 0; }
+.characterize-report-column { min-width: 0; }
+@media (min-width: 900px) {
+  .characterize-layout { grid-template-columns: minmax(0, 6fr) minmax(0, 5fr); align-items: start; gap: 32px; }
+}
+
+.characterize-hint { font-size: 0.875rem; color: var(--ink-soft); max-width: 62ch; }
+
+/* Famous sites: one-click buttons; the chosen one stays inked in */
+.characterize-famous-list { list-style: none; display: flex; flex-wrap: wrap; gap: 8px; }
+.characterize-famous-button { text-align: left; }
+.characterize-famous-button[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--paper); }
+
+/* Earth map: Leaflet needs a real height, so the frame keeps the world's 2:1 shape */
+.characterize-map .earth-map-frame { border: 1px solid var(--rule); border-radius: var(--radius-frame); overflow: hidden; }
+.characterize-map .earth-map { width: 100%; aspect-ratio: 2 / 1; min-height: 220px; }
+body:not(.leaflet-dragging) .characterize-map .leaflet-grab { cursor: crosshair; }
+.characterize-map .picked-cell { stroke: var(--mars); fill: var(--mars); }
+.characterize-map .characterize-pin { stroke: var(--paper-raised); stroke-width: 2px; fill: var(--mars); fill-opacity: 1; }
+
+/* Typed coordinates, the keyboard way to pick a spot */
+.characterize-coordinates { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px 12px; margin-top: 12px; }
+.characterize-coordinate-field { display: grid; }
+.characterize-coordinate-field .text-input { width: 9rem; }
+.characterize-coordinates .characterize-hint { flex-basis: 100%; }
+
+/* Notes in place of results: first visit, unscored spot, failed load */
+.characterize-notice {
+  display: grid; gap: 10px; justify-items: start; padding: 20px;
+  border: 1px dashed var(--rule); border-radius: var(--radius-frame); color: var(--ink-soft);
+}
+.characterize-notice-title { font-stretch: var(--width-expanded); font-size: 1.125rem; font-weight: 800; color: var(--ink); }
+.characterize-notice[role="alert"] { border-style: solid; border-left: 4px solid var(--warning); color: var(--ink); }
+
+/* Report card */
+.characterize-report {
+  display: grid; gap: 18px; padding: 20px;
+  border: 1px solid var(--rule); border-radius: var(--radius-frame); background: var(--paper-raised);
+}
+.characterize-report-header { display: grid; gap: 8px; }
+.characterize-report-name { font-stretch: var(--width-expanded); font-size: 1.5rem; font-weight: 850; overflow-wrap: anywhere; }
+.characterize-report-tags { font-size: 0.9375rem; font-weight: 600; color: var(--ink-soft); }
+.characterize-report-place { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; color: var(--ink-soft); font-weight: 600; }
+.characterize-report-toolbar {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px;
+  padding-top: 16px; border-top: 1px solid var(--rule);
+}
+.characterize-report-heading { font-stretch: var(--width-expanded); font-size: 1.125rem; font-weight: 800; }
+.characterize-details-toggle[aria-expanded="true"] { border-color: var(--ink); }
+.characterize-report-note { font-size: 0.875rem; color: var(--ink-soft); }
+
+/* One Moon or Mars match per row, best first */
+.characterize-matches { list-style: none; display: grid; gap: 14px; }
+.characterize-match { --body-color: var(--ink-soft); display: grid; gap: 12px; padding: 4px 0 4px 14px; border-left: 4px solid var(--body-color); }
+.characterize-match-mars { --body-color: var(--mars); }
+.characterize-match-moon { --body-color: var(--moon); }
+.characterize-match-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.characterize-match-name { font-size: 1.0625rem; font-weight: 750; }
+.characterize-match-meta { display: flex; flex-wrap: wrap; gap: 2px 12px; margin-top: 2px; font-size: 0.875rem; color: var(--ink-soft); }
+.characterize-match-body { color: var(--body-color); font-weight: 750; }
+.characterize-match-lists { display: grid; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); gap: 10px 16px; }
+.characterize-reasons-title { font-size: 0.8125rem; font-weight: 700; color: var(--ink-soft); }
+.characterize-reasons-list { padding-left: 1.1rem; list-style: square; font-size: 0.9375rem; }
+.characterize-reasons-list li::marker { color: var(--body-color); }
+
+/* Details: numbers for each match and for the place itself */
+.characterize-match-details, .characterize-site-factors { display: grid; gap: 8px; animation: characterize-reveal 200ms var(--ease-out); }
+.characterize-site-factors { padding-top: 16px; border-top: 1px solid var(--rule); }
+@keyframes characterize-reveal {
+  from { opacity: 0; transform: translateY(-4px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .characterize-match-details, .characterize-site-factors { animation: none; }
+}
+.characterize-show-all { justify-self: start; margin-top: 12px; }
