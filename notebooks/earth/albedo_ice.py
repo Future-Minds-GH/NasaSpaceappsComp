@@ -2,22 +2,23 @@
 # # Job 1 part: albedo, ATI and ice probability
 #
 # Output: `analog-finder/raw/earth/part_albedo_ice.parquet`
-# Columns: `cell_id, albedo, ati, ice_prob`. Missing = null. No 0-fill.
+# Columns: `cell_id, albedo, ati, ice_prob, ice_surface`. Missing = null. No 0-fill.
+# `ice_prob` (permafrost, snow, ice sheets) is the scored ice factor. `ice_surface` (snow and ice sheets only, no permafrost) feeds the surface-type fractions, so buried ice is not counted twice.
 #
 # Inputs (exact products):
 # 1. Albedo: MODIS **MCD43C3 v061** (0.05 deg CMG), layer `Albedo_WSA_shortwave` (scale 0.001, fill 32767).
-# 2. Snow: MODIS/Terra **MOD10C1 v061** (daily, 0.05 deg CMG), layer `Day_CMG_Snow_Cover` (percent, fill 255, checked on a real granule). CMR version string is `61`.
-# 3. Permafrost: **ESA Permafrost CCI v5.0** (`fv05.0`) permafrost extent, NetCDF, variable `PFR` (percent), 1 km, from CEDA.
+# 2. Snow: MODIS/Terra **MOD10CM** monthly snow cover (0.05 deg CMG, CMR version string `61`), layer `Snow_Cover_Monthly_CMG` (percent 0-100, fill 255, checked on a real granule). One file per month, so a cloudy day does not count as no snow.
+# 3. Permafrost: **ESA Permafrost CCI v5.0** (`fv05.0`) permafrost extent, NetCDF, variable `PFR` (percent, fill 255), from CEDA. Checked on the real 2023 files: a plain WGS 84 lat/lon grid at 0.01 deg (NH 25-85 N, Antarctica 85-60 S), no reprojection needed. The notebook downloads both files (12 MB and 0.5 MB).
 # 4. Ice sheets: MODIS **MCD12C1 v061**, layer `Majority_Land_Cover_Type_1` (IGBP), class 15 = permanent snow and ice (layer name checked on a real granule).
-# 5. `t_day_k`, `t_night_k` from `processed/earth.parquet` (thin-slice notebook). Run that notebook first.
+# 5. `t_day_k`, `t_night_k` from `processed/earth_thin.parquet` (thin-slice notebook). Run that notebook first.
 #
 # Before you run:
 # 1. You need a free NASA Earthdata login: https://urs.earthdata.nasa.gov/users/new
 # 2. The login prompt appears in the albedo step. Do not save the login in the notebook.
-# 3. The permafrost step needs the CEDA files in `raw/earth/permafrost/` (see that step).
+# 3. The permafrost step downloads its two files from CEDA (free, no login).
 
 # %%
-%pip -q install earthaccess pyhdf pyarrow netCDF4
+%pip -q install earthaccess pyhdf pyarrow netCDF4 xarray requests
 
 # %%
 from pathlib import Path
@@ -106,7 +107,7 @@ def combine_ice(permafrost, snow, ice_sheet):
 # %%
 import pandas as pd
 
-earth = pd.read_parquet(OUT / "earth.parquet", columns=["cell_id", "t_day_k", "t_night_k"])
+earth = pd.read_parquet(OUT / "earth_thin.parquet", columns=["cell_id", "t_day_k", "t_night_k"])
 assert len(earth) == NROWS * NCOLS, len(earth)
 earth = earth.sort_values("cell_id").reset_index(drop=True)
 assert (earth["cell_id"].to_numpy() == np.arange(NROWS * NCOLS)).all()
@@ -157,15 +158,16 @@ ati = compute_ati(albedo, earth["t_day_k"].to_numpy(), earth["t_night_k"].to_num
 print("ati valid cells:", np.isfinite(ati).sum())
 
 # %% [markdown]
-# ## 5. Snow fraction (MODIS MOD10C1 v061, layer `Day_CMG_Snow_Cover`)
-# Layer `Day_CMG_Snow_Cover` checked on a real granule: valid 0-100 percent, fill 255.
-# Check with `SD(file).datasets()` on the first file. Snow fraction = mean over the 12 days / 100.
+# ## 5. Snow fraction (MODIS MOD10CM monthly, layer `Snow_Cover_Monthly_CMG`)
+# Valid 0-100 percent, fill 255 (checked on a real granule). Snow fraction = mean of the 12 monthly values / 100.
 
 # %%
-snow_files = find_one_per_day("MOD10C1", "61", DAYS)   # CMR version string is "61", not "061" (checked)
+g_snow = earthaccess.search_data(short_name="MOD10CM", version="61", temporal=(f"{YEAR}-01-01", f"{YEAR}-12-31"))
+assert len(g_snow) >= 12, f"Expected 12 monthly snow files, found {len(g_snow)}"
+snow_files = earthaccess.download(g_snow, str(RAW / "mod10cm"))
 sstack = []
 for f in snow_files:
-    raw, attr = read_sds(f, "Day_CMG_Snow_Cover")
+    raw, attr = read_sds(f, "Snow_Cover_Monthly_CMG")
     assert raw.shape == (3600, 7200), raw.shape
     s = raw.astype("float64")
     s[(s < 0) | (s > 100)] = np.nan               # codes above 100 are not snow percent
@@ -176,36 +178,50 @@ print("snow valid cells:", np.isfinite(snow).sum())
 
 # %% [markdown]
 # ## 6. Permafrost (ESA Permafrost CCI v5.0, variable `PFR`)
-# Download these files by hand (free, no login) into `raw/earth/permafrost/`. One annual file is enough.
-# Use the Case A file of 2023 (MODISLST_CRYOGRID):
-# 1. Northern Hemisphere: `ESACCI-PERMAFROST-L4-PFR-MODISLST_CRYOGRID-AREA4_PP-2023-fv05.0.nc`
-#    from https://data.ceda.ac.uk/neodc/esacci/permafrost/data/permafrost_extent/L4/area4/pp/v05.0/northern_hemisphere/
-#    (the year in the file name is UNVERIFIED; the page shows `****`).
-# 2. Antarctica: same pattern under `.../v05.0/antarctica/` (UNVERIFIED folder and file name).
-#    Antarctica is optional here: the ice-sheet mask sets the ice sheet to 1.
-# `PFR` is percent (0-100). The notebook does not guess the grid: it asserts 1D `lat` and `lon`.
+# Two annual files for 2023 (MODISLST_CRYOGRID), free, no login. Both are WGS 84 lat/lon at 0.01 deg (checked).
+# `PFR` is percent (0-100), fill 255. The 0.01 deg grid lines up with the 0.25 deg cells (25 rows and 25 columns each),
+# so the notebook bins it in chunks of 500 rows to keep memory low.
 
 # %%
+import hashlib
+import requests
 import xarray as xr
 
+PF_BASE = "https://data.ceda.ac.uk/neodc/esacci/permafrost/data/permafrost_extent/L4/area4/pp/v05.0/"
+PF_FILES = {   # local name -> (url path, max bytes, SHA-256 of the file checked on 2026-11-14)
+    "nh2023.nc": ("northern_hemisphere/2023/ESACCI-PERMAFROST-L4-PFR-MODISLST_CRYOGRID-AREA4_PP-2023-fv05.0.nc", 50_000_000,
+                  "be024ac8fda10f124932122271d4c41ba2685a0bb1b3c4768866ad382dc50f36"),
+    "ant2023.nc": ("Antarctica/2023/ESACCI-PERMAFROST-L4-PFR-MODISLST_CRYOGRID-AREA27_PP-2023-fv05.0.nc", 10_000_000,
+                   "7d482e56dd6ef4fba10f197bb15b6e72dea611099078098c85a3a76c6f89554b"),
+}
 PF_DIR = RAW / "permafrost"
-pf_files = sorted(PF_DIR.glob("ESACCI-PERMAFROST-L4-PFR-*.nc"))
-assert pf_files, f"Put the CEDA PFR files in {PF_DIR}"
+PF_DIR.mkdir(parents=True, exist_ok=True)
+for local, (path, max_bytes, sha256) in PF_FILES.items():
+    if not (PF_DIR / local).exists():
+        r = requests.get(PF_BASE + path + "?download=1", timeout=300, stream=True)
+        r.raise_for_status()
+        buf = bytearray()
+        for chunk in r.iter_content(1 << 20):          # stop at the size cap, do not read the whole body first
+            buf += chunk
+            assert len(buf) <= max_bytes, f"{local} is larger than {max_bytes} bytes"
+        assert hashlib.sha256(buf).hexdigest() == sha256, f"{local} changed: check the download"
+        (PF_DIR / local).write_bytes(bytes(buf))
 
 perm = np.full((NROWS, NCOLS), np.nan)
-for f in pf_files:
-    ds = xr.open_dataset(f)
-    assert "PFR" in ds, list(ds.variables)
-    pfr = ds["PFR"]
-    if "time" in pfr.dims:
-        pfr = pfr.isel(time=0)
-    assert pfr.dims == ("lat", "lon") or pfr.dims == ("latitude", "longitude"), pfr.dims
-    v = pfr.values.astype("float64")
-    v[(v < 0) | (v > 100)] = np.nan
-    la = ds[pfr.dims[0]].values
-    lo = ds[pfr.dims[1]].values
-    part = bin_to_cells(v / 100.0, la, lo)
-    perm = np.where(np.isnan(perm), part, perm)   # first file wins where both have data
+for local in PF_FILES:
+    ds = xr.open_dataset(PF_DIR / local)
+    pfr = ds["PFR"].isel(time=0)
+    assert pfr.dims == ("lat", "lon"), pfr.dims
+    la, lo = ds["lat"].values, ds["lon"].values
+    # The chunks only work when the pixel edges sit on the 0.25 deg cell edges (25 pixels per cell).
+    for axis, offset in ((la, 90.0), (lo, 180.0)):
+        edge = (axis[0] - (axis[1] - axis[0]) / 2 + offset) / CELL
+        assert abs(edge - round(edge)) < 0.05, f"{local}: the grid does not start on a 0.25 deg cell edge"
+    for r0 in range(0, la.size, 500):                  # 500 rows = 20 cells, so no cell is split
+        v = pfr.isel(lat=slice(r0, r0 + 500)).values.astype("float64")
+        v[(v < 0) | (v > 100)] = np.nan                # fill 255
+        part = bin_to_cells(v / 100.0, la[r0:r0 + 500], lo)
+        perm = np.where(np.isnan(perm), part, perm)
 permafrost = perm.ravel()
 print("permafrost valid cells:", np.isfinite(permafrost).sum())
 
@@ -227,14 +243,16 @@ print("ice-sheet cells:", ice_sheet.sum())
 
 # %%
 ice_prob = combine_ice(permafrost, snow, ice_sheet)
+ice_surface = combine_ice(np.full_like(snow, np.nan), snow, ice_sheet)   # snow and ice sheets only, no permafrost
 part = pd.DataFrame({
     "cell_id": np.arange(NROWS * NCOLS),
     "albedo": albedo,
     "ati": ati,
     "ice_prob": ice_prob,
+    "ice_surface": ice_surface,
 })
 assert len(part) == NROWS * NCOLS
-assert part["ice_prob"].dropna().between(0, 1).all()
+assert part["ice_prob"].dropna().between(0, 1).all() and part["ice_surface"].dropna().between(0, 1).all()
 assert part["albedo"].dropna().between(0, 1).all()
 part.to_parquet(RAW / "part_albedo_ice.parquet", index=False)
 print(part.describe())
