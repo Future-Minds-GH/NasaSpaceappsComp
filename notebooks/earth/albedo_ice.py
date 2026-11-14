@@ -213,6 +213,10 @@ for local in PF_FILES:
     pfr = ds["PFR"].isel(time=0)
     assert pfr.dims == ("lat", "lon"), pfr.dims
     la, lo = ds["lat"].values, ds["lon"].values
+    # The chunks only work when the pixel edges sit on the 0.25 deg cell edges (25 pixels per cell).
+    for axis, offset in ((la, 90.0), (lo, 180.0)):
+        edge = (axis[0] - (axis[1] - axis[0]) / 2 + offset) / CELL
+        assert abs(edge - round(edge)) < 0.05, f"{local}: the grid does not start on a 0.25 deg cell edge"
     for r0 in range(0, la.size, 500):                  # 500 rows = 20 cells, so no cell is split
         v = pfr.isel(lat=slice(r0, r0 + 500)).values.astype("float64")
         v[(v < 0) | (v > 100)] = np.nan                # fill 255

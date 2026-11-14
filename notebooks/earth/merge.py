@@ -66,6 +66,8 @@ def merge_parts(thin, parts):
 
 def check_contract(df):
     for group in (SURF, PARTS["part_minerals.parquet"][:]):
+        n_null = df[group].isna().sum(axis=1)
+        assert n_null.isin([0, len(group)]).all(), f"{group[0]}..: a row is only partly null"
         s = df[group].sum(axis=1, skipna=False)
         ok = s.dropna()
         assert np.allclose(ok, 1, atol=1e-6), f"{group[0]}..: fractions do not sum to 1"
