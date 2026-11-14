@@ -1,0 +1,11 @@
+__pycache__/
+.pytest_cache/
+data/fake/
+web/public/data/
+.env*
+!.env.example
+*.pem
+*.key
+node_modules/
+.venv/
+validation/results.json

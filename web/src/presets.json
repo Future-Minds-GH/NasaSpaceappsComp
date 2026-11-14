@@ -1,0 +1,16 @@
+{
+  "weightKeys": ["temp", "swing", "sun", "slope", "rough", "elev", "surface", "minerals", "ice"],
+  "groups": {
+    "weather": ["temp", "swing", "sun"],
+    "geology": ["slope", "rough", "elev", "surface", "minerals", "ice"]
+  },
+  "presets": {
+    "balanced": { "label": "Balanced", "temp": 15, "swing": 10, "sun": 10, "slope": 15, "rough": 15, "elev": 5, "surface": 0, "minerals": 15, "ice": 15 },
+    "drilling": { "label": "Drilling", "temp": 10, "swing": 5, "sun": 0, "slope": 5, "rough": 5, "elev": 0, "surface": 20, "minerals": 40, "ice": 15 },
+    "vehicles": { "label": "Vehicles / rovers", "temp": 10, "swing": 5, "sun": 0, "slope": 30, "rough": 30, "elev": 0, "surface": 25, "minerals": 0, "ice": 0 },
+    "tooling": { "label": "Test tooling", "temp": 25, "swing": 25, "sun": 10, "slope": 5, "rough": 5, "elev": 5, "surface": 20, "minerals": 5, "ice": 0 },
+    "solar": { "label": "Solar panels", "temp": 15, "swing": 10, "sun": 45, "slope": 5, "rough": 0, "elev": 0, "surface": 25, "minerals": 0, "ice": 0 },
+    "farming": { "label": "Farming / regolith growth", "temp": 25, "swing": 10, "sun": 20, "slope": 5, "rough": 0, "elev": 0, "surface": 10, "minerals": 30, "ice": 0 },
+    "pharma": { "label": "Pharmaceuticals (radiation)", "temp": 30, "swing": 10, "sun": 40, "slope": 0, "rough": 0, "elev": 0, "surface": 10, "minerals": 10, "ice": 0 }
+  }
+}

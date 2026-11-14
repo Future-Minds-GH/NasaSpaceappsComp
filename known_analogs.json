@@ -1,0 +1,357 @@
+{
+ "_note": "Sites researched from public pages (mostly Wikipedia infoboxes). verified=false means the coordinate is a proxy or not confirmed: see unverified_reason. Slater Plain is omitted: no coordinate found. Pairs are BODY-LEVEL: sources call the Earth sites Mars or Moon analogs in general; no opened source pairs an Earth site with a named Moon/Mars site. A hit means ANY listed Earth site is found.",
+ "hit_rule": "A hit = a top-10 Earth match lies within max(site radius_km, 100 km) of ANY Earth site in earth_ids.",
+ "sites": [
+  {
+   "id": "atacama_yungay",
+   "name": "Atacama Desert (Yungay region, Mars analog)",
+   "body": "earth",
+   "lat": -24.5,
+   "lon": -69.25,
+   "radius_km": 150,
+   "source_url": "https://en.wikipedia.org/wiki/Atacama_Desert",
+   "source_note": "Wikipedia gives desert centre 24.5S 69.25W and says the Yungay area is a Mars analog used by NASA to test Mars instruments. NASA page https://astrobiology.nasa.gov/news/nasa-tests-life-detection-drill-in-the-atacama-desert/ confirms Yungay Station drill tests but gives no coordinates.",
+   "verified": false,
+   "unverified_reason": "Coordinate is the desert centre, not Yungay Station. The McKay 2003 PDF (about 24.08S 69.98W per search snippet) could not be opened. Wikipedia 'Yungay, Chile' is a different town (37S).",
+   "role": "site"
+  },
+  {
+   "id": "haughton_crater",
+   "name": "Haughton impact structure, Devon Island",
+   "body": "earth",
+   "lat": 75.383,
+   "lon": -89.667,
+   "radius_km": 11.5,
+   "source_url": "https://en.wikipedia.org/wiki/Haughton_crater",
+   "source_note": "Infobox 75 23N 89 40W, diameter about 23 km; article calls it as close to Mars-like as can be had on Earth.",
+   "verified": true,
+   "role": "site"
+  },
+  {
+   "id": "death_valley",
+   "name": "Death Valley",
+   "body": "earth",
+   "lat": 36.24694,
+   "lon": -116.81694,
+   "radius_km": 60,
+   "source_url": "https://en.wikipedia.org/wiki/Death_Valley",
+   "source_note": "Infobox coordinates 36 14 49N 116 49 01W. No Mars analog statement found in the page text read.",
+   "verified": true,
+   "role": "site"
+  },
+  {
+   "id": "mcmurdo_dry_valleys",
+   "name": "McMurdo Dry Valleys",
+   "body": "earth",
+   "lat": -77.467,
+   "lon": 162.517,
+   "radius_km": 40,
+   "source_url": "https://en.wikipedia.org/wiki/McMurdo_Dry_Valleys",
+   "source_note": "Infobox 77 28S 162 31E; article calls them a high-fidelity terrestrial analogue for the Mars environment.",
+   "verified": true,
+   "role": "site"
+  },
+  {
+   "id": "wright_valley",
+   "name": "Wright Valley (Dry Valleys)",
+   "body": "earth",
+   "lat": -77.517,
+   "lon": 161.833,
+   "radius_km": 35,
+   "source_url": "https://en.wikipedia.org/wiki/Wright_Valley",
+   "source_note": "Infobox 77 31S 161 50E; page makes no Mars claim (parent Dry Valleys page does).",
+   "verified": true,
+   "role": "site"
+  },
+  {
+   "id": "taylor_valley",
+   "name": "Taylor Valley (Dry Valleys)",
+   "body": "earth",
+   "lat": -77.617,
+   "lon": 163.0,
+   "radius_km": 35,
+   "source_url": "https://en.wikipedia.org/wiki/Taylor_Valley",
+   "source_note": "Infobox 77 37S 163 00E; page makes no Mars claim.",
+   "verified": true,
+   "role": "site"
+  },
+  {
+   "id": "hawaii_hiseas_mauna_loa",
+   "name": "HI-SEAS habitat, Mauna Loa slope, Hawaii",
+   "body": "earth",
+   "lat": 19.602378,
+   "lon": -155.487192,
+   "radius_km": 5,
+   "source_url": "https://en.wikipedia.org/wiki/Hawaii_Space_Exploration_Analog_and_Simulation",
+   "source_note": "Infobox 19.602378N 155.487192W; described as analog habitat for human spaceflight to Mars, with a lunar scenario mission (Selene II).",
+   "verified": true,
+   "role": "site"
+  },
+  {
+   "id": "mauna_kea_summit",
+   "name": "Mauna Kea (summit; PISCES/Apollo training slopes)",
+   "body": "earth",
+   "lat": 19.82056,
+   "lon": -155.46806,
+   "radius_km": 25,
+   "source_url": "https://en.wikipedia.org/wiki/Mauna_Kea",
+   "source_note": "Summit 19 49 14N 155 28 05W. Apollo training on Mauna Kea slopes is reported by news items (https://phys.org/news/2014-05-decades-old-photos-emerge-apollo-images.html, search snippet only). PISCES's own site coordinates were not found.",
+   "verified": false,
+   "unverified_reason": "Summit coordinate is a proxy. The exact PISCES test site coordinate was not found in any opened source.",
+   "role": "site"
+  },
+  {
+   "id": "askja",
+   "name": "Askja caldera, Iceland (Apollo astronaut training)",
+   "body": "earth",
+   "lat": 65.033,
+   "lon": -16.783,
+   "radius_km": 10,
+   "source_url": "https://en.wikipedia.org/wiki/Askja",
+   "source_note": "Infobox 65 01 59N 16 46 59W; main caldera about 8 km; NASA trained Apollo astronauts there for lunar missions.",
+   "verified": true,
+   "role": "site"
+  },
+  {
+   "id": "amazon_basin",
+   "name": "Amazon basin (negative control)",
+   "body": "earth",
+   "lat": -3.0,
+   "lon": -60.0,
+   "radius_km": 1500,
+   "source_url": "https://en.wikipedia.org/wiki/Amazon_basin",
+   "source_note": "Article coordinates 3S 60W.",
+   "verified": true,
+   "role": "negative_control"
+  },
+  {
+   "id": "congo_basin",
+   "name": "Congo basin (negative control)",
+   "body": "earth",
+   "lat": 0.0,
+   "lon": 22.0,
+   "radius_km": 800,
+   "source_url": "https://en.wikipedia.org/wiki/Congo_Basin",
+   "source_note": "Article coordinates 0N 22E.",
+   "verified": true,
+   "role": "negative_control"
+  },
+  {
+   "id": "paris",
+   "name": "Paris (negative control)",
+   "body": "earth",
+   "lat": 48.8567,
+   "lon": 2.3522,
+   "radius_km": 10,
+   "source_url": "https://en.wikipedia.org/wiki/Paris",
+   "source_note": "Article coordinates 48 51 24N 2 21 08E.",
+   "verified": true,
+   "role": "negative_control"
+  },
+  {
+   "id": "singapore",
+   "name": "Singapore (negative control)",
+   "body": "earth",
+   "lat": 1.283,
+   "lon": 103.833,
+   "radius_km": 15,
+   "source_url": "https://en.wikipedia.org/wiki/Singapore",
+   "source_note": "Article coordinates 1 17N 103 50E.",
+   "verified": true,
+   "role": "negative_control"
+  },
+  {
+   "id": "jezero_crater",
+   "name": "Jezero Crater",
+   "body": "mars",
+   "lat": 18.38,
+   "lon": 77.58,
+   "radius_km": 22.5,
+   "source_url": "https://en.wikipedia.org/wiki/Jezero_(crater)",
+   "source_note": "Infobox 18 23N 77 35E, diameter 45 km.",
+   "verified": true,
+   "role": "site"
+  },
+  {
+   "id": "gale_crater",
+   "name": "Gale Crater",
+   "body": "mars",
+   "lat": -5.4,
+   "lon": 137.8,
+   "radius_km": 77,
+   "source_url": "https://en.wikipedia.org/wiki/Gale_(crater)",
+   "source_note": "Centre 5 24S 137 48E, diameter 154 km.",
+   "verified": true,
+   "role": "site"
+  },
+  {
+   "id": "arcadia_planitia",
+   "name": "Arcadia Planitia",
+   "body": "mars",
+   "lat": 47.2,
+   "lon": -175.7,
+   "radius_km": 1500,
+   "source_url": "https://en.wikipedia.org/wiki/Arcadia_Planitia",
+   "source_note": "Centre 47.2N 184.3E (converted to -175.7); spans about 33.9-64.2N and 165.9-210.4E.",
+   "verified": true,
+   "role": "site"
+  },
+  {
+   "id": "deuteronilus_mensae",
+   "name": "Deuteronilus Mensae",
+   "body": "mars",
+   "lat": 43.9,
+   "lon": -22.6,
+   "radius_km": 470,
+   "source_url": "https://en.wikipedia.org/wiki/Deuteronilus_Mensae",
+   "source_note": "Wikipedia gives 43 54N 337 24 labelled W, about 937 km across. Treated as 337.4E = -22.6 because the USGS map title 'MTM 35337, 40337, 45337' (https://pubs.usgs.gov/publication/sim3079) uses east longitude 337.",
+   "verified": false,
+   "unverified_reason": "Wikipedia's W label conflicts with an east-longitude reading. The USGS map page returned 403 for the extent; the E interpretation is inferred.",
+   "role": "site"
+  },
+  {
+   "id": "apollo17_taurus_littrow",
+   "name": "Taurus-Littrow valley (Apollo 17)",
+   "body": "moon",
+   "lat": 20.0,
+   "lon": 31.0,
+   "radius_km": 15,
+   "source_url": "https://en.wikipedia.org/wiki/Taurus%E2%80%93Littrow",
+   "source_note": "Valley centred 20 00N 31 00E; landing site lies within the valley. Valley extent not stated; radius is approximate.",
+   "verified": true,
+   "role": "site"
+  },
+  {
+   "id": "artemis3_peak_near_cabeus_b",
+   "name": "Peak near Cabeus B (Artemis III candidate region)",
+   "body": "moon",
+   "lat": -82.4,
+   "lon": -53.0,
+   "radius_km": 30,
+   "source_url": "https://en.wikipedia.org/wiki/Cabeus_(crater)",
+   "source_note": "Coordinates are those of crater Cabeus B (82.4S 53.0W, 61 km). Region name confirmed by https://www.nasa.gov/news-release/nasa-provides-update-on-artemis-iii-moon-landing-regions/ which gives no coordinates.",
+   "verified": false,
+   "unverified_reason": "Region peak coordinate not found; Cabeus B centre used as proxy.",
+   "role": "site"
+  },
+  {
+   "id": "artemis3_haworth",
+   "name": "Haworth (Artemis III candidate region)",
+   "body": "moon",
+   "lat": -86.9,
+   "lon": -4.0,
+   "radius_km": 25.7,
+   "source_url": "https://en.wikipedia.org/wiki/Haworth_(crater)",
+   "source_note": "Crater 86.9S 4W, diameter 51.4 km. Region name confirmed by the NASA release; the NASA release gives no coordinates.",
+   "verified": false,
+   "unverified_reason": "Crater centre used; exact candidate region location within Haworth not published in opened sources.",
+   "role": "site"
+  },
+  {
+   "id": "artemis3_malapert_massif",
+   "name": "Malapert Massif (Artemis III candidate region)",
+   "body": "moon",
+   "lat": -85.0,
+   "lon": 0.0,
+   "radius_km": 35,
+   "source_url": "https://en.wikipedia.org/wiki/Malapert_(crater)",
+   "source_note": "Malapert crater 84 54S 12 54E; massif 'lies almost exactly along 0 deg longitude' on the crater's SW rim; no exact massif coordinate given. Lat/lon here are approximate.",
+   "verified": false,
+   "unverified_reason": "No exact massif coordinate in any opened source.",
+   "role": "site"
+  },
+  {
+   "id": "artemis3_mons_mouton",
+   "name": "Mons Mouton (Artemis III candidate region)",
+   "body": "moon",
+   "lat": -84.6,
+   "lon": 31.0,
+   "radius_km": 20,
+   "source_url": "https://en.wikipedia.org/wiki/Mons_Mouton",
+   "source_note": "Infobox 84 36S 31 00E; NASA release lists Mons Mouton as a region.",
+   "verified": true,
+   "role": "site"
+  },
+  {
+   "id": "artemis3_mons_mouton_plateau",
+   "name": "Mons Mouton Plateau (Artemis III candidate region)",
+   "body": "moon",
+   "lat": -84.6,
+   "lon": 31.0,
+   "radius_km": 20,
+   "source_url": "https://www.nasa.gov/news-release/nasa-provides-update-on-artemis-iii-moon-landing-regions/",
+   "source_note": "NASA lists the name; coordinates here reuse Mons Mouton as a proxy.",
+   "verified": false,
+   "unverified_reason": "No coordinate for the plateau in any opened source.",
+   "role": "site"
+  },
+  {
+   "id": "artemis3_nobile_rim_1",
+   "name": "Nobile Rim 1 (Artemis III candidate region)",
+   "body": "moon",
+   "lat": -85.28,
+   "lon": 53.27,
+   "radius_km": 40,
+   "source_url": "https://en.wikipedia.org/wiki/Nobile_(crater)",
+   "source_note": "Nobile crater centre 85 17S 53 16E, 79 km. Astronomy.com (search snippet) says Rim 1 is on the SW rim. Coordinates are crater centre proxy.",
+   "verified": false,
+   "unverified_reason": "Rim-specific coordinate not found.",
+   "role": "site"
+  },
+  {
+   "id": "artemis3_nobile_rim_2",
+   "name": "Nobile Rim 2 (Artemis III candidate region)",
+   "body": "moon",
+   "lat": -85.28,
+   "lon": 53.27,
+   "radius_km": 40,
+   "source_url": "https://en.wikipedia.org/wiki/Nobile_(crater)",
+   "source_note": "Nobile crater centre proxy; Astronomy.com (search snippet) says Rim 2 is on the NE rim.",
+   "verified": false,
+   "unverified_reason": "Rim-specific coordinate not found.",
+   "role": "site"
+  },
+  {
+   "id": "artemis3_de_gerlache_rim_2",
+   "name": "de Gerlache Rim 2 (Artemis III candidate region)",
+   "body": "moon",
+   "lat": -88.5,
+   "lon": -87.1,
+   "radius_km": 16.2,
+   "source_url": "https://en.wikipedia.org/wiki/De_Gerlache_(crater)",
+   "source_note": "De Gerlache crater 88 30S 87 06W, 32.4 km. Coordinates are crater centre proxy.",
+   "verified": false,
+   "unverified_reason": "Rim 2 specific coordinate not found.",
+   "role": "site"
+  }
+ ],
+ "pairs": [
+  {
+   "id": "mars_to_earth",
+   "inputs": [
+    "jezero_crater",
+    "gale_crater",
+    "arcadia_planitia"
+   ],
+   "earth_ids": [
+    "haughton_crater",
+    "mcmurdo_dry_valleys",
+    "atacama_yungay"
+   ],
+   "basis": "Wikipedia: Haughton, McMurdo Dry Valleys and the Atacama (Yungay) are described as Mars analogs. Atacama coordinate is approximate (desert centre)."
+  },
+  {
+   "id": "moon_to_earth",
+   "inputs": [
+    "apollo17_taurus_littrow",
+    "artemis3_mons_mouton"
+   ],
+   "earth_ids": [
+    "askja",
+    "hawaii_hiseas_mauna_loa",
+    "mauna_kea_summit"
+   ],
+   "basis": "Wikipedia/news: Askja and Hawaii slopes were used to train Apollo astronauts; HI-SEAS has a lunar scenario. Mauna Kea coordinate is a proxy."
+  }
+ ]
+}
