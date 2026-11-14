@@ -82,3 +82,45 @@ df = merge_parts(thin, parts)
 check_contract(df)
 df.to_parquet(OUT / "earth.parquet", index=False)
 df.notna().mean().round(3)   # share of cells with data, per column
+
+
+# %% [markdown]
+# ## Quick-look maps and sanity checks
+# Four maps: `t_day_k`, `slope_deg`, `ice_prob`, `analog_ok` (true = 1, false = 0, null = blank).
+# The checks compare known places. A check is skipped, with a message, if a value there is null.
+
+# %%
+import matplotlib.pyplot as plt
+
+
+def at(lat, lon, col):
+    i = (df["lat"] - lat).abs().add((df["lon"] - lon).abs()).idxmin()
+    return df.loc[i, col]
+
+
+def check(label, a, b, ok):
+    if pd.isna(a) or pd.isna(b):
+        print("SKIPPED (null value):", label)
+        return
+    assert ok(a, b), f"{label}: {a} vs {b}"
+    print("ok:", label)
+
+
+check("Sahara hotter than Antarctica by day", at(25, 15, "t_day_k"), at(-80, 0, "t_day_k"), lambda a, b: a > b)
+check("Himalaya steeper than Sahara", at(28, 86, "slope_deg"), at(25, 15, "slope_deg"), lambda a, b: a > b)
+check("Antarctica icier than Sahara", at(-80, 0, "ice_prob"), at(25, 15, "ice_prob"), lambda a, b: a > b)
+check("Sahara analog_ok, Amazon not", float(at(25, 15, "analog_ok") == True) if pd.notna(at(25, 15, "analog_ok")) else np.nan,
+      float(at(-3, -60, "analog_ok") == True) if pd.notna(at(-3, -60, "analog_ok")) else np.nan, lambda a, b: a > b)
+
+maps = {
+    "t_day_k": df["t_day_k"].to_numpy(dtype="float64"),
+    "slope_deg": df["slope_deg"].to_numpy(dtype="float64"),
+    "ice_prob": df["ice_prob"].to_numpy(dtype="float64"),
+    "analog_ok": df["analog_ok"].map({True: 1.0, False: 0.0}).to_numpy(dtype="float64"),
+}
+fig, axes = plt.subplots(2, 2, figsize=(16, 8))
+for ax, (name, v) in zip(axes.ravel(), maps.items()):
+    im = ax.imshow(v.reshape(NROWS, NCOLS), extent=(-180, 180, -90, 90))
+    ax.set_title(name)
+    fig.colorbar(im, ax=ax, shrink=0.8)
+fig.savefig(OUT / "quicklook_earth.png", dpi=100, bbox_inches="tight")
