@@ -1,0 +1,12 @@
+workflow/
+__pycache__/
+*.pyc
+.env
+*.nc
+*.zip
+*.hdf
+*.parquet
+data/
+RAW/
+*.pem
+*.key
