@@ -102,9 +102,19 @@ def dem_block_stats(z, lat0):
     gy = np.gradient(z, dy, axis=0)
     gx = np.gradient(z, axis=1) / dx[:, None]
     slope = np.degrees(np.arctan(np.hypot(gx, gy)))
-    def blocks(a):
-        return a.reshape(4, 30, 4, 30).transpose(0, 2, 1, 3).reshape(4, 4, 900)
-    return blocks(slope).mean(axis=2), blocks(z).std(axis=2), blocks(z).mean(axis=2)
+    def blocks(a):                                        # 4 x 4 blocks of 30 x 30 pixels
+        return a.reshape(4, 30, 4, 30).transpose(0, 2, 1, 3)
+    zb = blocks(z)
+    mean = zb.mean(axis=(2, 3), keepdims=True)
+    dz = zb - mean
+    # Roughness = std of the elevation left after removing the best-fit plane of each block,
+    # so a smooth tilted surface scores about 0 (large-scale tilt is slope, not roughness).
+    # The pixel grid is full and centred, so the plane fit has a closed form.
+    idx = np.arange(30) - 14.5
+    bx = (dz * idx[None, None, None, :]).sum(axis=(2, 3), keepdims=True) / (30 * (idx ** 2).sum())
+    by = (dz * idx[None, None, :, None]).sum(axis=(2, 3), keepdims=True) / (30 * (idx ** 2).sum())
+    resid = dz - bx * idx[None, None, None, :] - by * idx[None, None, :, None]
+    return blocks(slope).mean(axis=(2, 3)), resid.std(axis=(2, 3)), mean[:, :, 0, 0]
 
 # %%
 import re
@@ -128,14 +138,22 @@ len(TILES)
 # %%
 from concurrent.futures import ThreadPoolExecutor
 
-DEM_FILE = RAW / "dem_cells.parquet"
+DEM_FILE = RAW / "dem_cells_v2.parquet"   # v2: detrended roughness
 done = pd.read_parquet(DEM_FILE) if DEM_FILE.exists() else pd.DataFrame()
 done_ids = set(done["tile"]) if len(done) else set()
 
 def tile_cells(tile):
+    # Returns a DataFrame, or None when the tile fails 3 times (the run goes on; see the check below).
     name, lat0, lon0 = tile
-    with rasterio.open(f"{BASE}/{name}/{name}.tif") as src:
-        z = src.read(1, out_shape=(120, 120), resampling=Resampling.average).astype("float64")
+    for attempt in range(3):
+        try:
+            with rasterio.open(f"{BASE}/{name}/{name}.tif") as src:
+                z = src.read(1, out_shape=(120, 120), resampling=Resampling.average).astype("float64")
+            break
+        except rasterio.errors.RasterioIOError:
+            z = None
+    if z is None:
+        return None
     slope, rough, elev = dem_block_stats(z, lat0)
     i, j = np.meshgrid(np.arange(4), np.arange(4), indexing="ij")
     row = (89 - lat0) * 4 + i
@@ -148,11 +166,16 @@ def tile_cells(tile):
 
 todo = [t for t in TILES if t[0] not in done_ids]
 parts = [done] if len(done) else []
+failed = []
 for start in range(0, len(todo), 200):
+    batch = todo[start:start + 200]
     with ThreadPoolExecutor(8) as pool:
-        parts += list(pool.map(tile_cells, todo[start:start + 200]))
+        results = list(pool.map(tile_cells, batch))
+    parts += [r for r in results if r is not None]
+    failed += [t[0] for t, r in zip(batch, results) if r is None]
     pd.concat(parts, ignore_index=True).to_parquet(DEM_FILE, index=False)   # checkpoint
     print(f"{min(start + 200, len(todo))} / {len(todo)} tiles")
+assert not failed, f"{len(failed)} tiles failed 3 times (first: {failed[:3]}). Progress is saved: run this cell again."
 dem = pd.concat(parts, ignore_index=True).drop(columns="tile")
 dem.shape
 
@@ -172,7 +195,9 @@ for col in ("slope_deg", "rough_m", "elev_m"):
 COLS = ["cell_id", "lat", "lon", "t_day_k", "t_night_k", "t_swing_k",
         "slope_deg", "rough_m", "elev_m", "elev_pct"]
 df = df[COLS]
-df.to_parquet(OUT / "earth.parquet", index=False)
+df.to_parquet(OUT / "earth_thin.parquet", index=False)   # input of the later notebooks
+if not (OUT / "earth.parquet").exists():                 # first hand-off; the merge notebook replaces it later
+    df.to_parquet(OUT / "earth.parquet", index=False)
 print(land.sum(), "land cells")
 df.describe().T
 
