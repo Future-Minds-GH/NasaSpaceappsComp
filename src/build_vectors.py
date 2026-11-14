@@ -104,17 +104,17 @@ def tile_cell_ids(nside=NSIDE):
 def to_byte(x, scale=254):
     """0-1 array (NaN = missing) to uint8. Missing -> 255."""
     x = np.asarray(x, dtype="float64")
-    assert np.all((x[~np.isnan(x)] >= -1e-9) & (x[~np.isnan(x)] <= 1 + 1e-9)), "value outside 0-1"
+    assert np.all((x[~np.isnan(x)] >= -1e-6) & (x[~np.isnan(x)] <= 1 + 1e-6)), "value outside 0-1"
     out = np.full(x.shape, NULL, dtype="uint8")
     ok = ~np.isnan(x)
-    out[ok] = np.rint(np.clip(x[ok], 0, 1) * scale).astype("uint8")
+    out[ok] = np.floor(np.clip(x[ok], 0, 1) * scale + 0.5).astype("uint8")   # half up, like JS Math.round
     return out
 
 
 def percentile_rank(x):
     """Rank of each value among the valid values, 0-1. NaN stays NaN."""
     s = pd.Series(np.asarray(x, dtype="float64"))
-    return s.rank(pct=True, method="average").to_numpy()
+    return ((s.rank(method="average") - 0.5) / s.notna().sum()).to_numpy()
 
 
 def field_values(df_tiles, source):
@@ -142,7 +142,10 @@ def nearest_analog_km(lat, lon, sites):
     """Distance in km from each tile centre to the nearest known Earth site (65535 if no sites)."""
     if not sites:
         return np.full(lat.shape, NO_KM, dtype="uint16")
-    d = np.min([haversine_km(lat, lon, s["lat"], s["lon"]) for s in sites], axis=0)
+    assert len(sites) <= 1000, f"{len(sites)} known sites is too many"
+    d = np.full(lat.shape, np.inf)
+    for s in sites:                                  # running minimum: one array at a time
+        d = np.minimum(d, haversine_km(lat, lon, s["lat"], s["lon"]))
     return np.minimum(np.rint(d), NO_KM - 1).astype("uint16")
 
 
@@ -150,11 +153,12 @@ def build(df, known_sites=None, nside=NSIDE):
     """Returns (vectors uint8 [n, 34], meta bytes, tile indices, summary dict)."""
     missing = [c for c in NEEDED if c not in df.columns]
     assert not missing, f"earth.parquet is missing columns {missing}"
-    df = df.sort_values("cell_id").reset_index(drop=True)
-    assert (df["cell_id"].to_numpy() == np.arange(NROWS * NCOLS)).all(), "cell_id must be 0..N-1"
+    assert df["cell_id"].is_unique, "cell_id must be unique"
+    assert df["cell_id"].between(0, NROWS * NCOLS - 1).all(), "cell_id must be 0..N-1"
+    df = df.set_index("cell_id").reindex(np.arange(NROWS * NCOLS))      # a missing cell has no data: not scored
+    df["analog_ok"] = df["analog_ok"].astype("boolean").fillna(False).astype(bool)
     cell, lat, lon = tile_cell_ids(nside)
-    ok = df["analog_ok"].map({True: True, False: False}).to_numpy(dtype=object)[cell]
-    scored = np.array([v is True for v in ok])
+    scored = df["analog_ok"].to_numpy()[cell]
     tiles = np.flatnonzero(scored)
     assert tiles.size > 0, "no scored tiles: analog_ok is never true"
     sub = df.iloc[cell[tiles]].reset_index(drop=True)
@@ -173,8 +177,9 @@ def build(df, known_sites=None, nside=NSIDE):
     meta["tags"] = 0
     meta["name"] = NO_NAME
     meta["env"] = NO_ENV
+    # GLiM-only cells (estimated): the rock class is set and all four EMIT classes are known zeros.
     emit_classes = sub[["min_ironox", "min_sulfate", "min_clay", "min_carbonate"]]
-    estimated = sub["min_mafic"].notna() & (emit_classes.fillna(-1).sum(axis=1) == 0)   # GLiM-only: estimated
+    estimated = sub["min_mafic"].notna() & emit_classes.notna().all(axis=1) & (emit_classes == 0).all(axis=1)
     meta["flags"] = estimated.to_numpy().astype("uint8")
     assert meta.dtype.itemsize == 12
     summary = {"tiles": int(tiles.size), "bytes_per_tile": BYTES, "share_filled": filled,
@@ -199,10 +204,13 @@ def main():
     args = ap.parse_args()
 
     if args.schema:
+        assert args.schema.stat().st_size < 5_000_000, "schema.json is larger than 5 MB"
         check_schema(json.loads(args.schema.read_text(encoding="utf-8")))
     known = []
     if args.known_analogs:
+        assert args.known_analogs.stat().st_size < 5_000_000, "known_analogs.json is larger than 5 MB"
         known = [s for s in json.loads(args.known_analogs.read_text(encoding="utf-8"))["sites"] if s.get("body") == "earth"]
+    assert args.parquet.stat().st_size < 2_000_000_000, "earth.parquet is larger than 2 GB"
     df = pd.read_parquet(args.parquet)
     vectors, meta, tiles, summary = build(df, known)
 

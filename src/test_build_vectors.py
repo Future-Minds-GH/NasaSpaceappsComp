@@ -137,6 +137,35 @@ def test_schema_check():
         bv.check_schema(bad)
 
 
+def test_table_without_ocean_rows():
+    # a table that holds only some cells (no ocean rows) must still work
+    part = make_df()
+    part = part[np.abs(part["lat"]) < 30].copy()
+    vectors, _, tiles, _ = bv.build(part, [])
+    ids = [f[1] for f in bv.FIELDS]
+    assert vectors.shape[0] == tiles.size and tiles.size > 0
+    assert (vectors[:, ids.index("slope")] != bv.NULL).all()
+
+
+def test_half_rounds_up_like_js():
+    assert bv.to_byte(np.array([0.75]))[0] == 191          # 190.5 -> 191 (Python rint would give 190)
+    assert bv.to_byte(np.array([np.nan]))[0] == bv.NULL
+    assert bv.to_byte(np.array([1.0000001]))[0] == 254     # tiny overshoot is clipped, not a crash
+    with pytest.raises(AssertionError):
+        bv.to_byte(np.array([1.5]))
+
+
+def test_percentile_uses_contract_definition():
+    p = bv.percentile_rank(np.array([10.0, 20.0, 30.0, 40.0, np.nan]))
+    assert np.allclose(p[:4], [0.125, 0.375, 0.625, 0.875]) and np.isnan(p[4])
+
+
+def test_emit_cell_with_glim_share_is_not_estimated(built):
+    # EMIT classes (0.4 + 0.1 + 0.1 + 0.2) are not all zero, so the flag stays 0
+    df, vectors, meta, tiles, summary = built
+    assert meta["flags"][row_of(built, 45.0, 60.0)] == 0
+
+
 def test_missing_column_fails_fast():
     df = make_df().drop(columns=["ice_prob"])
     with pytest.raises(AssertionError):
