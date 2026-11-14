@@ -1,7 +1,7 @@
 # %% [markdown]
 # # Job 1 thin slice: Earth data
 #
-# Output: `analog-finder/processed/earth.parquet` (Google Drive).
+# Output: `analog-finder/processed/earth_thin.parquet` (Google Drive). The first time, the same table is also saved as `earth.parquet` (the first hand-off). The merge notebook reads `earth_thin.parquet` and later replaces `earth.parquet`.
 # Columns: `cell_id, lat, lon, t_day_k, t_night_k, t_swing_k, slope_deg, rough_m, elev_m, elev_pct`.
 #
 # Before you run:
