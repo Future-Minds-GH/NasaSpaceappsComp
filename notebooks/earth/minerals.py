@@ -169,11 +169,14 @@ GLIM_SHA256 = "43b4ce3276b155d804db8ff9fb227d620b4c35015a4cf564eac4d06d2b69d88e"
 GLIM_DIR.mkdir(parents=True, exist_ok=True)
 GLIM_ZIP = GLIM_DIR / "glim.zip"
 if not GLIM_ZIP.exists():
-    r = requests.get(GLIM_URL, timeout=120)
+    r = requests.get(GLIM_URL, timeout=120, stream=True)
     r.raise_for_status()
-    assert len(r.content) < 1_000_000, f"GLiM zip too large: {len(r.content)} bytes"
-    assert hashlib.sha256(r.content).hexdigest() == GLIM_SHA256, "GLiM zip changed: check the download"
-    GLIM_ZIP.write_bytes(r.content)
+    buf = bytearray()
+    for chunk in r.iter_content(1 << 16):              # stop at the size cap, do not read the whole body first
+        buf += chunk
+        assert len(buf) <= 1_000_000, "GLiM zip is larger than 1 MB"
+    assert hashlib.sha256(buf).hexdigest() == GLIM_SHA256, "GLiM zip changed: check the download"
+    GLIM_ZIP.write_bytes(bytes(buf))
 assert hashlib.sha256(GLIM_ZIP.read_bytes()).hexdigest() == GLIM_SHA256, "Cached GLiM zip changed: delete it and rerun"
 
 with zipfile.ZipFile(GLIM_ZIP) as z:
