@@ -81,9 +81,10 @@ export default function LandingPage() {
     setPoint(null);
   }
 
-  // Re-added factors go back to their usual place in the list.
+  // Re-added factors go back to their usual place in the list, with a starting weight if theirs was 0 so they count.
   function showFactor(factor) {
     setShownFactors((current) => FACTORS.filter((other) => current.includes(other) || other === factor));
+    setWeights((current) => (current[factor] ? current : { ...current, [factor]: 20 }));
   }
 
   // Removing a factor also drops its single measurements; at least one factor always stays.
@@ -98,7 +99,6 @@ export default function LandingPage() {
     setMeasurements((current) => ({ ...current, [item.key]: MEASUREMENT_DEFAULT }));
     if (!shownFactors.includes(item.factor)) {
       showFactor(item.factor);
-      setWeights((current) => (current[item.factor] ? current : { ...current, [item.factor]: 20 }));
     }
   }
 

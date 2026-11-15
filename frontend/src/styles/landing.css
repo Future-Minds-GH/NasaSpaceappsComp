@@ -32,19 +32,6 @@
   width: 24px; height: 24px; border-radius: 50%;
 }
 .factor-remove:hover { color: #FFFFFF; background: rgb(255 255 255 / 0.1); }
-.factor-add {
-  display: flex; align-items: center; gap: 8px; padding: 10px 12px; min-height: 44px;
-  border: 1px dashed rgb(255 255 255 / 0.4); border-radius: var(--radius-control); background: none;
-  color: var(--on-space); font: inherit; font-weight: 600; cursor: pointer; text-align: left;
-  transition: border-color 160ms ease, background-color 160ms ease;
-}
-.factor-add span { font-size: 1.25rem; line-height: 1; }
-.factor-add:hover { border-color: #FFFFFF; background: rgb(255 255 255 / 0.05); }
-.factor-add-chip {
-  font: inherit; font-size: 0.8125rem; font-weight: 600; color: var(--on-space); background: rgb(255 255 255 / 0.08);
-  border: 1px solid rgb(255 255 255 / 0.25); border-radius: 999px; padding: 4px 10px; cursor: pointer;
-}
-.factor-add-chip:hover { border-color: #FFFFFF; }
 
 /* ---- Stage: two hovering planets and the arrow ---- */
 .workspace-stage {
@@ -247,11 +234,6 @@
 .measurement-slider .factor-slider-head { font-size: 0.8125rem; font-weight: 500; color: var(--on-space-soft); }
 .measurement-slider input[type="range"] { width: 100%; accent-color: var(--factor-color); }
 .measurement-note { font-size: 0.75rem; color: #FFBE2E; }
-.factor-add-panel { display: grid; gap: 12px; padding: 12px; border: 1px solid rgb(255 255 255 / 0.2); border-radius: var(--radius-control); }
-.factor-add-panel-head { display: flex; align-items: center; justify-content: space-between; }
-.factor-add-group { display: grid; gap: 6px; }
-.factor-add-group-name { display: flex; align-items: center; font-size: 0.8125rem; font-weight: 600; }
-.factor-add-chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .similarity-measurements { font-size: 0.75rem; color: var(--ink-soft); }
 
 /* ---- Coordinates: two compact readouts instead of one long mono string ---- */
@@ -262,3 +244,14 @@
 .caption-score { font-family: var(--font-display); color: #FFFFFF; }
 .compute-from .coords { margin-top: 2px; }
 .similarity .coord { background: var(--paper-raised); }
+
+/* "+ Add a measurement" dropdown */
+.factor-add-select select {
+  width: 100%; min-height: 44px; padding: 10px 36px 10px 12px; appearance: none; cursor: pointer;
+  font: inherit; font-weight: 600; color: var(--on-space);
+  background: rgb(255 255 255 / 0.04) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%23FFFFFF' stroke-width='1.6'/%3E%3C/svg%3E") no-repeat right 12px center / 12px 8px;
+  border: 1px dashed rgb(255 255 255 / 0.4); border-radius: var(--radius-control);
+  transition: border-color 160ms ease, background-color 160ms ease;
+}
+.factor-add-select select:hover { border-color: #FFFFFF; background-color: rgb(255 255 255 / 0.07); }
+.factor-add-select option, .factor-add-select optgroup { color: #000000; background: #FFFFFF; }
