@@ -33,7 +33,7 @@ NROWS, NCOLS = 360, 720
 REALITY_GAP = {  # same wording as frontend/scripts/sample-places.mjs
     "moon": ["Vacuum: no air at all", "Gravity 1/6 of Earth's", "Two-week days and two-week nights",
              "No shielding from cosmic radiation", "Sharp, unweathered dust"],
-    "mars": ["Air 1% as thick as Earth's, mostly CO₂", "Gravity 38% of Earth's", "Strong surface radiation",
+    "mars": ["Air less than 1% as thick as Earth's, mostly CO₂", "Gravity 38% of Earth's", "Strong surface radiation",
              "Toxic perchlorate salts in the soil", "Planet-wide dust storms"],
 }
 TREK = {  # same layers as trekImageUrl() in frontend/scripts/make-sample-data.mjs
