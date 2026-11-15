@@ -142,3 +142,25 @@ test("a same-planet search skips tiles near the picked spot and still fills the 
   for (const pick of picks) assert.ok(Math.abs(lons[pick.row]) * 111.19 >= SAME_BODY_MIN_KM, `lon ${lons[pick.row]} is too close`);
   assert.ok(Math.abs(lons[rankTopRows(totals, lats, lons, { count: 1 })[0].row]) < 1);   // without exclude: the spot itself
 });
+
+test("missing data: a tile without a factor gets that factor's median score and a flag; an empty tile stays out", async () => {
+  const { typicalFactorsOf } = await import("../src/data/similarity.js");
+  const schema = JSON.parse(readFileSync(new URL("../../data/schema.json", import.meta.url), "utf8"));
+  const layout = readLayout(schema);
+  const stride = layout.bytesPerTile;
+  const minerals = layout.fields.min_mafic.offset;
+  const mineralBytes = schema.factors.find((factor) => factor.id === "minerals").fields.map((field) => layout.fields[field.id].offset);
+  const clicked = new Uint8Array(stride).fill(100);
+  const tiles = new Uint8Array(stride * 4).fill(100);
+  tiles.fill(NULL_CODE, 0, stride);                                       // tile 0: no data at all
+  for (const offset of mineralBytes) tiles[stride + offset] = NULL_CODE;   // tile 1: no minerals
+  for (const offset of mineralBytes) tiles[2 * stride + offset] = 0;       // tile 2: different minerals (score 0.4...)
+  const scores = scoreAllEarthTiles(clicked, tiles, layout);
+  const m = FACTORS.indexOf("minerals");
+  const present = [scores[2 * FACTORS.length + m], scores[3 * FACTORS.length + m]].sort();
+  assert.ok(Number.isNaN(scores[m]), "empty tile stays empty");
+  assert.ok(Math.abs(scores[FACTORS.length + m] - (present[0] + present[1]) / 2) < 1e-6, "median of the tiles that have minerals");
+  assert.deepEqual(typicalFactorsOf(scores, 1), ["minerals"]);
+  assert.deepEqual(typicalFactorsOf(scores, 3), []);
+  assert.ok(minerals >= 0);
+});

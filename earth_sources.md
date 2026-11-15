@@ -6,7 +6,7 @@ Status key: **Checked** = the source, layer names and the processing math were t
 
 | Column | Source | Processing | Notebook | Status |
 | --- | --- | --- | --- | --- |
-| `t_day_k`, `t_night_k` | MODIS MOD11C3 v061, `LST_Day_CMG`, `LST_Night_CMG` | Scale 0.02 → K, 0 = fill → null. Mean of 12 months of 2023. Mean of each 5×5 block of 0.05° pixels | `earth_thin_slice` | Checked (Jan 2023: Sahara 297.5 K day, Antarctica 248 K, ocean null) |
+| `t_day_k`, `t_night_k` | MODIS MYD11C3 v061 (Aqua: about 1:30 pm and 1:30 am local time, close to the daily high and low; Mars uses daily max/min, the Moon noon/midnight), `LST_Day_CMG`, `LST_Night_CMG` | Scale 0.02 → K, 0 = fill → null. Mean of 12 months of 2023. Mean of each 5×5 block of 0.05° pixels | `earth_thin_slice` | Checked (Jan 2023: Sahara 297.5 K day, Antarctica 248 K, ocean null) |
 | `t_swing_k` | Derived | `t_day_k − t_night_k` | `earth_thin_slice` | Written |
 | `slope_deg`, `rough_m`, `elev_m` | Copernicus DEM GLO-90 (public AWS Open Data copy; same ESA product as Copernicus Data Space) | Each 1° tile resampled to 30″ (~1 km). Slope from the 1 km grid (metres per degree from latitude), mean per cell. `rough_m` = std of the 1 km elevations in the cell after removing each 30 × 30 block's best-fit plane (a smooth tilted surface scores about 0; tilt is in `slope_deg`). The window is one 0.25° cell, about 28 km: the Moon and Mars need the same physical distance. `elev_m` = mean. 26,475 tiles in the list | `earth_thin_slice` | Checked (Himalaya tile 8.9° mean slope and 297 m roughness, Sahara tile 0.4° and 16 m) |
 | `elev_pct` | Derived | Percentile rank of `elev_m` among cells with both a temperature and an elevation | `earth_thin_slice` | Written |

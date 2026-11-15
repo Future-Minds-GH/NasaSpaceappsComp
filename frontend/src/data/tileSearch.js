@@ -88,6 +88,7 @@ export function buildMatches(picks, { tiles, body = "earth", nside, weights, why
       breakdown,
       km_to_nearest_known_analog: tile.noveltyKm,
       mineralogy_estimated: tile.minEstimated,
+      typical_factors: pick.typicalFactors ?? [],   // no data on this tile: the factor uses a typical score
       false_friend: isFalseFriend(breakdown, weights),
       false_friend_factor: heaviestFactor(breakdown, weights),
       why: plainReasons(breakdown, whyRules),
