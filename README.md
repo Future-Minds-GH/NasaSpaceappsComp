@@ -22,7 +22,7 @@ Factors: terrain (slope, roughness), elevation, geology, mineralogy, climate (te
 | --- | --- |
 | `notebooks/earth/`, `notebooks/moon/`, `notebooks/mars/` | Colab data prep. Each `.py` file is the source of the `.ipynb` next to it |
 | `src/surface_fractions.py`, `src/merge_body.py` | Shared data-prep helpers |
-| `src/build_vectors.py` | parquet to site files (Earth today; Moon and Mars to do) |
+| `src/build_vectors.py`, `src/build_body_vectors.py` | parquet to site files: Earth; Moon and Mars plus `vectors/schema.json` |
 | `frontend/` | The site (React + Vite, static) |
 | `matcher/` | Python matcher, fake tables and validation harness (hit@10, negative controls) |
 | `known_analogs.json` | Known Earth analog sites with sources, for validation |
@@ -52,6 +52,7 @@ Requires a free NASA Earthdata login, entered in Colab only. Never commit creden
    ```bash
    pip install astropy-healpix pandas pyarrow numpy
    python src/build_vectors.py earth.parquet --out frontend/public/data --known-analogs known_analogs.json
+   python src/build_body_vectors.py --moon moon.parquet --mars mars.parquet --out frontend/public/data
    ```
 4. Commit `frontend/public/data/`. A push to `main` redeploys the site.
 
