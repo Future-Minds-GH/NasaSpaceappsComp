@@ -234,9 +234,14 @@ function TargetGlobe({ body, best, isSelected, isSamePlanet, onRemove }) {
   const focus = useMemo(() => (best ? { lat: best.lat, lon: best.lon } : null), [best]);
   return (
     <div className={`target-globe body-${body}${isSelected ? " is-selected" : ""}`}>
-      {onRemove && <button type="button" className="target-remove" onClick={onRemove} aria-label={`Remove ${BODY_NAMES[body]}`}>×</button>}
       <div className="hovering-planet">
         <PlanetGlobe body={body} isSpinning={!best} sites={sites} focus={focus} label={`Globe of ${BODY_NAMES[body]}, an output planet.`} />
+        {/* Hovering the planet shows a big X over it; clicking the planet removes it (at least one always stays). */}
+        {onRemove && (
+          <button type="button" className="target-remove" onClick={onRemove} aria-label={`Remove ${BODY_NAMES[body]}`}>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6 L18 18 M18 6 L6 18" /></svg>
+          </button>
+        )}
       </div>
       <div className="planet-caption">
         <span className="planet-caption-name">{BODY_NAMES[body]}</span>
