@@ -173,3 +173,15 @@ test("missing data: a tile without a factor gets that factor's median score and 
   const none = scoreAllEarthTiles(noMinerals, tiles, layout);
   for (let tile = 0; tile < 4; tile++) assert.ok(Number.isNaN(none[tile * FACTORS.length + m]));
 });
+
+test("a spot with no data for a factor says so, for any planet", async () => {
+  const { missingFactorsOf, noDataSentence } = await import("../src/data/fieldValues.js");
+  const schema = JSON.parse(readFileSync(new URL("../../data/schema.json", import.meta.url), "utf8"));
+  const layout = readLayout(schema);
+  const vector = new Uint8Array(layout.bytesPerTile).fill(100);
+  for (const field of schema.factors.find((factor) => factor.id === "minerals").fields) vector[layout.fields[field.id].offset] = NULL_CODE;
+  assert.deepEqual(missingFactorsOf(layout, vector), ["minerals"]);
+  assert.equal(noDataSentence("Mars", ["Minerals"]), "This spot on Mars has no data for minerals, so it is left out of the score.");
+  assert.equal(noDataSentence("the Moon", ["Day-night swing", "Surface type"]), "This spot on the Moon has no data for day-night swing and surface type, so they are left out of the score.");
+  assert.equal(noDataSentence("Earth", []), null);
+});

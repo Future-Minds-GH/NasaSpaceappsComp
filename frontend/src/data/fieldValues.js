@@ -1,3 +1,4 @@
+import { FACTORS } from "./scoring.js";
 // Real values of a tile in plain words, decoded from its bytes with the layout of data/schema.json:
 // "Night 170 K", or next to a match "Night 170 K vs 215 K". Used by the tile profile and the result cards.
 import { decodeByte } from "./similarity.js";
@@ -65,4 +66,18 @@ export function ordinal(n) {
   const tens = n % 100;
   const suffix = tens >= 11 && tens <= 13 ? "th" : ({ 1: "st", 2: "nd", 3: "rd" })[n % 10] ?? "th";
   return `${n}${suffix}`;
+}
+
+/** The factors (FACTORS order) a tile has no data for: they cannot be compared from this spot on any match. */
+export function missingFactorsOf(layout, vector) {
+  if (!layout || !vector) return [];
+  return FACTORS.filter((factor) => describeFactorValue(layout, factor, vector) === null);
+}
+
+/** "This spot on Mars has no data for minerals, so it is left out of the score." (any body, any factors), or null. */
+export function noDataSentence(bodyName, factorLabels) {
+  if (factorLabels.length === 0) return null;
+  const names = factorLabels.map((label) => label.toLowerCase());
+  const list = names.length === 1 ? names[0] : `${names.slice(0, -1).join(", ")} and ${names.at(-1)}`;
+  return `This spot on ${bodyName} has no data for ${list}, so ${names.length === 1 ? "it is" : "they are"} left out of the score.`;
 }
