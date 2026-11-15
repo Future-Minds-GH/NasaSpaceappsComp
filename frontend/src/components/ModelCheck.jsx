@@ -1,4 +1,4 @@
-// Role 3's terrain model check (model_check.md) on the About page, turned into headings, paragraphs and lists by a
+// Role 3's model check (model_check.md) on the About page, turned into headings, paragraphs and lists by a
 // tiny Markdown reader. Text goes in through React, never as HTML, so the file can't inject anything into the page.
 import { loadModelCheck } from "../data/api.js";
 import { useLoaded } from "../data/useLoaded.js";
@@ -7,12 +7,12 @@ import { useLoaded } from "../data/useLoaded.js";
 export default function ModelCheck() {
   const { data: text, isLoading } = useLoaded(() => loadModelCheck(), []);
 
-  if (isLoading) return <p className="about-text" role="status">Loading the terrain model check…</p>;
+  if (isLoading) return <p className="about-text" role="status">Loading the model check…</p>;
   // A dev server answers a missing file with its index.html page, which is not the model check either.
   const isPublished = typeof text === "string" && !/^\s*<(!doctype|html)/i.test(text);
   const blocks = isPublished ? toTextBlocks(text) : [];
   if (blocks.length === 0) {
-    return <p className="about-text">The terrain model check will appear here once Role 3 publishes it.</p>;
+    return <p className="about-text">The model check will appear here once Role 3 publishes it.</p>;
   }
 
   return (

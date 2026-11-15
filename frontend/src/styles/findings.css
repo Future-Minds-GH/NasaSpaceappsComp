@@ -33,7 +33,7 @@
 .findings-factor-list { list-style: none; display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 0.9375rem; font-weight: 600; }
 .findings-factor-list li { display: inline-flex; align-items: center; }
 
-/* The seven numbers, only when asked for */
+/* The nine numbers, only when asked for */
 .findings-item-details summary { width: fit-content; min-height: 36px; padding: 6px 0; font-weight: 650; cursor: pointer; }
 .findings-item-details[open] summary { margin-bottom: 8px; }
 .findings-item-details .factor-bars { max-width: 560px; }

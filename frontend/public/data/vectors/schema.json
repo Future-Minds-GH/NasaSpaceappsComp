@@ -1,254 +1,57 @@
 {
- "version": "0.1",
+ "version": "0.3",
  "sample": false,
- "nside": {
-  "earth": 256,
-  "moon": 64,
-  "mars": 128
- },
+ "nside": { "earth": 256, "moon": 64, "mars": 128 },
  "scheme": "nested",
  "null_code": 255,
- "encoding": {
-  "percentile": "round(p × 254)",
-  "fraction": "round(f × 254)",
-  "embedding": "round((e + 1) / 2 × 254)",
-  "code": "integer code",
-  "flag": "0 or 1"
- },
+ "byte_scale": 254,
  "mars_shards": "mars_<base cell 0-11>.bin",
+ "encoding": {
+  "value": "round((clip(x, min, max) - min) / (max - min) * 254); decode min + b / 254 * (max - min)",
+  "fraction": "round(f * 254), f in 0-1",
+  "percentile": "round(p * 254), p = rank within its own body in 0-1: (average rank - 0.5) / n over the scored tiles"
+ },
+ "scoring": {
+  "scalar": "s = max(0, 1 - |a - b| / tol), a and b decoded",
+  "vector": "s = max(0, 1 - 0.5 * sum |p - q|); null if any component is null on either tile",
+  "temp": "mean of the day and night scores that are present (the weight is split evenly)",
+  "total": "S = 100 * sum(w * s) / sum(w) over factors with w > 0 that are present on both tiles; no factor present -> tile skipped",
+  "bands": { "green": 90, "yellow": 60 },
+  "modes": "absolute (default): fields of the factors. relative: each factor scalar is replaced by its relative field (rel_of), tol = relative_tol"
+ },
+ "relative_tol": 0.25,
  "factors": [
-  {
-   "id": "terrain",
-   "fields": [
-    {
-     "id": "emb0",
-     "kind": "embedding"
-    },
-    {
-     "id": "emb1",
-     "kind": "embedding"
-    },
-    {
-     "id": "emb2",
-     "kind": "embedding"
-    },
-    {
-     "id": "emb3",
-     "kind": "embedding"
-    },
-    {
-     "id": "emb4",
-     "kind": "embedding"
-    },
-    {
-     "id": "emb5",
-     "kind": "embedding"
-    },
-    {
-     "id": "emb6",
-     "kind": "embedding"
-    },
-    {
-     "id": "emb7",
-     "kind": "embedding"
-    },
-    {
-     "id": "slope",
-     "kind": "percentile"
-    },
-    {
-     "id": "roughness",
-     "kind": "percentile"
-    }
-   ]
-  },
-  {
-   "id": "elevation",
-   "fields": [
-    {
-     "id": "relief",
-     "kind": "percentile"
-    },
-    {
-     "id": "topo_position",
-     "kind": "code",
-     "lookup": "topo_position"
-    }
-   ]
-  },
-  {
-   "id": "geology",
-   "fields": [
-    {
-     "id": "rock_class",
-     "kind": "code",
-     "lookup": "rock_class"
-    },
-    {
-     "id": "volcanic",
-     "kind": "flag"
-    },
-    {
-     "id": "impact",
-     "kind": "flag"
-    }
-   ]
-  },
-  {
-   "id": "mineralogy",
-   "fields": [
-    {
-     "id": "mafic",
-     "kind": "fraction"
-    },
-    {
-     "id": "clays",
-     "kind": "fraction"
-    },
-    {
-     "id": "sulfates",
-     "kind": "fraction"
-    },
-    {
-     "id": "carbonates",
-     "kind": "fraction"
-    },
-    {
-     "id": "iron_oxides",
-     "kind": "fraction"
-    },
-    {
-     "id": "salts",
-     "kind": "fraction"
-    }
-   ]
-  },
-  {
-   "id": "climate",
-   "fields": [
-    {
-     "id": "aridity",
-     "kind": "percentile"
-    },
-    {
-     "id": "mean_temp",
-     "kind": "percentile"
-    },
-    {
-     "id": "day_night_range",
-     "kind": "percentile"
-    },
-    {
-     "id": "cold_extreme",
-     "kind": "percentile"
-    },
-    {
-     "id": "sunlit_fraction",
-     "kind": "percentile"
-    }
-   ]
-  },
-  {
-   "id": "atmosphere",
-   "fields": [
-    {
-     "id": "pressure",
-     "kind": "percentile"
-    },
-    {
-     "id": "wind",
-     "kind": "percentile"
-    },
-    {
-     "id": "dust",
-     "kind": "percentile"
-    },
-    {
-     "id": "dust_storms",
-     "kind": "percentile"
-    }
-   ]
-  },
-  {
-   "id": "water_ice",
-   "fields": [
-    {
-     "id": "ice_fraction",
-     "kind": "fraction"
-    },
-    {
-     "id": "ice_depth",
-     "kind": "code",
-     "lookup": "ice_depth"
-    },
-    {
-     "id": "ice_form",
-     "kind": "code",
-     "lookup": "ice_form"
-    },
-    {
-     "id": "liquid_water",
-     "kind": "fraction"
-    }
-   ]
-  }
+  { "id": "temp", "label": "Temperature (day and night)", "fields": [
+   { "id": "t_day_k", "kind": "value", "min": 0, "max": 420, "unit": "K", "tol": 40 },
+   { "id": "t_night_k", "kind": "value", "min": 0, "max": 420, "unit": "K", "tol": 40 } ] },
+  { "id": "swing", "label": "Day-night swing", "fields": [
+   { "id": "t_swing_k", "kind": "value", "min": 0, "max": 350, "unit": "K", "tol": 30 } ] },
+  { "id": "sun", "label": "Sunlight", "fields": [
+   { "id": "sun_wm2", "kind": "value", "min": 0, "max": 500, "unit": "W/m²", "tol": 100 } ] },
+  { "id": "slope", "label": "Slope", "fields": [
+   { "id": "slope_deg", "kind": "value", "min": 0, "max": 40, "unit": "°", "tol": 5 } ] },
+  { "id": "rough", "label": "Roughness", "fields": [
+   { "id": "rough_m", "kind": "value", "min": 0, "max": 1016, "unit": "m", "tol": 20 } ] },
+  { "id": "elev", "label": "Relative elevation", "fields": [
+   { "id": "elev_pct", "kind": "percentile", "tol": 0.25, "note": "rank within its own body in both modes" } ] },
+  { "id": "surface", "label": "Surface type", "vector": true, "fields": [
+   { "id": "surf_dust", "kind": "fraction" }, { "id": "surf_sand", "kind": "fraction" },
+   { "id": "surf_rock", "kind": "fraction" }, { "id": "surf_ice", "kind": "fraction" } ] },
+  { "id": "minerals", "label": "Minerals", "vector": true, "fields": [
+   { "id": "min_mafic", "kind": "fraction" }, { "id": "min_feldspathic", "kind": "fraction" },
+   { "id": "min_ironox", "kind": "fraction" }, { "id": "min_sulfate", "kind": "fraction" },
+   { "id": "min_clay", "kind": "fraction" }, { "id": "min_carbonate", "kind": "fraction" } ] },
+  { "id": "ice", "label": "Water ice", "fields": [
+   { "id": "ice_prob", "kind": "fraction", "tol": 0.3 } ] }
  ],
- "lookups": {
-  "topo_position": {
-   "names": [
-    "basin",
-    "lower slope",
-    "flat",
-    "upper slope",
-    "ridge"
-   ],
-   "rule": "same 1, neighbouring code 0.5, else 0"
-  },
-  "rock_class": {
-   "names": [
-    "anorthosite",
-    "basalt",
-    "other igneous",
-    "sedimentary",
-    "evaporite",
-    "impact breccia",
-    "ice"
-   ],
-   "groups": [
-    "igneous",
-    "igneous",
-    "igneous",
-    "sedimentary",
-    "sedimentary",
-    "impact",
-    "ice"
-   ],
-   "rule": "same 1, same group 0.5, else 0"
-  },
-  "ice_depth": {
-   "names": [
-    "surface",
-    "under 1 m",
-    "deeper",
-    "none"
-   ],
-   "rule": "same 1, else 0"
-  },
-  "ice_form": {
-   "names": [
-    "none",
-    "seasonal",
-    "ground ice",
-    "buried glacial ice",
-    "exposed ice sheet"
-   ],
-   "related": [
-    [
-     2,
-     3
-    ]
-   ],
-   "rule": "same 1, ground vs buried 0.5, else 0"
-  }
- }
+ "relative_fields": [
+  { "id": "t_day_pct", "kind": "percentile", "rel_of": "t_day_k" },
+  { "id": "t_night_pct", "kind": "percentile", "rel_of": "t_night_k" },
+  { "id": "t_swing_pct", "kind": "percentile", "rel_of": "t_swing_k" },
+  { "id": "sun_pct", "kind": "percentile", "rel_of": "sun_wm2" },
+  { "id": "slope_pct", "kind": "percentile", "rel_of": "slope_deg" },
+  { "id": "rough_pct", "kind": "percentile", "rel_of": "rough_m" },
+  { "id": "ice_pct", "kind": "percentile", "rel_of": "ice_prob" }
+ ],
+ "byte_order": "every factor field in the order above (18 bytes), then every relative field (7 bytes): 25 bytes per tile"
 }

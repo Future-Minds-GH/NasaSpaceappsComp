@@ -1,4 +1,4 @@
-// About page: the method in plain sentences, the validation tests, Role 3's model check and terrain figures, data
+// About page: the method in plain sentences, the validation tests, Role 3's model check and comparison figures, data
 // credits and the team.
 import { loadValidation } from "../data/api.js";
 import { useLoaded } from "../data/useLoaded.js";
@@ -45,12 +45,12 @@ export default function AboutPage() {
       </section>
 
       <section className="about-section" aria-labelledby="about-model-check-heading">
-        <h2 id="about-model-check-heading" className="section-heading">Terrain model check</h2>
+        <h2 id="about-model-check-heading" className="section-heading">Model check</h2>
         <ModelCheck />
       </section>
 
       <section className="about-section" aria-labelledby="about-figures-heading">
-        <h2 id="about-figures-heading" className="section-heading">Terrain comparisons</h2>
+        <h2 id="about-figures-heading" className="section-heading">Comparison figures</h2>
         <FigureGallery figures={FIGURES} />
       </section>
 
@@ -104,7 +104,7 @@ function ValidationResult() {
 
 /** Role 3's figures from content/about.js, or one line saying they are still to come. */
 function FigureGallery({ figures }) {
-  if (figures.length === 0) return <p className="about-text">Terrain comparison figures will appear here.</p>;
+  if (figures.length === 0) return <p className="about-text">Comparison figures will appear here.</p>;
 
   return (
     <div className="about-figures">

@@ -15,7 +15,7 @@ export function loadTargets() {
     .then((siteLists) => siteLists.flat());
 }
 
-/** Mission presets from Role 2's weights.json, the only source of weights: { factors, default_preset, presets }. */
+/** Mission presets from Role 2's weights.json, the only source of weights: { factors, groups, default_preset, default_mode, presets }. */
 export function loadWeights() {
   return fetchJson("weights.json");
 }
@@ -52,9 +52,9 @@ export function loadBodyMeta(body) {
 }
 
 /**
- * A shortlist of 30 Earth candidates per Moon/Mars tile with their seven factor scores (Role 2's pools/), used when the
+ * A shortlist of 30 Earth candidates per Moon/Mars tile with their nine factor scores, absolute mode (Role 2's pools/), used when the
  * live search fails or is slow. Files are split by HEALPix parent cell at nside 8: pools/<body>_<parent index>.json,
- * holding { tiles: { "<tile index>": [[<Earth tile index>, s1 … s7 (null = missing)], …] } }.
+ * holding { tiles: { "<tile index>": [[<Earth tile index>, s1 … s9 (null = missing)], …] } }.
  */
 export function loadPool(body, parentIndex) {
   return fetchJson(`pools/${body}_${parentIndex}.json`, { isOptional: true });

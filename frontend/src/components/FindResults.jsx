@@ -2,6 +2,7 @@
 // sliders, the Details panel (site profile, factor numbers, downloads) and the top 10 matches as cards on a map.
 import { useState } from "react";
 import PresetPicker from "./PresetPicker.jsx";
+import ModeToggle from "./ModeToggle.jsx";
 import WeightSliders from "./WeightSliders.jsx";
 import MatchExports from "./MatchExports.jsx";
 import MatchCard from "./MatchCard.jsx";
@@ -11,7 +12,7 @@ import TileProfile from "./TileProfile.jsx";
 import ResultsMap from "./ResultsMap.jsx";
 import { areWeightsEqual } from "../data/scoring.js";
 
-export default function FindResults({ target, matchBodyName = "Earth", matches, matchesState, presets, presetId, onSelectPreset, customWeights, onChangeWeights }) {
+export default function FindResults({ target, matchBodyName = "Earth", matches, matchesState, presets, presetId, onSelectPreset, groups, mode, onChangeMode, customWeights, onChangeWeights }) {
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [comparedMatch, setComparedMatch] = useState(null);
 
@@ -36,6 +37,7 @@ export default function FindResults({ target, matchBodyName = "Earth", matches, 
 
       <div className="find-toolbar">
         <PresetPicker presets={presets} selectedPresetId={presetId} onSelect={onSelectPreset} />
+        <ModeToggle mode={mode} onChange={onChangeMode} name="explore-mode" />
         <button
           type="button"
           className="button button-quiet"
@@ -51,17 +53,16 @@ export default function FindResults({ target, matchBodyName = "Earth", matches, 
           <strong>Weight the criteria.</strong> Drag a slider to say how much each one matters; the matches re-rank as you
           drag. {isCustom ? "You're using your own weights." : `Starting from ${presets[presetId]?.label ?? "the mission type"}.`}
         </p>
-        <WeightSliders weights={weightsUsed} onChange={onChangeWeights} onReset={() => onChangeWeights(null)} isCustom={isCustom} />
+        <WeightSliders groups={groups} weights={weightsUsed} onChange={onChangeWeights} onReset={() => onChangeWeights(null)} isCustom={isCustom} />
       </section>
 
       <div id="find-details" className="find-details" hidden={!isDetailsOpen}>
         {target.factors && <TargetProfile target={target} />}
         <div className="find-details-scoring">
           <p className="find-details-intro">
-            Each factor scores from 0 (unlike) to 1 (alike). The match score multiplies them, so one weak factor pulls it
-            down. {isCustom ? "Scored with your own weights." : presets[presetId]?.description}
+            Each factor scores from 0 (unlike) to 1 (alike). The match score is their weighted average, scored in {mode} mode. {isCustom ? "Scored with your own weights." : presets[presetId]?.description}
           </p>
-          <MatchExports matches={matches} weights={weightsUsed} clickedTileId={target.target_id} fileStem={`${target.target_id}_${isCustom ? "custom" : presetId}_matches`} />
+          <MatchExports matches={matches} weights={weightsUsed} clickedTileId={target.target_id} fileStem={`${target.target_id}_${isCustom ? "custom" : presetId}_${mode}_matches`} />
         </div>
       </div>
 

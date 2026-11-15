@@ -1,9 +1,10 @@
 // Turns the search's raw numbers into result cards for any body: reads each body's tile list, picks the clicked
 // tile's vector, and builds each card (rank, novelty and tags on Earth, plain reasons, false-friend check).
-import { FACTORS, combineScore, heaviestFactor, isFalseFriend } from "./scoring.js";
+import { FACTORS, combineScore, heaviestFactor, isFalseFriend, scoreBand } from "./scoring.js";
 import { rankTopRows } from "./ranking.js";
 import { baseCellOf, tileCenter, tileCount } from "./healpix.js";
 import { NULL_CODE } from "./similarity.js";
+import { describeFactorValue } from "./fieldValues.js";
 import { earthImageUrl } from "../content/earthImagery.js";
 import { FACTOR_REASONS } from "../content/labels.js";
 
@@ -58,8 +59,11 @@ export function clickedTileVector(body, nside, tileIndex, vectorBytes, bytesPerT
   return vector.length && !vector.every((byte) => byte === NULL_CODE) ? vector : null;
 }
 
-/** Result cards from the worker's picks ({ row, total, earthRankPct, factorScores }), best first. */
-export function buildMatches(picks, { tiles, body = "earth", nside, weights, whyRules = null }) {
+/**
+ * Result cards from the worker's picks ({ row, total, earthRankPct, factorScores }), best first. With `clicked`,
+ * `vectors` and `layout`, each card also carries `values`: the real values of the two tiles side by side per factor.
+ */
+export function buildMatches(picks, { tiles, body = "earth", nside, weights, whyRules = null, mode = null, clicked = null, vectors = null, layout = null }) {
   return picks.map((pick, position) => {
     const tile = tiles[pick.row];
     const breakdown = Object.fromEntries(FACTORS.map((factor, index) => {
@@ -78,6 +82,8 @@ export function buildMatches(picks, { tiles, body = "earth", nside, weights, why
       // Earth tiles get a satellite photo; Moon and Mars cards crop the globe texture instead.
       image_url: body === "earth" ? earthImageUrl(tile.lat, tile.lon) : null,
       score: pick.total,
+      band: scoreBand(pick.total),
+      mode,
       earth_rank_pct: pick.earthRankPct,
       breakdown,
       km_to_nearest_known_analog: tile.noveltyKm,
@@ -85,6 +91,7 @@ export function buildMatches(picks, { tiles, body = "earth", nside, weights, why
       false_friend: isFalseFriend(breakdown, weights),
       false_friend_factor: heaviestFactor(breakdown, weights),
       why: plainReasons(breakdown, whyRules),
+      values: clicked && vectors && layout ? realValues(layout, clicked, vectors.subarray(pick.row * layout.bytesPerTile, (pick.row + 1) * layout.bytesPerTile)) : null,
     };
   });
 }
@@ -94,6 +101,7 @@ export function buildMatches(picks, { tiles, body = "earth", nside, weights, why
  * re-scored with the current weights and the top 10 kept. Earth rank is left out: the pool is not the whole planet.
  */
 export function buildPoolMatches(pool, tileIndex, { earthTiles, rowByIndex, weights, earthNside, whyRules = null }) {
+  // Pools are scored in absolute mode (the default); the caller never asks for them in another mode.
   const entries = (pool?.tiles?.[tileIndex] ?? []).filter(([earthIndex]) => rowByIndex.has(earthIndex));
   if (entries.length === 0) return null;
   const breakdownOf = (scores) => Object.fromEntries(FACTORS.map((factor, index) => [factor, scores[index] ?? null]));
@@ -107,12 +115,17 @@ export function buildPoolMatches(pool, tileIndex, { earthTiles, rowByIndex, weig
     earthRankPct: null,
     factorScores: entries[pick.row].slice(1).map((value) => value ?? NaN),
   }));
-  return buildMatches(picks, { tiles: earthTiles, body: "earth", nside: earthNside, weights, whyRules });
+  return buildMatches(picks, { tiles: earthTiles, body: "earth", nside: earthNside, weights, whyRules, mode: "absolute" });
+}
+
+/** Per factor, the clicked tile's and the match's real values as one phrase ("Night 170 K vs 215 K"), or null. */
+function realValues(layout, clicked, matchVector) {
+  return Object.fromEntries(FACTORS.map((factor) => [factor, describeFactorValue(layout, factor, clicked, matchVector)]));
 }
 
 /**
  * Two or three plain reasons, strongest factor first. Role 2's why_rules.json, when present, sets the wording and
- * the score each factor needs: { "terrain": { "min": 0.7, "text": "Same shape of ground" }, … }.
+ * the score each factor needs: { "slope": { "min": 0.7, "text": "Similar slopes" }, … }.
  */
 function plainReasons(breakdown, whyRules) {
   return FACTORS

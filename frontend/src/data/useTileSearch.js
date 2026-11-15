@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import { loadBodyMeta, loadBodyVectors, loadEarthTiles, loadPool, loadShowcase, loadVectorSchema, loadWhyRules } from "./api.js";
 import { baseCellOf, latLonToTile } from "./healpix.js";
 import { readLayout } from "./similarity.js";
+import { SAME_BODY_MIN_KM } from "./ranking.js";
 import { rescoreMatches } from "./scoring.js";
 import { buildMatches, buildPoolMatches, clickedTileVector, readBodyTiles, readEarthTiles } from "./tileSearch.js";
 import { searchKeyOf, useSearchWorker } from "./useSearchWorker.js";
@@ -21,10 +22,10 @@ const POOL_PARENT_NSIDE = 8;
  * @param {{ body: "earth"|"moon"|"mars", lat: number, lon: number } | null} selection  the clicked spot
  * @param {"earth"|"moon"|"mars"} targetBody  the body whose tiles are ranked against it
  * @param {Record<string, number> | undefined} weights
- * @param {Record<string, number> | null} [fieldWeights]  multipliers for single measurements (see scoreAllEarthTiles)
+ * @param {"absolute" | "relative"} mode  how the factors are scored; pools and showcase.json serve only "absolute"
  * @param {number} [attempt]  bump to retry after a failure: reloads the files and starts a fresh search worker
  */
-export function useTileSearch(selection, targetBody, weights, fieldWeights = null, attempt = 0) {
+export function useTileSearch(selection, targetBody, weights, mode, attempt = 0) {
   const base = useLoaded(loadSearchBase, [attempt]);
   const candidates = useLoaded(() => (selection ? loadCandidates(targetBody) : null), [targetBody, Boolean(selection), attempt]);
   // useLoaded keeps the previous body's tiles on screen while the next body loads. Using them would send one body's
@@ -38,6 +39,12 @@ export function useTileSearch(selection, targetBody, weights, fieldWeights = nul
     const index = latLonToTile(nside, selection.lat, selection.lon);
     return { id: `${selection.body}_${nside}_${index}`, index, nside, body: selection.body };
   }, [selection, base.data]);
+
+  // Same planet: leave out the area around the picked spot (the tile is part of the search key, so this is too).
+  const exclude = useMemo(
+    () => (selection && selection.body === targetBody ? { lat: selection.lat, lon: selection.lon, km: SAME_BODY_MIN_KM } : null),
+    [selection, targetBody],
+  );
 
   const shard = tile?.body === "mars" ? baseCellOf(tile.nside, tile.index) : null;
   const sourceKey = tile && tile.body !== "earth" ? `${tile.body}/${shard}` : null;
@@ -55,22 +62,23 @@ export function useTileSearch(selection, targetBody, weights, fieldWeights = nul
   }, [tile, base.data, sourceBytes]);
 
   useEffect(() => {
-    if (isWorkerReady && clickedVector && targetCandidates && weights) requestRanking(tile.id, targetBody, targetCandidates, clickedVector, weights, fieldWeights);
-  }, [isWorkerReady, clickedVector, targetCandidates, weights, fieldWeights, tile?.id, targetBody, requestRanking]);
+    if (isWorkerReady && clickedVector && targetCandidates && weights) requestRanking(tile.id, targetBody, targetCandidates, clickedVector, weights, mode, exclude);
+  }, [isWorkerReady, clickedVector, targetCandidates, weights, mode, exclude, tile?.id, targetBody, requestRanking]);
 
-  const searchKey = tile ? searchKeyOf(tile.id, targetBody, fieldWeights) : null;
+  const searchKey = tile ? searchKeyOf(tile.id, targetBody, mode) : null;
   const liveMatches = useMemo(() => {
     if (!latestPicks || latestPicks.searchKey !== searchKey || !targetCandidates || !base.data) return null;
     return buildMatches(latestPicks.picks, {
       tiles: targetCandidates.tiles, body: targetBody, nside: base.data.schema.nside[targetBody], weights: latestPicks.weights, whyRules: base.data.whyRules,
+      mode, clicked: clickedVector, vectors: targetCandidates.vectors, layout: base.data.layout,
     });
-  }, [latestPicks, searchKey, targetCandidates, base.data, targetBody]);
+  }, [latestPicks, searchKey, targetCandidates, base.data, targetBody, mode, clickedVector]);
 
   const searchError = base.error ?? candidates.error ?? sourceVectors.error ?? workerError;
   const isSlow = useIsSlow(searchKey, Boolean(liveMatches));
 
   // Fallback 1 (plan v2.1): the tile's pool shortlist, when the live search failed or is slow (a phone).
-  const canUsePool = Boolean(tile && tile.body !== "earth" && targetBody === "earth" && base.data);
+  const canUsePool = Boolean(mode === "absolute" && tile && tile.body !== "earth" && targetBody === "earth" && base.data);
   const poolParent = canUsePool ? Math.floor(tile.index / (tile.nside / POOL_PARENT_NSIDE) ** 2) : null;
   const pool = useLoaded(
     () => (canUsePool && !liveMatches && (searchError || isSlow) ? loadPool(tile.body, poolParent) : null),
@@ -84,7 +92,7 @@ export function useTileSearch(selection, targetBody, weights, fieldWeights = nul
   }, [liveMatches, pool.data, tile, weights, base.data]);
 
   // Fallback 2: Role 2's precomputed showcase.json, for the demo's showcase clicks.
-  const showcaseMatches = searchError && !poolMatches && tile && targetBody === "earth" ? base.data?.showcase?.results?.[tile.id]?.matches : null;
+  const showcaseMatches = mode === "absolute" && searchError && !poolMatches && tile && targetBody === "earth" ? base.data?.showcase?.results?.[tile.id]?.matches : null;
   const isSourceLoaded = tile?.body === "earth" ? Boolean(base.data) : Boolean(sourceBytes);
   const hasNoData = Boolean(tile && isSourceLoaded && !clickedVector);
   const fallbackMatches = poolMatches ?? (showcaseMatches && weights ? rescoreMatches(showcaseMatches, weights) : null);

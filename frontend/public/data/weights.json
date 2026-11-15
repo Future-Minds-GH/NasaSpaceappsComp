@@ -1,126 +1,173 @@
 {
  "sample": false,
+ "default_preset": "balanced",
+ "default_mode": "absolute",
  "factors": [
   {
-   "id": "terrain",
-   "label": "Terrain"
+   "id": "temp",
+   "label": "Temperature (day and night)",
+   "group": "weather"
   },
   {
-   "id": "elevation",
-   "label": "Elevation & topography"
+   "id": "swing",
+   "label": "Day-night swing",
+   "group": "weather"
   },
   {
-   "id": "geology",
-   "label": "Geology"
+   "id": "sun",
+   "label": "Sunlight",
+   "group": "weather"
   },
   {
-   "id": "mineralogy",
-   "label": "Mineralogy"
+   "id": "slope",
+   "label": "Slope",
+   "group": "geology"
   },
   {
-   "id": "climate",
-   "label": "Climate"
+   "id": "rough",
+   "label": "Roughness",
+   "group": "geology"
   },
   {
-   "id": "atmosphere",
-   "label": "Atmosphere: dust & wind"
+   "id": "elev",
+   "label": "Relative elevation",
+   "group": "geology"
   },
   {
-   "id": "water_ice",
-   "label": "Water & ice"
+   "id": "surface",
+   "label": "Surface type",
+   "group": "geology"
+  },
+  {
+   "id": "minerals",
+   "label": "Minerals",
+   "group": "geology"
+  },
+  {
+   "id": "ice",
+   "label": "Water ice",
+   "group": "geology"
   }
  ],
- "default_preset": "balanced",
+ "groups": {
+  "weather": [
+   "temp",
+   "swing",
+   "sun"
+  ],
+  "geology": [
+   "slope",
+   "rough",
+   "elev",
+   "surface",
+   "minerals",
+   "ice"
+  ]
+ },
  "presets": {
   "balanced": {
    "label": "Balanced",
-   "description": "Every measured factor counts.",
+   "description": "Every factor counts. Surface type is not weighted.",
    "weights": {
-    "terrain": 0.3,
-    "elevation": 0.05,
-    "geology": 0.0,
-    "mineralogy": 0.15,
-    "climate": 0.35,
-    "atmosphere": 0.0,
-    "water_ice": 0.15
+    "temp": 0.15,
+    "swing": 0.1,
+    "sun": 0.1,
+    "slope": 0.15,
+    "rough": 0.15,
+    "elev": 0.05,
+    "surface": 0.0,
+    "minerals": 0.15,
+    "ice": 0.15
    }
   },
   "drilling": {
    "label": "Drilling",
    "description": "Favours minerals, surface type and ice: what a drill meets.",
    "weights": {
-    "terrain": 0.125,
-    "elevation": 0.0,
-    "geology": 0.0,
-    "mineralogy": 0.5,
-    "climate": 0.1875,
-    "atmosphere": 0.0,
-    "water_ice": 0.1875
+    "temp": 0.1,
+    "swing": 0.05,
+    "sun": 0.0,
+    "slope": 0.05,
+    "rough": 0.05,
+    "elev": 0.0,
+    "surface": 0.2,
+    "minerals": 0.4,
+    "ice": 0.15
    }
   },
   "vehicles": {
    "label": "Vehicles / rovers",
-   "description": "Favours slope and roughness: what a rover drives on.",
+   "description": "Favours slope, roughness and surface type: what a rover drives on.",
    "weights": {
-    "terrain": 0.8,
-    "elevation": 0.0,
-    "geology": 0.0,
-    "mineralogy": 0.0,
-    "climate": 0.2,
-    "atmosphere": 0.0,
-    "water_ice": 0.0
+    "temp": 0.1,
+    "swing": 0.05,
+    "sun": 0.0,
+    "slope": 0.3,
+    "rough": 0.3,
+    "elev": 0.0,
+    "surface": 0.25,
+    "minerals": 0.0,
+    "ice": 0.0
    }
   },
   "tooling": {
    "label": "Test tooling",
-   "description": "Favours temperature and the day-night swing: what hardware must survive.",
+   "description": "Favours temperature, the day-night swing and surface type: what hardware must survive.",
    "weights": {
-    "terrain": 0.125,
-    "elevation": 0.0625,
-    "geology": 0.0,
-    "mineralogy": 0.0625,
-    "climate": 0.75,
-    "atmosphere": 0.0,
-    "water_ice": 0.0
+    "temp": 0.25,
+    "swing": 0.25,
+    "sun": 0.1,
+    "slope": 0.05,
+    "rough": 0.05,
+    "elev": 0.05,
+    "surface": 0.2,
+    "minerals": 0.05,
+    "ice": 0.0
    }
   },
   "solar": {
    "label": "Solar panels",
-   "description": "Favours sunlight and temperature: what panels see.",
+   "description": "Favours sunlight, temperature and surface type: what panels see.",
    "weights": {
-    "terrain": 0.0667,
-    "elevation": 0.0,
-    "geology": 0.0,
-    "mineralogy": 0.0,
-    "climate": 0.9333,
-    "atmosphere": 0.0,
-    "water_ice": 0.0
+    "temp": 0.15,
+    "swing": 0.1,
+    "sun": 0.45,
+    "slope": 0.05,
+    "rough": 0.0,
+    "elev": 0.0,
+    "surface": 0.25,
+    "minerals": 0.0,
+    "ice": 0.0
    }
   },
   "farming": {
    "label": "Farming / regolith growth",
    "description": "Favours minerals, temperature and sunlight: what plants grow in.",
    "weights": {
-    "terrain": 0.0556,
-    "elevation": 0.0,
-    "geology": 0.0,
-    "mineralogy": 0.3333,
-    "climate": 0.6111,
-    "atmosphere": 0.0,
-    "water_ice": 0.0
+    "temp": 0.25,
+    "swing": 0.1,
+    "sun": 0.2,
+    "slope": 0.05,
+    "rough": 0.0,
+    "elev": 0.0,
+    "surface": 0.1,
+    "minerals": 0.3,
+    "ice": 0.0
    }
   },
   "pharma": {
    "label": "Pharmaceuticals (radiation)",
-   "description": "Favours sunlight and temperature. Radiation cannot be matched on Earth.",
+   "description": "Favours sunlight and temperature. Radiation is not measured, so it is not matched.",
    "weights": {
-    "terrain": 0.0,
-    "elevation": 0.0,
-    "geology": 0.0,
-    "mineralogy": 0.1111,
-    "climate": 0.8889,
-    "atmosphere": 0.0,
-    "water_ice": 0.0
+    "temp": 0.3,
+    "swing": 0.1,
+    "sun": 0.4,
+    "slope": 0.0,
+    "rough": 0.0,
+    "elev": 0.0,
+    "surface": 0.1,
+    "minerals": 0.1,
+    "ice": 0.0
    }
   }
  }

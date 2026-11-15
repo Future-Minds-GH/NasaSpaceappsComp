@@ -26,8 +26,8 @@ export function SiteBadges({ site }) {
         <li className="badge badge-false-friend">
           <strong>False friend</strong>
           <span>
-            {/* Plan v2.1 rule: terrain alike, but the factor the mission weights most is far off. */}
-            Looks alike from above, but its {FACTOR_LABELS[site.false_friend_factor ?? weakestFactor(site.breakdown ?? {})].toLowerCase()}, which this mission counts most, is far off
+            {/* Rule: slope and roughness alike, but the factor the mission weights most is far off. */}
+            Same slope and roughness, but its {FACTOR_LABELS[site.false_friend_factor ?? weakestFactor(site.breakdown ?? {})].toLowerCase()}, which this mission counts most, is far off
           </span>
         </li>
       )}

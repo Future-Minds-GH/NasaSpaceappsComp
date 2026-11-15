@@ -25,13 +25,20 @@
   --warning: #9A5B00;
 
   /* One swatch per factor, like geologic map units. Labels always sit beside them, so colour is never the only cue. */
-  --factor-terrain: #C49A55;
-  --factor-elevation: #7C8F4E;
-  --factor-geology: #8A5D96;
-  --factor-mineralogy: #C2604A;
-  --factor-climate: #D9A82E;
-  --factor-atmosphere: #5F8F8C;
-  --factor-water_ice: #3F86C1;
+  --factor-temp: #D9A82E;
+  --factor-swing: #E0803A;
+  --factor-sun: #E8C547;
+  --factor-slope: #C49A55;
+  --factor-rough: #A57A4A;
+  --factor-elev: #7C8F4E;
+  --factor-surface: #8A5D96;
+  --factor-minerals: #C2604A;
+  --factor-ice: #3F86C1;
+
+  /* Score bands: green from 90, yellow from 60, else red. */
+  --band-green: #2E8540;
+  --band-yellow: #D9A400;
+  --band-red: #D83933;
 
   --environment-desert: #C8A464;
   --environment-arid: #B07A4F;
@@ -169,6 +176,21 @@ fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
 .score-ring svg { position: absolute; inset: 0; }
 .score-ring-track { fill: none; stroke: var(--rule-soft); }
 .score-ring-fill { fill: none; stroke: var(--focus); stroke-linecap: round; }
+.score-ring.band-green .score-ring-fill { stroke: var(--band-green); }
+.score-ring.band-yellow .score-ring-fill { stroke: var(--band-yellow); }
+.score-ring.band-red .score-ring-fill { stroke: var(--band-red); }
+.band-text { font-size: 0.75rem; font-weight: 700; }
+.band-text.band-green { color: var(--band-green); }
+.band-text.band-yellow { color: var(--warning); }
+.band-text.band-red { color: var(--band-red); }
+/* Absolute / Relative choice: two radio rows, each with its one-sentence meaning */
+.mode-toggle { display: grid; gap: 6px; border: 0; padding: 0; margin: 0 0 12px; min-width: 0; }
+.mode-toggle-option { display: grid; grid-template-columns: auto 1fr; gap: 2px 8px; align-items: start; font-size: 0.8125rem; cursor: pointer; }
+.mode-toggle-option input { grid-row: 1 / span 2; margin-top: 3px; }
+.mode-toggle-option strong { font-size: 0.875rem; }
+.mode-toggle-option span { color: var(--ink-soft); }
+.factor-group { margin: 8px 0 0; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-soft); }
+.factor-real-value { display: block; font-size: 0.75rem; font-weight: 400; color: var(--ink-soft); }
 .score-ring-number { position: relative; font-family: var(--font-mono); font-weight: 500; font-size: 1.25rem; letter-spacing: -0.02em; }
 
 /* Factor bars: map-legend rows; numbers and meanings appear in the Details view */
@@ -201,7 +223,7 @@ fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
   .arrow-link::after, .arrow-link:hover::after { transition: none; transform: none; }
 }
 
-/* "Weight the criteria": the seven sliders, always on show under the mission type (Explore and Discover).
+/* "Weight the criteria": the nine sliders, always on show under the mission type (Explore and Discover).
    Two columns on wide screens keep the panel short; the reset button spans both. */
 .weight-panel { display: grid; gap: 10px; padding: 14px 16px; border: 1px solid var(--rule); border-radius: var(--radius-frame); background: var(--paper-raised); }
 .weight-panel-intro { font-size: 0.9375rem; color: var(--ink-soft); max-width: 75ch; }

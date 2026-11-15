@@ -60,7 +60,7 @@ export default function FindingCard({ finding, target }) {
       </div>
 
       <details className="findings-item-details">
-        <summary>Show all seven factor scores</summary>
+        <summary>Show all nine factor scores</summary>
         <FactorBars breakdown={finding.breakdown} isShowingNumbers />
       </details>
     </article>

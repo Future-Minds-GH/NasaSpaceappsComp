@@ -1,5 +1,5 @@
-// Landing workspace, laid out like the team's paper sketch: factor sliders down the left (the main five, plus
-// "add your own measurement"), two hovering planets joined by an animated arrow, small "other planets" buttons above
+// Landing workspace, laid out like the team's paper sketch: the mode toggle and the nine factor sliders down the left
+// (grouped weather / ground), two hovering planets joined by an animated arrow, small "other planets" buttons above
 // side, and a Compute bar along the bottom. Clicking a small planet on the right adds it as another output globe;
 // one Compute searches every output planet from the picked spot (its own planet too), shows a short loading bar, then
 // one similarity vector per output planet.
@@ -9,19 +9,18 @@ import { EXTRA_SITES, isPickableSite, shortSiteName } from "../content/notableSi
 import { useLoaded } from "../data/useLoaded.js";
 import { useTileSearch } from "../data/useTileSearch.js";
 import { FACTORS } from "../data/scoring.js";
-import { BODY_RADIUS_KM } from "../data/ranking.js";
-import { BODY_NAMES, MEASUREMENTS } from "../content/labels.js";
+import { BODY_RADIUS_KM, SAME_BODY_MIN_KM } from "../data/ranking.js";
+import { BODY_NAMES } from "../content/labels.js";
 import PlanetGlobe, { GLOBE_TEXTURES } from "../components/PlanetGlobe.jsx";
-import FactorSidebar, { MAIN_FACTORS, MEASUREMENT_DEFAULT } from "../components/FactorSidebar.jsx";
+import FactorSidebar from "../components/FactorSidebar.jsx";
 import Coordinates from "../components/Coordinates.jsx";
 import CoordinateInput from "../components/CoordinateInput.jsx";
 import ComputeBar from "../components/ComputeBar.jsx";
 import SimilarityVector from "../components/SimilarityVector.jsx";
+import { MODES } from "../data/similarity.js";
 import "../styles/landing.css";
 
 const BODIES = ["earth", "moon", "mars"];
-// Same-body searches skip tiles this close to the picked spot, or the best match is the spot itself (plan rule 2).
-const SAME_BODY_EXCLUSION_KM = 300;
 const PICK_COLOR = "#FF5A36"; // the picked spot
 const MATCH_COLOR = "#7CC8FF"; // each output planet's best match (blue: green is kept for good scores)
 
@@ -36,8 +35,10 @@ export default function LandingPage() {
   // Sliders start from the Balanced preset; the preset picker was removed, so people only move the sliders.
   const presetId = presetsState.data?.default_preset ?? "balanced";
   const [weights, setWeights] = useState(null); // 0–100 per factor; null until presets load
-  const [shownFactors, setShownFactors] = useState(MAIN_FACTORS);
-  const [measurements, setMeasurements] = useState({}); // added single measurements: "factor.field" → 0–300 (100 = 1×)
+  const [shownFactors, setShownFactors] = useState(FACTORS);
+  // Absolute or relative scoring; until a person picks one, the weights file's default.
+  const [pickedMode, setPickedMode] = useState(null);
+  const mode = pickedMode ?? (MODES.includes(presetsState.data?.default_mode) ? presetsState.data.default_mode : "absolute");
   // The searches run only on Compute: this holds the request that was computed.
   const [request, setRequest] = useState(null);
   const [startedAt, setStartedAt] = useState(0);
@@ -52,13 +53,14 @@ export default function LandingPage() {
   // their search never runs.
   const selectionFor = (body) => (request?.targets.includes(body) ? request.selection : null);
   const searches = {
-    earth: useTileSearch(selectionFor("earth"), "earth", request?.weights, request?.fieldWeights, request?.attempt ?? 0),
-    moon: useTileSearch(selectionFor("moon"), "moon", request?.weights, request?.fieldWeights, request?.attempt ?? 0),
-    mars: useTileSearch(selectionFor("mars"), "mars", request?.weights, request?.fieldWeights, request?.attempt ?? 0),
+    earth: useTileSearch(selectionFor("earth"), "earth", request?.weights, request?.mode, request?.attempt ?? 0),
+    moon: useTileSearch(selectionFor("moon"), "moon", request?.weights, request?.mode, request?.attempt ?? 0),
+    mars: useTileSearch(selectionFor("mars"), "mars", request?.weights, request?.mode, request?.attempt ?? 0),
   };
   const results = Object.fromEntries(BODIES.map((body) => {
     const search = searches[body];
-    const matches = (search.data ?? []).filter((match) => !(request && body === request.inputBody && distanceKm(match, request.point, body) < SAME_BODY_EXCLUSION_KM));
+    // The ranking already skips these tiles; this guards the fallbacks.
+    const matches = (search.data ?? []).filter((match) => !(request && body === request.inputBody && distanceKm(match, request.point, body) < SAME_BODY_MIN_KM));
     return [body, { search, matches, best: matches[0] ?? null }];
   }));
 
@@ -76,7 +78,7 @@ export default function LandingPage() {
   useEffect(() => {
     if (request && isSettled && failedBodies.length > 0 && canAutoRetry) setRequest((current) => ({ ...current, attempt: current.attempt + 1 }));
   }, [request, isSettled, failedBodies.length, canAutoRetry]);
-  const settingsKey = JSON.stringify([weights, shownFactors, targets, measurements]);
+  const settingsKey = JSON.stringify([weights, shownFactors, targets, mode]);
   const isStale = Boolean(request) && (request.point !== point || request.inputBody !== inputBody || request.settingsKey !== settingsKey);
   const isShowingResult = (status === "done" || status === "failed") && !isStale;
 
@@ -110,17 +112,16 @@ export default function LandingPage() {
     setWeights((current) => (current[factor] ? current : { ...current, [factor]: 20 }));
   }
 
-  // Removing a factor also drops its single measurements; at least one factor always stays.
+  // At least one factor always stays.
   function hideFactor(factor) {
     if (shownFactors.length <= 1) return;
     setShownFactors((current) => current.filter((shown) => shown !== factor));
-    setMeasurements((current) => Object.fromEntries(Object.entries(current).filter(([key]) => !key.startsWith(`${factor}.`))));
   }
 
-  // Adding a measurement also shows its factor (with a starting weight if it was hidden).
-  function addMeasurement(item) {
-    setMeasurements((current) => ({ ...current, [item.key]: MEASUREMENT_DEFAULT }));
-    if (!shownFactors.includes(item.factor)) showFactor(item.factor);
+  // Changing the mode reruns the search at once when a result is on screen; otherwise Compute uses it later.
+  function changeMode(nextMode) {
+    setPickedMode(nextMode);
+    if (request && point && weights) compute(null, nextMode);
   }
 
   function addTarget(body) {
@@ -132,17 +133,15 @@ export default function LandingPage() {
   }
 
   // Compute can be given typed coordinates from the Compute bar: they become the picked spot first.
-  function compute(typedPoint = null) {
+  function compute(typedPoint = null, nextMode = mode) {
     const spot = typedPoint ? { lat: typedPoint.lat, lon: typedPoint.lon, name: null } : point;
     if (!spot || !weights) return;
     if (typedPoint) setPoint(spot);
     const scoredWeights = Object.fromEntries(FACTORS.map((factor) => [factor, shownFactors.includes(factor) ? weights[factor] / 100 : 0]));
     setStartedAt(performance.now());
-    const entries = Object.entries(measurements);
-    const fieldWeights = entries.length ? Object.fromEntries(entries.map(([key, value]) => [key, value / 100])) : null;
     // After a failure, Compute is a retry: a new attempt number reloads the files and restarts the search workers.
     const attempt = (request?.attempt ?? 0) + (status === "failed" ? 1 : 0);
-    setRequest({ point: spot, inputBody, targets, selection: { body: inputBody, lat: spot.lat, lon: spot.lon }, weights: scoredWeights, fieldWeights, settingsKey, attempt, firstAttempt: attempt });
+    setRequest({ point: spot, inputBody, targets, selection: { body: inputBody, lat: spot.lat, lon: spot.lon }, weights: scoredWeights, mode: nextMode, settingsKey: JSON.stringify([weights, shownFactors, targets, nextMode]), attempt, firstAttempt: attempt });
   }
 
   // Notable sites on the input planet: the project's named sites plus well-known landmarks. Clicking one picks it.
@@ -164,14 +163,13 @@ export default function LandingPage() {
     <div className="workspace">
       <FactorSidebar
         weights={weights}
+        groups={presetsState.data?.groups}
+        mode={mode}
+        onChangeMode={changeMode}
         onChangeWeight={(factor, value) => setWeights((current) => ({ ...current, [factor]: value }))}
         shownFactors={shownFactors}
         onShowFactor={showFactor}
         onHideFactor={hideFactor}
-        measurements={measurements}
-        onAddMeasurement={addMeasurement}
-        onChangeMeasurement={(key, value) => setMeasurements((current) => ({ ...current, [key]: value }))}
-        onRemoveMeasurement={(key) => setMeasurements(({ [key]: _removed, ...rest }) => rest)}
       />
 
       <section className="workspace-stage" aria-label="Pick a spot, then compare">
@@ -260,8 +258,8 @@ export default function LandingPage() {
               isApproximate={results[body].search.isApproximate}
               inputBody={request.inputBody}
               weights={request.weights}
-              measurementNote={describeMeasurements(measurements)}
-              exploreLink={body === request.inputBody ? null : `/explore/${request.inputBody}?to=${body}&at=${request.point.lat.toFixed(2)},${request.point.lon.toFixed(2)}&preset=${presetId}`}
+              mode={request.mode}
+              exploreLink={body === request.inputBody ? null : `/explore/${request.inputBody}?to=${body}&at=${request.point.lat.toFixed(2)},${request.point.lon.toFixed(2)}&preset=${presetId}&mode=${request.mode}`}
             />
           ))}
         </section>
@@ -315,12 +313,6 @@ function TargetGlobe({ body, best, isSamePlanet, onRemove }) {
       </div>
     </div>
   );
-}
-
-function describeMeasurements(measurements) {
-  const entries = Object.entries(measurements);
-  if (!entries.length) return null;
-  return entries.map(([key, value]) => `${MEASUREMENTS.find((item) => item.key === key)?.label ?? key} ${(value / 100).toFixed(1)}×`).join(" · ");
 }
 
 function formatList(names) {

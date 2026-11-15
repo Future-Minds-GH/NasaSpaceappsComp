@@ -7,14 +7,14 @@ export const METHOD_STAGES = [
     title: "Tiles and vectors",
     sentences: [
       "We cut the Moon, Mars and Earth into equal-area HEALPix tiles about 27 km across, so a 27 km crater looks the same size on all three.",
-      "Every tile becomes one vector of 34 numbers in seven parts: terrain, elevation and topography, geology, mineralogy, climate, atmosphere (dust and wind), and water and ice, with each measurement turned into its Earth percentile.",
-      "Only terrain shape uses machine learning: DINOv2 (ViT-S/14) looks at each tile's hillshade, slope and thermal inertia; everything else comes straight from measured data.",
+      "Every tile becomes one vector of numbers in nine parts: temperature (day and night), day-night swing, sunlight, slope, roughness, relative elevation, surface type, minerals and water ice. Each is stored in real units (kelvin, W/m², degrees, metres), plus a rank within its own planet.",
+      "There is no machine learning in the score: every number is measured or derived from measured data (slope and roughness from elevation models), and estimated minerals are marked.",
     ],
   },
   {
     title: "The search",
     sentences: [
-      "When you click a Moon or Mars tile, your browser compares its vector with every Earth tile, scores the seven factors from 0 to 1, and combines them with a weighted geometric mean so one weak factor pulls the total down (floored at 0.05, and factors a body lacks, like the Moon's air, are left out).",
+      "When you click a Moon or Mars tile, your browser compares its vector with every Earth tile, scores the nine factors from 0 to 1 (1 minus the gap divided by a tolerance, such as 40 K for temperature), and combines them with a weighted average. A factor with no data on either tile is left out. In Relative mode each factor compares ranks within its own planet instead of real units.",
     ],
   },
   {
@@ -26,7 +26,7 @@ export const METHOD_STAGES = [
 ];
 
 /**
- * Role 3's terrain comparison figures. Put each image in frontend/public/figures/ and add it here:
+ * Role 3's comparison figures. Put each image in frontend/public/figures/ and add it here:
  * { file: "atacama_vs_jezero.png", caption: "One sentence saying what the figure shows." }
  */
 export const FIGURES = [];
@@ -69,13 +69,13 @@ export const DATA_CREDITS = [
 ];
 
 export const FULL_CREDITS_NOTE =
-  "Also used: USGS Moon and Mars geologic maps, GLiM lithology, the Earth Impact Database, the Mars Climate Database, SWIM ice maps, the ESA and IMEWG analog catalogues, RGI glaciers, and the DINOv2 model (Meta, Apache 2.0). The full list with formal citations is Role 1's citations.md in the repository.";
+  "Also used: USGS Moon and Mars geologic maps, GLiM lithology, the Earth Impact Database, the Mars Climate Database, SWIM ice maps, the ESA and IMEWG analog catalogues, RGI glaciers. The full list with formal citations is Role 1's citations.md in the repository.";
 
 /** The four team roles. Member names are added by the team, never guessed. */
 export const TEAM_ROLES = [
   { name: "Grid, Data API & Vectors", role: "Role 1", work: "Cuts all three bodies into tiles, wraps the agencies' data services, and builds every tile's vector." },
-  { name: "Scoring & Results", role: "Role 2", work: "Measures geology, minerals, climate, atmosphere and ice, writes the similarity maths, Discover and the validation." },
-  { name: "AI/Terrain", role: "Role 3", work: "Turns elevation into terrain statistics and DINOv2 shape embeddings, and makes the terrain figures." },
+  { name: "Scoring & Results", role: "Role 2", work: "Measures temperature, sunlight, minerals and ice, writes the similarity maths, Discover and the validation." },
+  { name: "AI/Terrain", role: "Role 3", work: "Turns elevation into slope and roughness, and makes the comparison figures." },
   { name: "Frontend & Demo", role: "Role 4", work: "Builds the globes, the live search and this site, and the demo." },
 ];
 
