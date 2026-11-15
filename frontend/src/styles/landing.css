@@ -3,28 +3,28 @@
 
 .workspace {
   display: grid;
-  grid-template-columns: minmax(250px, 300px) 1fr;
-  grid-template-areas: "sidebar stage" "compute compute" "result result";
+  grid-template-columns: clamp(210px, 22vw, 300px) minmax(0, 1fr);
+  grid-template-areas: "sidebar stage" "sidebar compute" "sidebar result";
   background: radial-gradient(ellipse at 60% 45%, var(--space-raised) 0%, var(--space) 70%);
   color: var(--on-space);
   min-height: calc(100vh - 72px);
   grid-template-rows: 1fr auto auto;
+  align-items: start;
 }
 .workspace :focus-visible { outline-color: #FFFFFF; }
 
 /* ---- Left column: factor sliders ---- */
 .factor-sidebar {
-  grid-area: sidebar; display: flex; flex-direction: column; gap: 16px;
-  padding: 24px 20px; border-right: 1px solid rgb(255 255 255 / 0.12); background: rgb(255 255 255 / 0.03);
+  grid-area: sidebar; display: flex; flex-direction: column; gap: 16px; align-self: start;
+  position: sticky; top: 0; max-height: 100vh; overflow-y: auto;
+  padding: 24px clamp(12px, 1.6vw, 20px); border-right: 1px solid rgb(255 255 255 / 0.12); background: rgb(255 255 255 / 0.03);
 }
 .factor-sidebar .eyebrow { color: var(--on-space-soft); }
 .factor-sidebar-title { font-size: 1.25rem; }
-.factor-preset { display: grid; gap: 6px; }
-.factor-preset select, .factor-add-custom input {
+.factor-add-custom input {
   font: inherit; font-size: 0.9375rem; color: var(--on-space); background: rgb(255 255 255 / 0.06);
   border: 1px solid rgb(255 255 255 / 0.25); border-radius: var(--radius-control); padding: 8px 10px; min-height: 40px;
 }
-.factor-preset select option { color: #000; }
 .factor-slider-list { list-style: none; display: grid; gap: 14px; }
 .factor-slider { display: grid; gap: 4px; }
 .factor-slider-head { display: flex; align-items: center; gap: 8px; font-size: 0.9375rem; font-weight: 600; }
@@ -61,8 +61,8 @@
 
 /* ---- Stage: two hovering planets and the arrow ---- */
 .workspace-stage {
-  grid-area: stage; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 8px;
-  padding: 24px clamp(16px, 3vw, 48px); min-width: 0;
+  grid-area: stage; align-self: stretch; display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 8px;
+  padding: 16px clamp(16px, 3vw, 48px); min-width: 0;
 }
 .planet-column { display: grid; justify-items: center; gap: 12px; min-width: 0; }
 .other-planets { display: grid; justify-items: center; gap: 6px; }
@@ -82,7 +82,7 @@
 
 /* The planet floats gently up and down: the sketch's "hovering planet". */
 .hovering-planet {
-  position: relative; width: min(100%, 360px); aspect-ratio: 1;
+  position: relative; width: min(100%, 360px, 40vh); aspect-ratio: 1;
   animation: planet-hover 6s ease-in-out infinite;
 }
 .planet-column-target .hovering-planet { animation-delay: -3s; }
@@ -97,7 +97,7 @@
 @keyframes planet-hover { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
 @keyframes planet-shadow { 0%, 100% { transform: scaleX(1); opacity: 1; } 50% { transform: scaleX(0.8); opacity: 0.6; } }
 
-.planet-caption { display: grid; justify-items: center; gap: 2px; margin-top: 18px; text-align: center; }
+.planet-caption { display: grid; justify-items: center; gap: 2px; margin-top: 10px; text-align: center; }
 .planet-caption-name { font-family: var(--font-display); font-weight: 700; font-size: clamp(1.4rem, 1rem + 1.2vw, 2rem); line-height: 1; }
 .planet-caption-detail { font-family: var(--font-mono); font-size: 0.8125rem; color: var(--on-space-soft); }
 .body-earth .planet-caption-name { color: #8FD3AE; }
@@ -146,53 +146,73 @@
 .compute-progress-label { font-family: var(--font-mono); font-size: 0.8125rem; color: var(--on-space-soft); }
 .compute-button { min-width: 160px; font-size: 1.0625rem; }
 
-/* ---- Result: the similarity vector ---- */
+/* ---- Result: one similarity vector per body, side by side ---- */
+.similarity-results {
+  grid-area: result; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;
+  padding: 24px max(var(--gutter), 24px) 40px; background: var(--paper); color: var(--ink);
+  animation: similarity-in 400ms var(--ease-out);
+}
 .similarity {
-  grid-area: result; display: grid; gap: 20px; padding: 28px max(var(--gutter), 24px) 40px;
-  background: var(--paper); color: var(--ink); animation: similarity-in 400ms var(--ease-out);
+  display: grid; align-content: start; gap: 12px; padding: 14px; min-width: 0;
+  border: 1px solid var(--rule); border-top: 4px solid var(--body-color, var(--rule)); background: var(--paper);
   --band: var(--ink-soft);
 }
+.similarity.body-earth { --body-color: var(--earth); }
+.similarity.body-moon { --body-color: var(--moon); }
+.similarity.body-mars { --body-color: var(--mars); }
+.similarity.is-selected { box-shadow: 0 0 0 2px var(--body-color); }
 .similarity :focus-visible { outline-color: var(--focus); }
-.similarity.is-message { text-align: center; font-size: 1.0625rem; }
+.similarity.is-message { color: var(--ink-soft); }
 .similarity.band-green { --band: #2E8540; }
 .similarity.band-yellow { --band: #D9A400; }
 .similarity.band-red { --band: #D83933; }
 .similarity .score-ring-fill { stroke: var(--band); }
-.similarity-header { display: flex; align-items: center; gap: 20px; max-width: 1080px; width: 100%; margin: 0 auto; }
-.similarity-title { font-size: clamp(1.25rem, 1rem + 1vw, 1.75rem); margin: 4px 0 6px; }
-.similarity-vector-text code { font-family: var(--font-mono); font-size: 0.9375rem; background: var(--paper-raised); padding: 4px 8px; border-radius: 4px; }
-.similarity-note { margin-top: 6px; font-size: 0.875rem; color: var(--warning); }
-.similarity-bars { list-style: none; display: grid; gap: 8px; max-width: 1080px; width: 100%; margin: 0 auto; }
-.similarity-bar { display: grid; grid-template-columns: minmax(10rem, 28%) 1fr 4.5rem; align-items: center; gap: 12px; font-size: 0.9375rem; }
+.similarity-select {
+  display: flex; align-items: center; gap: 14px; padding: 0; border: 0; background: none; color: inherit;
+  font: inherit; text-align: left; cursor: pointer;
+}
+.similarity-head-text { display: grid; gap: 2px; min-width: 0; }
+.similarity-body { font-family: var(--font-display); font-weight: 700; font-size: 1.25rem; color: var(--body-color); display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; }
+.similarity-same { font-family: var(--font-mono); font-size: 0.6875rem; font-weight: 400; color: var(--ink-soft); }
+.similarity-place { font-family: var(--font-mono); font-size: 0.8125rem; color: var(--ink-soft); }
+.similarity-vector-text code { font-family: var(--font-mono); font-size: 0.8125rem; background: var(--paper-raised); padding: 3px 6px; border-radius: 4px; overflow-wrap: anywhere; }
+.similarity-note { font-size: 0.8125rem; color: var(--warning); }
+.similarity-bars { list-style: none; display: grid; gap: 6px; }
+.similarity-bar { display: grid; grid-template-columns: 1fr 3rem; grid-template-rows: auto auto; column-gap: 8px; row-gap: 2px; align-items: center; font-size: 0.8125rem; }
 .similarity-bar-name { display: flex; align-items: center; font-weight: 600; }
-.similarity-bar-track { height: 12px; border-radius: 4px; background: var(--rule-soft); overflow: hidden; }
+.similarity-bar-value { grid-column: 2; grid-row: 1; font-family: var(--font-mono); text-align: right; }
+.similarity-bar-track { grid-column: 1 / -1; grid-row: 2; height: 8px; border-radius: 4px; background: var(--rule-soft); overflow: hidden; }
 .similarity-bar-fill { display: block; height: 100%; width: 100%; transform-origin: left; border-radius: 4px; animation: bar-grow 700ms var(--ease-out) both; }
 .similarity-bar.band-green .similarity-bar-fill { background: #2E8540; }
 .similarity-bar.band-yellow .similarity-bar-fill { background: #E5B000; }
 .similarity-bar.band-red .similarity-bar-fill { background: #D83933; }
 .similarity-bar.is-missing { color: var(--ink-soft); }
 .similarity-bar.is-missing .factor-swatch { background: transparent; border: 1px dashed currentColor; }
-.similarity-bar-value { font-family: var(--font-mono); text-align: right; }
-.similarity-bar.is-missing .similarity-bar-value { font-style: italic; font-family: var(--font); font-size: 0.8125rem; }
-.similarity-footer { max-width: 1080px; width: 100%; margin: 0 auto; color: var(--ink-soft); }
+.similarity-bar.is-missing .similarity-bar-value { font-style: italic; font-family: var(--font); }
+.similarity-footer { font-size: 0.875rem; color: var(--ink-soft); }
 @keyframes similarity-in { from { opacity: 0; transform: translateY(12px); } }
 @keyframes bar-grow { from { transform: scaleX(0); } }
 
-/* ---- Small screens: stack everything ---- */
-@media (max-width: 960px) {
-  .workspace { grid-template-columns: 1fr; grid-template-areas: "stage" "sidebar" "compute" "result"; grid-template-rows: auto; }
-  .factor-sidebar { border-right: 0; border-top: 1px solid rgb(255 255 255 / 0.12); }
+/* ---- Narrower windows: the sliders stay on the side; only phones stack ---- */
+@media (max-width: 1100px) {
+  .compute-bar { grid-template-columns: 1fr auto; }
+  .compute-summary { grid-column: 1 / -1; }
+}
+@media (max-width: 820px) {
+  .workspace-stage { padding-inline: 12px; gap: 4px; }
+  .workspace-arrow { width: 64px; }
+  .workspace-arrow-label { display: none; }
+  .other-planet-globe { width: 32px; height: 32px; }
 }
 @media (max-width: 640px) {
+  .workspace { grid-template-columns: 1fr; grid-template-areas: "stage" "sidebar" "compute" "result"; }
+  .factor-sidebar { position: static; max-height: none; border-right: 0; border-top: 1px solid rgb(255 255 255 / 0.12); }
   .workspace-stage { grid-template-columns: 1fr; }
   .workspace-arrow svg { transform: rotate(90deg); }
   .hovering-planet { width: min(100%, 280px); }
   .compute-bar { grid-template-columns: 1fr; }
   .compute-button { width: 100%; }
-  .similarity-header { flex-direction: column; align-items: flex-start; }
-  .similarity-bar { grid-template-columns: 1fr 3.5rem; }
-  .similarity-bar-track { grid-column: 1 / -1; grid-row: 2; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .hovering-planet, .hovering-planet::after, .workspace-arrow-line, .similarity, .similarity-bar-fill { animation: none; }
+  .hovering-planet, .hovering-planet::after, .workspace-arrow-line, .similarity-results, .similarity-bar-fill { animation: none; }
 }

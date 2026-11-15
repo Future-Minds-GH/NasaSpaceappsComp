@@ -8,7 +8,7 @@ import { FACTOR_LABELS, FACTOR_MEANINGS } from "../content/labels.js";
 export const MAIN_FACTORS = ["terrain", "elevation", "mineralogy", "climate", "water_ice"];
 
 export default function FactorSidebar({
-  presets, presetId, onSelectPreset, weights, onChangeWeight, shownFactors, onShowFactor, onHideFactor,
+  weights, onChangeWeight, shownFactors, onShowFactor, onHideFactor,
   customMeasurements, onAddCustom, onChangeCustom, onRemoveCustom,
 }) {
   const [isAdding, setIsAdding] = useState(false);
@@ -29,12 +29,6 @@ export default function FactorSidebar({
     <aside className="factor-sidebar" aria-labelledby="factor-sidebar-title">
       <h2 id="factor-sidebar-title" className="factor-sidebar-title">Factor sliders</h2>
 
-      <label className="factor-preset">
-        <span className="eyebrow">What are you testing?</span>
-        <select value={presetId} onChange={(event) => onSelectPreset(event.target.value)}>
-          {Object.entries(presets).map(([id, preset]) => <option key={id} value={id}>{preset.label}</option>)}
-        </select>
-      </label>
 
       <ul className="factor-slider-list">
         {shownFactors.map((factor) => {

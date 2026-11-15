@@ -1,14 +1,14 @@
 // Landing workspace, laid out like the team's paper sketch: factor sliders down the left (the main five, plus
 // "add your own measurement"), two hovering planets joined by an animated arrow, small "other planets" buttons above
-// each one, and a Compute bar along the bottom. Compute runs the real tile search, shows a short loading bar, then the
-// similarity vector for the best match.
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+// each one, and a Compute bar along the bottom. One Compute searches Earth, the Moon and Mars at once from the picked
+// spot (including the spot's own body), shows a short loading bar, then one similarity vector per body.
+import { useCallback, useMemo, useState, useEffect } from "react";
 import { loadWeights } from "../data/api.js";
 import { useLoaded } from "../data/useLoaded.js";
 import { useTileSearch } from "../data/useTileSearch.js";
 import { FACTORS } from "../data/scoring.js";
 import { formatCoordinates } from "../data/format.js";
+import { BODY_RADIUS_KM } from "../data/ranking.js";
 import { BODY_NAMES } from "../content/labels.js";
 import PlanetGlobe, { GLOBE_TEXTURES } from "../components/PlanetGlobe.jsx";
 import FactorSidebar, { MAIN_FACTORS } from "../components/FactorSidebar.jsx";
@@ -17,18 +17,21 @@ import SimilarityVector from "../components/SimilarityVector.jsx";
 import "../styles/landing.css";
 
 const BODIES = ["earth", "moon", "mars"];
+// Same-body searches skip tiles this close to the picked spot, or the best match is the spot itself (plan rule 2).
+const SAME_BODY_EXCLUSION_KM = 300;
 
 export default function LandingPage() {
   const presetsState = useLoaded(loadWeights, []);
   const presets = presetsState.data?.presets ?? {};
   const [inputBody, setInputBody] = useState("mars");
-  const [targetBody, setTargetBody] = useState("earth");
+  const [viewBody, setViewBody] = useState("earth"); // which result body the right-hand globe shows
   const [point, setPoint] = useState(null);
-  const [presetId, setPresetId] = useState("balanced");
+  // Sliders start from the Balanced preset; the preset picker was removed, so people only move the sliders.
+  const presetId = presetsState.data?.default_preset ?? "balanced";
   const [weights, setWeights] = useState(null); // 0–100 per factor; null until presets load
   const [shownFactors, setShownFactors] = useState(MAIN_FACTORS);
   const [customMeasurements, setCustomMeasurements] = useState([]);
-  // The search runs only on Compute: this holds the request that was computed.
+  // The searches run only on Compute: this holds the request that was computed.
   const [request, setRequest] = useState(null);
   const [startedAt, setStartedAt] = useState(0);
   const [finishedRequest, setFinishedRequest] = useState(null);
@@ -38,54 +41,57 @@ export default function LandingPage() {
     setWeights(toPercent(presets[presetId].weights));
   }, [presets, presetId, weights]);
 
-  const search = useTileSearch(request?.selection ?? null, request?.targetBody ?? targetBody, request?.weights);
-  const bestMatch = search.data?.[0] ?? null;
+  // One search per body, all from the same picked spot.
+  const selection = request?.selection ?? null;
+  const searches = {
+    earth: useTileSearch(selection, "earth", request?.weights),
+    moon: useTileSearch(selection, "moon", request?.weights),
+    mars: useTileSearch(selection, "mars", request?.weights),
+  };
+  const results = Object.fromEntries(BODIES.map((body) => {
+    const search = searches[body];
+    const matches = (search.data ?? []).filter((match) => !(request && body === request.inputBody && distanceKm(match, request.point, body) < SAME_BODY_EXCLUSION_KM));
+    return [body, { search, matches, best: matches[0] ?? null }];
+  }));
 
+  const isSettled = Boolean(request) && BODIES.every((body) => !searches[body].isLoading);
   const handleFinished = useCallback(() => setFinishedRequest(request), [request]);
+  const status = !request ? "idle" : finishedRequest === request ? "done" : "computing";
+  const settingsKey = JSON.stringify([weights, shownFactors]);
+  const isStale = Boolean(request) && (request.point !== point || request.inputBody !== inputBody || request.settingsKey !== settingsKey);
+  const isShowingResult = status === "done" && !isStale;
 
-  const isSettled = Boolean(request) && !search.isLoading;
-  const status = !request ? "idle" :  finishedRequest === request ? "done" : "computing";
-  // Anything changed since the last Compute makes the shown result stale.
-  const isStale = Boolean(request) && (request.point !== point || request.targetBody !== targetBody || request.inputBody !== inputBody || request.weightsKey !== JSON.stringify([weights, shownFactors]));
-
-  const targetSites = useMemo(
-    () => (status === "done" && bestMatch && !isStale ? [{ target_id: "best", name: `Best match · ${Math.round(bestMatch.score)}%`, lat: bestMatch.lat, lon: bestMatch.lon }] : []),
-    [status, bestMatch, isStale],
+  const viewBest = isShowingResult ? results[viewBody].best : null;
+  const viewSites = useMemo(
+    () => (viewBest ? [{ target_id: "best", name: `Best match · ${Math.round(viewBest.score)}%`, lat: viewBest.lat, lon: viewBest.lon }] : []),
+    [viewBest],
   );
-  const targetFocus = targetSites[0] ? { lat: targetSites[0].lat, lon: targetSites[0].lon } : null;
+  const viewFocus = useMemo(() => (viewBest ? { lat: viewBest.lat, lon: viewBest.lon } : null), [viewBest]);
 
-  function pickBody(side, body) {
-    const [own, other, setOwn, setOther] = side === "input" ? [inputBody, targetBody, setInputBody, setTargetBody] : [targetBody, inputBody, setTargetBody, setInputBody];
-    if (body === own) return;
-    if (body === other) setOther(own); // never compare a body with itself: swap instead
-    setOwn(body);
-    if (side === "input" || body === other) setPoint(null);
-  }
-
-  function swap() {
-    setInputBody(targetBody);
-    setTargetBody(inputBody);
+  function pickInputBody(body) {
+    if (body === inputBody) return;
+    setInputBody(body);
     setPoint(null);
   }
 
-  function choosePreset(nextId) {
-    setPresetId(nextId);
-    if (presets[nextId]) setWeights(toPercent(presets[nextId].weights));
+  function swap() {
+    setInputBody(viewBody);
+    setViewBody(inputBody);
+    setPoint(null);
   }
 
   function compute() {
     if (!point || !weights) return;
     const scoredWeights = Object.fromEntries(FACTORS.map((factor) => [factor, shownFactors.includes(factor) ? weights[factor] / 100 : 0]));
     setStartedAt(performance.now());
-    setRequest({ point, inputBody, targetBody, selection: { body: inputBody, ...point }, weights: scoredWeights, weightsKey: JSON.stringify([weights, shownFactors]) });
+    setRequest({ point, inputBody, selection: { body: inputBody, ...point }, weights: scoredWeights, settingsKey });
   }
+
+  const inputTile = request?.inputBody === inputBody && request?.point === point ? searches[inputBody].tile : null;
 
   return (
     <div className="workspace">
       <FactorSidebar
-        presets={presets}
-        presetId={presetId}
-        onSelectPreset={choosePreset}
         weights={weights}
         onChangeWeight={(factor, value) => setWeights((current) => ({ ...current, [factor]: value }))}
         shownFactors={shownFactors}
@@ -101,13 +107,14 @@ export default function LandingPage() {
         <PlanetColumn
           side="input"
           body={inputBody}
-          onPickBody={(body) => pickBody("input", body)}
+          choices={BODIES.filter((other) => other !== inputBody)}
+          onPickBody={pickInputBody}
           caption={point ? formatCoordinates(point.lat, point.lon) : `Click anywhere on ${BODY_NAMES[inputBody]}`}
         >
           <PlanetGlobe
             body={inputBody}
             isInteractive
-            selectedTile={search.tile && request?.inputBody === inputBody && request?.point === point ? search.tile : null}
+            selectedTile={inputTile}
             sites={point ? [{ target_id: "pick", name: "Your spot", lat: point.lat, lon: point.lon }] : []}
             onPick={(lat, lon) => setPoint({ lat, lon })}
             label={`Globe of ${BODY_NAMES[inputBody]}. Drag to turn it, click a spot to pick it.`}
@@ -115,7 +122,7 @@ export default function LandingPage() {
         </PlanetColumn>
 
         <div className="workspace-arrow-wrap">
-          <button type="button" className={`workspace-arrow is-${status}`} onClick={swap} aria-label={`Swap: compare ${BODY_NAMES[targetBody]} to ${BODY_NAMES[inputBody]} instead`}>
+          <button type="button" className={`workspace-arrow is-${status}`} onClick={swap} aria-label={`Swap: start from ${BODY_NAMES[viewBody]} instead`}>
             <svg viewBox="0 0 160 60" aria-hidden="true">
               <path className="workspace-arrow-line" d="M8 38 C 50 6, 110 6, 146 30" />
               <path className="workspace-arrow-head" d="M134 18 L148 31 L130 36" />
@@ -126,19 +133,18 @@ export default function LandingPage() {
 
         <PlanetColumn
           side="target"
-          body={targetBody}
-          onPickBody={(body) => pickBody("target", body)}
-          caption={targetSites[0] ? `Best match: ${formatCoordinates(targetSites[0].lat, targetSites[0].lon)}` : `Searching every tile of ${BODY_NAMES[targetBody]}`}
+          body={viewBody}
+          choices={BODIES.filter((other) => other !== viewBody)}
+          onPickBody={setViewBody}
+          caption={viewBest ? `Best match: ${formatCoordinates(viewBest.lat, viewBest.lon)}` : viewBody === inputBody ? `Other places on ${BODY_NAMES[viewBody]}` : `Every tile of ${BODY_NAMES[viewBody]}`}
         >
-          <PlanetGlobe body={targetBody} isSpinning={!targetFocus} sites={targetSites} focus={targetFocus} label={`Globe of ${BODY_NAMES[targetBody]}, the body being searched.`} />
+          <PlanetGlobe body={viewBody} isSpinning={!viewFocus} sites={viewSites} focus={viewFocus} label={`Globe of ${BODY_NAMES[viewBody]}, one of the bodies searched.`} />
         </PlanetColumn>
       </section>
 
       <ComputeBar
         inputBody={inputBody}
-        targetBody={targetBody}
         point={point}
-        presetLabel={presets[presetId]?.label}
         status={isStale ? "stale" : status}
         startedAt={startedAt}
         isReady={isSettled}
@@ -147,32 +153,39 @@ export default function LandingPage() {
         isDisabled={!point || !weights || (status === "computing" && !isStale)}
       />
 
-      {status === "done" && !isStale && (
-        <SimilarityVector
-          match={bestMatch}
-          matchCount={search.data?.length ?? 0}
-          error={search.error}
-          hasNoData={search.hasNoData}
-          isApproximate={search.isApproximate}
-          inputBody={request.inputBody}
-          targetBody={request.targetBody}
-          point={request.point}
-          weights={request.weights}
-          customMeasurements={customMeasurements}
-          exploreLink={`/explore/${request.inputBody}?to=${request.targetBody}&at=${request.point.lat.toFixed(2)},${request.point.lon.toFixed(2)}&preset=${presetId}`}
-        />
+      {isShowingResult && (
+        <section className="similarity-results" aria-label="Similarity on Earth, the Moon and Mars">
+          {BODIES.map((body) => (
+            <SimilarityVector
+              key={body}
+              body={body}
+              isSameBody={body === request.inputBody}
+              isSelected={body === viewBody}
+              onSelect={() => setViewBody(body)}
+              match={results[body].best}
+              matchCount={results[body].matches.length}
+              error={results[body].search.error}
+              hasNoData={results[body].search.hasNoData}
+              isApproximate={results[body].search.isApproximate}
+              inputBody={request.inputBody}
+              weights={request.weights}
+              customMeasurements={customMeasurements}
+              exploreLink={body === request.inputBody ? null : `/explore/${request.inputBody}?to=${body}&at=${request.point.lat.toFixed(2)},${request.point.lon.toFixed(2)}&preset=${presetId}`}
+            />
+          ))}
+        </section>
       )}
     </div>
   );
 }
 
-function PlanetColumn({ side, body, onPickBody, caption, children }) {
+function PlanetColumn({ side, body, choices, onPickBody, caption, children }) {
   return (
     <div className={`planet-column planet-column-${side} body-${body}`}>
-      <div className="other-planets" role="group" aria-label={side === "input" ? "Start from another body" : "Compare to another body"}>
-        <span className="eyebrow other-planets-label">{side === "input" ? "From" : "Compare to"}</span>
+      <div className="other-planets" role="group" aria-label={side === "input" ? "Start from another body" : "Show another body's result"}>
+        <span className="eyebrow other-planets-label">{side === "input" ? "From" : "Showing"}</span>
         <div className="other-planets-row">
-          {BODIES.filter((other) => other !== body).map((other) => (
+          {choices.map((other) => (
             <button key={other} type="button" className="other-planet" onClick={() => onPickBody(other)} title={BODY_NAMES[other]}>
               <span className="other-planet-globe" style={{ backgroundImage: `url(${GLOBE_TEXTURES[other].url})` }} aria-hidden="true" />
               <span className="other-planet-name">{BODY_NAMES[other]}</span>
@@ -191,4 +204,10 @@ function PlanetColumn({ side, body, onPickBody, caption, children }) {
 
 function toPercent(presetWeights) {
   return Object.fromEntries(FACTORS.map((factor) => [factor, Math.round((presetWeights[factor] ?? 0) * 100)]));
+}
+
+function distanceKm(a, b, body) {
+  const toRadians = (degrees) => (degrees * Math.PI) / 180;
+  const h = Math.sin(toRadians(b.lat - a.lat) / 2) ** 2 + Math.cos(toRadians(a.lat)) * Math.cos(toRadians(b.lat)) * Math.sin(toRadians(b.lon - a.lon) / 2) ** 2;
+  return 2 * BODY_RADIUS_KM[body] * Math.asin(Math.sqrt(h));
 }
