@@ -59,6 +59,8 @@ npm run dev           # open the URL it prints
 
 Requires a free NASA Earthdata login, entered in Colab only. Never commit credentials.
 
+The computed Earth table is available as a download, so you can skip the Earth notebooks: [`earth.parquet` (46 MB), release data-2026-11-15](https://github.com/Future-Minds-GH/NasaSpaceappsComp/releases/tag/data-2026-11-15). Use it in step 3.
+
 1. Run the Earth notebooks in order: `earth_thin_slice`, `sun`, `filter`, `albedo_ice`, `minerals`, `merge`. Output: `earth.parquet`.
 2. Run the Moon and Mars notebooks in order: thin slice, the depth notebooks, then `*_merge`. Output: `moon.parquet`, `mars.parquet`.
 3. Make the site files:
