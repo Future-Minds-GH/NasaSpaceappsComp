@@ -17,7 +17,8 @@ export const NO_FILTERS = { body: SHOW_ALL, tag: SHOW_ALL };
 export default function DiscoveryFilters({ filters, optionsByFilter, onChange }) {
   return (
     <div className="discover-filters">
-      {FILTER_FIELDS.map(({ key, label }) => (
+      {/* A filter with no choices (no tags in the data) would show only "All": leave it out. */}
+      {FILTER_FIELDS.filter(({ key }) => optionsByFilter[key].length > 0).map(({ key, label }) => (
         <div className="discover-filter" key={key}>
           <label className="control-label" htmlFor={`discover-filter-${key}`}>{label}</label>
           <select

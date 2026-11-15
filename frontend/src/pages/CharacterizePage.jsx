@@ -5,36 +5,38 @@ import EarthMap from "../components/EarthMap.jsx";
 import ReportCard from "../components/ReportCard.jsx";
 import CharacterizeNotice from "../components/CharacterizeNotice.jsx";
 import CoordinateForm from "../components/CoordinateForm.jsx";
-import { loadFamousSites, loadGridTile, loadTargets, loadWeights } from "../data/api.js";
+import { loadFamousSites, loadTargets, loadWeights } from "../data/api.js";
+import { scoreSpot } from "../data/characterizeSpot.js";
 import { useLoaded } from "../data/useLoaded.js";
-import { cellKey, snapToCell, tileNameForCell } from "../data/earthGrid.js";
+import { snapToCell } from "../data/earthGrid.js";
 import { formatCoordinates } from "../data/format.js";
 import "../styles/characterize.css";
 
 // The best-known analog sites lead the list; the rest follow in file order.
-const FEATURED_SITE_IDS = ["atacama", "haughton_crater", "death_valley"];
+const FEATURED_SITE_IDS = ["atacama_yungay", "haughton_crater", "death_valley"];
 
 export default function CharacterizePage() {
-  // { cell, famousSite?, focus? }: the picked 0.5° cell, the famous-site entry when a site button picked it,
-  // and where to move the map (left out for map clicks, since the user is already looking there).
+  // { cell, point, famousSite?, focus? }: the picked 0.5° cell, the exact [lat, lon] picked, the famous-site entry when a
+  // site button picked it, and where to move the map (left out for map clicks, since the user is already looking there).
   const [selection, setSelection] = useState(null);
   const [referenceAttempt, setReferenceAttempt] = useState(0);
   const [tileAttempt, setTileAttempt] = useState(0);
 
   const reference = useLoaded(loadReferenceData, [referenceAttempt]);
-  const tileName = selection && !selection.famousSite ? tileNameForCell(selection.cell) : null;
-  const tile = useLoaded(() => (tileName ? loadTaggedTile(tileName) : null), [tileName, tileAttempt]);
-  const report = resolveReport(selection, tile, tileName);
+  // A spot pick is scored live; famous sites carry their own precomputed card.
+  const spotKey = selection && !selection.famousSite ? selection.point.join("_") : null;
+  const spot = useLoaded(() => (spotKey ? scoreTaggedSpot(spotKey, selection.point) : null), [spotKey, tileAttempt]);
+  const report = resolveReport(selection, spot, spotKey);
   const pickedCoordinates = selection ? formatCoordinates(selection.cell.lat, selection.cell.lon) : "";
 
   function handleFamousSiteClick(famousSite) {
     const { lat, lon } = famousSite.site;
-    setSelection({ cell: snapToCell(lat, lon), famousSite, focus: [lat, lon] });
+    setSelection({ cell: snapToCell(lat, lon), point: [lat, lon], famousSite, focus: [lat, lon] });
   }
 
   function handleSpotPick(lat, lon, isMovingMap = false) {
     const cell = snapToCell(lat, lon);
-    setSelection({ cell, focus: isMovingMap ? [cell.lat, cell.lon] : undefined });
+    setSelection({ cell, point: [lat, lon], focus: isMovingMap ? [cell.lat, cell.lon] : undefined });
   }
 
   return (
@@ -102,8 +104,8 @@ export default function CharacterizePage() {
           )}
           {report.status === "unscored" && (
             <CharacterizeNotice title="No score for this spot">
-              {pickedCoordinates} has no score because only land is scored: oceans and ice sheets are left out. Try a
-              desert, polar or volcanic region, or pick one of the famous test sites.
+              This spot is not in the scored land tiles. {pickedCoordinates} may be ocean, ice sheet or a tile left out for
+              lack of data. Try a desert, polar or volcanic region, or pick one of the famous test sites.
             </CharacterizeNotice>
           )}
           {report.status === "ready" && (
@@ -125,18 +127,17 @@ function loadReferenceData() {
   });
 }
 
-/** Tags the tile's cells with its name, so a lookup never reads the previous tile while the next one loads. */
-function loadTaggedTile(tileName) {
-  return loadGridTile(tileName).then((cells) => ({ tileName, cells }));
+/** Tags the entry with the spot it was scored for, so the page never shows the previous spot's card for the next one. */
+function scoreTaggedSpot(spotKey, [lat, lon]) {
+  return scoreSpot(lat, lon).then((entry) => ({ spotKey, entry }));
 }
 
 /** What the report column shows: nothing picked yet, loading, an error, an unscored spot, or a report card. */
-function resolveReport(selection, tile, tileName) {
+function resolveReport(selection, spot, spotKey) {
   if (!selection) return { status: "empty" };
   if (selection.famousSite) return { status: "ready", entry: selection.famousSite };
-  if (tile.data?.tileName !== tileName) return { status: tile.error ? "error" : "loading" };
-  const entry = tile.data.cells[cellKey(selection.cell)];
-  return entry ? { status: "ready", entry } : { status: "unscored" };
+  if (spot.data?.spotKey !== spotKey) return { status: spot.error ? "error" : "loading" };
+  return spot.data.entry ? { status: "ready", entry: spot.data.entry } : { status: "unscored" };
 }
 
 /** Short line for screen readers, so they hear the result without the whole card being read out. */
