@@ -28,6 +28,10 @@ export default function FactorSidebar({
   return (
     <aside className="factor-sidebar" aria-labelledby="factor-sidebar-title">
       <h2 id="factor-sidebar-title" className="factor-sidebar-title">Factor sliders</h2>
+      <p className="factor-sidebar-intro">
+        <strong>Weights of the measurements.</strong> Slide one up to make that factor count more in the similarity
+        score; at 0 it is left out.
+      </p>
 
 
       <ul className="factor-slider-list">

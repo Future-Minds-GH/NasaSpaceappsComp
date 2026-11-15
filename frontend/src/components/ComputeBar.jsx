@@ -16,7 +16,7 @@ const CREEP_LIMIT = 90;
 const MIN_FILL_MS = 1400;
 const HOLD_FULL_MS = 250;
 
-export default function ComputeBar({ inputBody, point, status, startedAt, isReady, onFinished, onCompute, isDisabled }) {
+export default function ComputeBar({ inputBody, targetNames, point, status, startedAt, isReady, onFinished, onCompute, isDisabled }) {
   const progress = useProgress(status === "computing", startedAt, isReady, onFinished);
   const step = STEPS.find((candidate) => progress < candidate.until) ?? STEPS[STEPS.length - 1];
   const isComputing = status === "computing";
@@ -31,7 +31,7 @@ export default function ComputeBar({ inputBody, point, status, startedAt, isRead
         <span className="compute-to" aria-hidden="true">→</span>
         <span className="compute-from">
           <span className="eyebrow">To</span>
-          <strong>Earth, Moon &amp; Mars</strong> · all at once
+          <strong>{targetNames}</strong>
         </span>
       </p>
 
@@ -41,7 +41,7 @@ export default function ComputeBar({ inputBody, point, status, startedAt, isRead
       </div>
       {!isComputing && (
         <p className="compute-hint">
-          {status === "stale" ? "Settings changed. Compute again to update the result." : status === "done" ? "Done. Three similarity vectors are below." : point ? "Ready when you are." : `Click a spot on ${BODY_NAMES[inputBody]} first.`}
+          {status === "stale" ? "Settings changed. Compute again to update the result." : status === "done" ? "Done. The similarity vectors are below." : point ? "Ready when you are." : `Click a spot on ${BODY_NAMES[inputBody]} first.`}
         </p>
       )}
 

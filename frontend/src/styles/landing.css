@@ -216,3 +216,34 @@
 @media (prefers-reduced-motion: reduce) {
   .hovering-planet, .hovering-planet::after, .workspace-arrow-line, .similarity-results, .similarity-bar-fill { animation: none; }
 }
+
+/* ---- Sidebar caption ---- */
+.factor-sidebar-intro { margin-top: -8px; font-size: 0.8125rem; line-height: 1.45; color: var(--on-space-soft); }
+.factor-sidebar-intro strong { color: var(--on-space); font-weight: 600; }
+
+/* ---- Output planets: each one clicked on the right becomes another globe in a row ---- */
+.workspace-stage:has(.targets-2) { grid-template-columns: minmax(0, 1fr) auto minmax(0, 1.5fr); }
+.workspace-stage:has(.targets-3) { grid-template-columns: minmax(0, 0.8fr) auto minmax(0, 2fr); }
+.target-globes { display: flex; justify-content: center; align-items: flex-start; gap: 12px; width: 100%; }
+.target-globe { position: relative; flex: 1 1 0; min-width: 0; display: grid; justify-items: center; animation: target-in 450ms var(--ease-out); }
+.targets-1 .target-globe .hovering-planet { width: min(100%, 360px, 40vh); }
+.targets-2 .target-globe .hovering-planet { width: min(100%, 300px, 34vh); }
+.targets-3 .target-globe .hovering-planet { width: min(100%, 240px, 28vh); }
+.target-globe:nth-child(2) .hovering-planet { animation-delay: -1.5s; }
+.target-globe:nth-child(3) .hovering-planet { animation-delay: -4.5s; }
+.target-globe .planet-globe { cursor: default; }
+.target-globe.is-selected .planet-caption-name { text-decoration: underline; text-underline-offset: 6px; }
+.target-remove {
+  position: absolute; top: -4px; right: 4px; z-index: 2; width: 28px; height: 28px; border-radius: 50%;
+  border: 1px solid rgb(255 255 255 / 0.3); background: rgb(0 0 0 / 0.6); color: #FFFFFF; font-size: 1rem; line-height: 1; cursor: pointer;
+  opacity: 0; transition: opacity 160ms ease;
+}
+.target-globe:hover .target-remove, .target-remove:focus-visible { opacity: 1; }
+@media (hover: none) { .target-remove { opacity: 1; } }
+.other-planet.is-addable .other-planet-globe { position: relative; }
+.other-planet.is-addable:hover .other-planet-globe { box-shadow: inset -6px -5px 12px rgb(0 0 0 / 0.65), 0 0 0 2px #8FD3AE; }
+@keyframes target-in { from { opacity: 0; transform: scale(0.6); } }
+@media (max-width: 640px) {
+  .workspace-stage:has(.targets-2), .workspace-stage:has(.targets-3) { grid-template-columns: 1fr; }
+}
+@media (prefers-reduced-motion: reduce) { .target-globe { animation: none; } }

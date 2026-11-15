@@ -1,7 +1,8 @@
 // Landing workspace, laid out like the team's paper sketch: factor sliders down the left (the main five, plus
 // "add your own measurement"), two hovering planets joined by an animated arrow, small "other planets" buttons above
-// each one, and a Compute bar along the bottom. One Compute searches Earth, the Moon and Mars at once from the picked
-// spot (including the spot's own body), shows a short loading bar, then one similarity vector per body.
+// side, and a Compute bar along the bottom. Clicking a small planet on the right adds it as another output globe;
+// one Compute searches every output planet from the picked spot (its own planet too), shows a short loading bar, then
+// one similarity vector per output planet.
 import { useCallback, useMemo, useState, useEffect } from "react";
 import { loadWeights } from "../data/api.js";
 import { useLoaded } from "../data/useLoaded.js";
@@ -24,7 +25,9 @@ export default function LandingPage() {
   const presetsState = useLoaded(loadWeights, []);
   const presets = presetsState.data?.presets ?? {};
   const [inputBody, setInputBody] = useState("mars");
-  const [viewBody, setViewBody] = useState("earth"); // which result body the right-hand globe shows
+  // Output planets: clicking a small planet on the right adds it as another globe; Compute searches each one.
+  const [targets, setTargets] = useState(["earth"]);
+  const [selectedBody, setSelectedBody] = useState(null); // result card highlighted after Compute
   const [point, setPoint] = useState(null);
   // Sliders start from the Balanced preset; the preset picker was removed, so people only move the sliders.
   const presetId = presetsState.data?.default_preset ?? "balanced";
@@ -41,12 +44,13 @@ export default function LandingPage() {
     setWeights(toPercent(presets[presetId].weights));
   }, [presets, presetId, weights]);
 
-  // One search per body, all from the same picked spot.
-  const selection = request?.selection ?? null;
+  // One search per output planet, all from the same picked spot. Planets that weren't added get no selection, so
+  // their search never runs.
+  const selectionFor = (body) => (request?.targets.includes(body) ? request.selection : null);
   const searches = {
-    earth: useTileSearch(selection, "earth", request?.weights),
-    moon: useTileSearch(selection, "moon", request?.weights),
-    mars: useTileSearch(selection, "mars", request?.weights),
+    earth: useTileSearch(selectionFor("earth"), "earth", request?.weights),
+    moon: useTileSearch(selectionFor("moon"), "moon", request?.weights),
+    mars: useTileSearch(selectionFor("mars"), "mars", request?.weights),
   };
   const results = Object.fromEntries(BODIES.map((body) => {
     const search = searches[body];
@@ -57,16 +61,11 @@ export default function LandingPage() {
   const isSettled = Boolean(request) && BODIES.every((body) => !searches[body].isLoading);
   const handleFinished = useCallback(() => setFinishedRequest(request), [request]);
   const status = !request ? "idle" : finishedRequest === request ? "done" : "computing";
-  const settingsKey = JSON.stringify([weights, shownFactors]);
+  const settingsKey = JSON.stringify([weights, shownFactors, targets]);
   const isStale = Boolean(request) && (request.point !== point || request.inputBody !== inputBody || request.settingsKey !== settingsKey);
   const isShowingResult = status === "done" && !isStale;
 
-  const viewBest = isShowingResult ? results[viewBody].best : null;
-  const viewSites = useMemo(
-    () => (viewBest ? [{ target_id: "best", name: `Best match · ${Math.round(viewBest.score)}%`, lat: viewBest.lat, lon: viewBest.lon }] : []),
-    [viewBest],
-  );
-  const viewFocus = useMemo(() => (viewBest ? { lat: viewBest.lat, lon: viewBest.lon } : null), [viewBest]);
+  const bestOn = (body) => (isShowingResult ? results[body].best : null);
 
   function pickInputBody(body) {
     if (body === inputBody) return;
@@ -74,17 +73,27 @@ export default function LandingPage() {
     setPoint(null);
   }
 
+  // Swap the input with the first output planet.
   function swap() {
-    setInputBody(viewBody);
-    setViewBody(inputBody);
+    const [first, ...rest] = targets;
+    setInputBody(first);
+    setTargets([inputBody, ...rest.filter((body) => body !== inputBody)]);
     setPoint(null);
+  }
+
+  function addTarget(body) {
+    setTargets((current) => (current.includes(body) ? current : BODIES.filter((other) => current.includes(other) || other === body)));
+  }
+
+  function removeTarget(body) {
+    setTargets((current) => (current.length > 1 ? current.filter((other) => other !== body) : current));
   }
 
   function compute() {
     if (!point || !weights) return;
     const scoredWeights = Object.fromEntries(FACTORS.map((factor) => [factor, shownFactors.includes(factor) ? weights[factor] / 100 : 0]));
     setStartedAt(performance.now());
-    setRequest({ point, inputBody, selection: { body: inputBody, ...point }, weights: scoredWeights, settingsKey });
+    setRequest({ point, inputBody, targets, selection: { body: inputBody, ...point }, weights: scoredWeights, settingsKey });
   }
 
   const inputTile = request?.inputBody === inputBody && request?.point === point ? searches[inputBody].tile : null;
@@ -122,7 +131,7 @@ export default function LandingPage() {
         </PlanetColumn>
 
         <div className="workspace-arrow-wrap">
-          <button type="button" className={`workspace-arrow is-${status}`} onClick={swap} aria-label={`Swap: start from ${BODY_NAMES[viewBody]} instead`}>
+          <button type="button" className={`workspace-arrow is-${status}`} onClick={swap} aria-label={`Swap: start from ${BODY_NAMES[targets[0]]} instead`}>
             <svg viewBox="0 0 160 60" aria-hidden="true">
               <path className="workspace-arrow-line" d="M8 38 C 50 6, 110 6, 146 30" />
               <path className="workspace-arrow-head" d="M134 18 L148 31 L130 36" />
@@ -131,19 +140,36 @@ export default function LandingPage() {
           <span className="workspace-arrow-label">{status === "computing" ? "Comparing…" : "Click to swap"}</span>
         </div>
 
-        <PlanetColumn
-          side="target"
-          body={viewBody}
-          choices={BODIES.filter((other) => other !== viewBody)}
-          onPickBody={setViewBody}
-          caption={viewBest ? `Best match: ${formatCoordinates(viewBest.lat, viewBest.lon)}` : viewBody === inputBody ? `Other places on ${BODY_NAMES[viewBody]}` : `Every tile of ${BODY_NAMES[viewBody]}`}
-        >
-          <PlanetGlobe body={viewBody} isSpinning={!viewFocus} sites={viewSites} focus={viewFocus} label={`Globe of ${BODY_NAMES[viewBody]}, one of the bodies searched.`} />
-        </PlanetColumn>
+        <div className={`planet-column planet-column-target targets-${targets.length}`}>
+          <div className="other-planets" role="group" aria-label="Add an output planet">
+            <span className="eyebrow other-planets-label">{targets.length < BODIES.length ? "Compare to · click to add" : "Comparing to all three"}</span>
+            <div className="other-planets-row">
+              {BODIES.filter((other) => !targets.includes(other)).map((other) => (
+                <button key={other} type="button" className="other-planet is-addable" onClick={() => addTarget(other)} title={`Add ${BODY_NAMES[other]}`}>
+                  <span className="other-planet-globe" style={{ backgroundImage: `url(${GLOBE_TEXTURES[other].url})` }} aria-hidden="true" />
+                  <span className="other-planet-name">+ {BODY_NAMES[other]}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="target-globes">
+            {targets.map((body) => (
+              <TargetGlobe
+                key={body}
+                body={body}
+                best={bestOn(body)}
+                isSelected={selectedBody === body}
+                isSamePlanet={body === inputBody}
+                onRemove={targets.length > 1 ? () => removeTarget(body) : null}
+              />
+            ))}
+          </div>
+        </div>
       </section>
 
       <ComputeBar
         inputBody={inputBody}
+        targetNames={formatList(targets.map((body) => BODY_NAMES[body]))}
         point={point}
         status={isStale ? "stale" : status}
         startedAt={startedAt}
@@ -154,14 +180,14 @@ export default function LandingPage() {
       />
 
       {isShowingResult && (
-        <section className="similarity-results" aria-label="Similarity on Earth, the Moon and Mars">
-          {BODIES.map((body) => (
+        <section className="similarity-results" aria-label="Similarity on each output planet">
+          {request.targets.map((body) => (
             <SimilarityVector
               key={body}
               body={body}
               isSameBody={body === request.inputBody}
-              isSelected={body === viewBody}
-              onSelect={() => setViewBody(body)}
+              isSelected={body === selectedBody}
+              onSelect={() => setSelectedBody(body)}
               match={results[body].best}
               matchCount={results[body].matches.length}
               error={results[body].search.error}
@@ -182,8 +208,8 @@ export default function LandingPage() {
 function PlanetColumn({ side, body, choices, onPickBody, caption, children }) {
   return (
     <div className={`planet-column planet-column-${side} body-${body}`}>
-      <div className="other-planets" role="group" aria-label={side === "input" ? "Start from another body" : "Show another body's result"}>
-        <span className="eyebrow other-planets-label">{side === "input" ? "From" : "Showing"}</span>
+      <div className="other-planets" role="group" aria-label="Start from another body">
+        <span className="eyebrow other-planets-label">From</span>
         <div className="other-planets-row">
           {choices.map((other) => (
             <button key={other} type="button" className="other-planet" onClick={() => onPickBody(other)} title={BODY_NAMES[other]}>
@@ -200,6 +226,28 @@ function PlanetColumn({ side, body, choices, onPickBody, caption, children }) {
       </div>
     </div>
   );
+}
+
+// One output globe. The best-match label and focus are memoised so the globe only flies when the result changes.
+function TargetGlobe({ body, best, isSelected, isSamePlanet, onRemove }) {
+  const sites = useMemo(() => (best ? [{ target_id: "best", name: `${Math.round(best.score)}%`, lat: best.lat, lon: best.lon }] : []), [best]);
+  const focus = useMemo(() => (best ? { lat: best.lat, lon: best.lon } : null), [best]);
+  return (
+    <div className={`target-globe body-${body}${isSelected ? " is-selected" : ""}`}>
+      {onRemove && <button type="button" className="target-remove" onClick={onRemove} aria-label={`Remove ${BODY_NAMES[body]}`}>×</button>}
+      <div className="hovering-planet">
+        <PlanetGlobe body={body} isSpinning={!best} sites={sites} focus={focus} label={`Globe of ${BODY_NAMES[body]}, an output planet.`} />
+      </div>
+      <div className="planet-caption">
+        <span className="planet-caption-name">{BODY_NAMES[body]}</span>
+        <span className="planet-caption-detail">{best ? `${Math.round(best.score)}% · ${formatCoordinates(best.lat, best.lon)}` : isSamePlanet ? "Same planet" : "Every tile"}</span>
+      </div>
+    </div>
+  );
+}
+
+function formatList(names) {
+  return names.length < 3 ? names.join(" & ") : `${names.slice(0, -1).join(", ")} & ${names[names.length - 1]}`;
 }
 
 function toPercent(presetWeights) {
