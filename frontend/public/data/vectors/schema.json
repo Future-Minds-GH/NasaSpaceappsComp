@@ -1,0 +1,254 @@
+{
+ "version": "0.1",
+ "sample": false,
+ "nside": {
+  "earth": 256,
+  "moon": 64,
+  "mars": 128
+ },
+ "scheme": "nested",
+ "null_code": 255,
+ "encoding": {
+  "percentile": "round(p × 254)",
+  "fraction": "round(f × 254)",
+  "embedding": "round((e + 1) / 2 × 254)",
+  "code": "integer code",
+  "flag": "0 or 1"
+ },
+ "mars_shards": "mars_<base cell 0-11>.bin",
+ "factors": [
+  {
+   "id": "terrain",
+   "fields": [
+    {
+     "id": "emb0",
+     "kind": "embedding"
+    },
+    {
+     "id": "emb1",
+     "kind": "embedding"
+    },
+    {
+     "id": "emb2",
+     "kind": "embedding"
+    },
+    {
+     "id": "emb3",
+     "kind": "embedding"
+    },
+    {
+     "id": "emb4",
+     "kind": "embedding"
+    },
+    {
+     "id": "emb5",
+     "kind": "embedding"
+    },
+    {
+     "id": "emb6",
+     "kind": "embedding"
+    },
+    {
+     "id": "emb7",
+     "kind": "embedding"
+    },
+    {
+     "id": "slope",
+     "kind": "percentile"
+    },
+    {
+     "id": "roughness",
+     "kind": "percentile"
+    }
+   ]
+  },
+  {
+   "id": "elevation",
+   "fields": [
+    {
+     "id": "relief",
+     "kind": "percentile"
+    },
+    {
+     "id": "topo_position",
+     "kind": "code",
+     "lookup": "topo_position"
+    }
+   ]
+  },
+  {
+   "id": "geology",
+   "fields": [
+    {
+     "id": "rock_class",
+     "kind": "code",
+     "lookup": "rock_class"
+    },
+    {
+     "id": "volcanic",
+     "kind": "flag"
+    },
+    {
+     "id": "impact",
+     "kind": "flag"
+    }
+   ]
+  },
+  {
+   "id": "mineralogy",
+   "fields": [
+    {
+     "id": "mafic",
+     "kind": "fraction"
+    },
+    {
+     "id": "clays",
+     "kind": "fraction"
+    },
+    {
+     "id": "sulfates",
+     "kind": "fraction"
+    },
+    {
+     "id": "carbonates",
+     "kind": "fraction"
+    },
+    {
+     "id": "iron_oxides",
+     "kind": "fraction"
+    },
+    {
+     "id": "salts",
+     "kind": "fraction"
+    }
+   ]
+  },
+  {
+   "id": "climate",
+   "fields": [
+    {
+     "id": "aridity",
+     "kind": "percentile"
+    },
+    {
+     "id": "mean_temp",
+     "kind": "percentile"
+    },
+    {
+     "id": "day_night_range",
+     "kind": "percentile"
+    },
+    {
+     "id": "cold_extreme",
+     "kind": "percentile"
+    },
+    {
+     "id": "sunlit_fraction",
+     "kind": "percentile"
+    }
+   ]
+  },
+  {
+   "id": "atmosphere",
+   "fields": [
+    {
+     "id": "pressure",
+     "kind": "percentile"
+    },
+    {
+     "id": "wind",
+     "kind": "percentile"
+    },
+    {
+     "id": "dust",
+     "kind": "percentile"
+    },
+    {
+     "id": "dust_storms",
+     "kind": "percentile"
+    }
+   ]
+  },
+  {
+   "id": "water_ice",
+   "fields": [
+    {
+     "id": "ice_fraction",
+     "kind": "fraction"
+    },
+    {
+     "id": "ice_depth",
+     "kind": "code",
+     "lookup": "ice_depth"
+    },
+    {
+     "id": "ice_form",
+     "kind": "code",
+     "lookup": "ice_form"
+    },
+    {
+     "id": "liquid_water",
+     "kind": "fraction"
+    }
+   ]
+  }
+ ],
+ "lookups": {
+  "topo_position": {
+   "names": [
+    "basin",
+    "lower slope",
+    "flat",
+    "upper slope",
+    "ridge"
+   ],
+   "rule": "same 1, neighbouring code 0.5, else 0"
+  },
+  "rock_class": {
+   "names": [
+    "anorthosite",
+    "basalt",
+    "other igneous",
+    "sedimentary",
+    "evaporite",
+    "impact breccia",
+    "ice"
+   ],
+   "groups": [
+    "igneous",
+    "igneous",
+    "igneous",
+    "sedimentary",
+    "sedimentary",
+    "impact",
+    "ice"
+   ],
+   "rule": "same 1, same group 0.5, else 0"
+  },
+  "ice_depth": {
+   "names": [
+    "surface",
+    "under 1 m",
+    "deeper",
+    "none"
+   ],
+   "rule": "same 1, else 0"
+  },
+  "ice_form": {
+   "names": [
+    "none",
+    "seasonal",
+    "ground ice",
+    "buried glacial ice",
+    "exposed ice sheet"
+   ],
+   "related": [
+    [
+     2,
+     3
+    ]
+   ],
+   "rule": "same 1, ground vs buried 0.5, else 0"
+  }
+ }
+}
