@@ -299,7 +299,7 @@ cells = cell_centres()
 lat_c, lon_c = cells.lat.values, cells.lon.values
 
 swim_prob = np.full(len(cells), np.nan)
-for f in swim_files:                                   # (an empty list leaves swim_prob all NaN)                                   # several tiles/layers: maximum
+for f in swim_files:                                   # several tiles/layers: maximum (no files: swim_prob stays all NaN)
     swim_prob = np.fmax(swim_prob, swim_to_prob(swim_tif_to_cells(f)))
 
 grs_prob = weh_to_prob(grs_to_cells(grs_grid, lat_c, lon_c))
