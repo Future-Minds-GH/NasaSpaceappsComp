@@ -2,14 +2,14 @@
 
 Output (under --out), in the format of the front end's make-sample-vectors.mjs (schema v0.1):
   vectors/schema.json      field order, encoding and lookups (same fields as build_vectors.py)
-  vectors/moon.bin         EVERY Moon tile, HEALPix NESTED nside 64, 34 bytes each, in tile-index order
+  vectors/moon.bin         EVERY Moon tile, HEALPix NESTED nside 64, 35 bytes each, in tile-index order
   vectors/mars_<0-11>.bin  EVERY Mars tile, nside 128, split by base cell (tiles base*nside^2 .. (base+1)*nside^2-1)
   tiles/<body>_meta.json   reality gap, named tiles, the target sites for the globe buttons, min_estimated
 
 How a tile gets its values: each tile takes the 0.5 deg cell that contains the tile centre. Tiles whose cell has
 analog_ok = false (or no row) get 255 (null) in every byte. Percentile fields are ranks among the scored tiles of
 that body only. Fields the tables do not have (embeddings, codes, flags, atmosphere, ...) are 255.
-Known gaps: min_feldspathic and the surf_* fractions have no field in schema v0.1, so they are not exported.
+Known gap: the surf_* fractions have no field in the schema, so they are not exported.
 
 Install:  pip install astropy-healpix pandas pyarrow numpy
 Usage:    python src/build_body_vectors.py --moon moon.parquet --mars mars.parquet --out frontend/public/data
@@ -69,7 +69,7 @@ def schema():
     flat = [f["id"] for fac in factors for f in fac["fields"]]
     assert flat == [f[1] for f in FIELDS], "FIELDS are not grouped by factor in factor order"
     return {
-        "version": "0.1", "sample": False, "nside": NSIDE, "scheme": "nested", "null_code": NULL,
+        "version": "0.2", "sample": False, "nside": NSIDE, "scheme": "nested", "null_code": NULL,
         "encoding": {"percentile": "round(p × 254)", "fraction": "round(f × 254)",
                      "embedding": "round((e + 1) / 2 × 254)", "code": "integer code", "flag": "0 or 1"},
         "mars_shards": "mars_<base cell 0-11>.bin", "factors": factors, "lookups": LOOKUPS,
@@ -99,7 +99,7 @@ def cell_of(lat, lon):
 
 
 def build_body(df, nside):
-    """Returns (vectors uint8 [npix, 34] for EVERY tile, summary)."""
+    """Returns (vectors uint8 [npix, 35] for EVERY tile, summary)."""
     missing = [c for c in NEEDED if c not in df.columns]
     assert not missing, f"table is missing columns {missing}"
     assert df["cell_id"].is_unique, "cell_id must be unique"

@@ -1,12 +1,13 @@
 """Turn earth.parquet into the binary files the website reads.
 
 Output (under --out):
-  vectors/earth.bin        one 34-byte row per scored Earth tile, in tile-index order
+  vectors/earth.bin        one 35-byte row per scored Earth tile, in tile-index order
   earth_meta.bin           one 12-byte row per tile, same order (little-endian)
   tiles/earth_meta.json    the lists earth_meta.bin points into
 
 Format (from the front end's make-sample-vectors.mjs, schema v0.1):
-  HEALPix NESTED, nside 256. 34 bytes per tile, fields in schema order below.
+  HEALPix NESTED, nside 256. 35 bytes per tile, fields in schema order below.
+  v0.2: 'feldspathic' added after 'mafic' (the main lunar mineral class; was dropped in v0.1).
   Percentile and fraction fields: round(x * 254). Code and flag fields: the integer. 255 = null.
   earth_meta row: uint32 tile index, uint16 km to the nearest known analog (65535 = unknown),
   uint16 tag bits, uint16 name index (65535 = none), uint8 environment (255 = none),
@@ -54,6 +55,7 @@ FIELDS = [
     ("geology", "volcanic", "flag", None),
     ("geology", "impact", "flag", None),
     ("mineralogy", "mafic", "fraction", ("frac", "min_mafic")),
+    ("mineralogy", "feldspathic", "fraction", ("frac", "min_feldspathic")),
     ("mineralogy", "clays", "fraction", ("frac", "min_clay")),
     ("mineralogy", "sulfates", "fraction", ("frac", "min_sulfate")),
     ("mineralogy", "carbonates", "fraction", ("frac", "min_carbonate")),
@@ -74,9 +76,9 @@ FIELDS = [
     ("water_ice", "liquid_water", "fraction", None),
 ]
 BYTES = len(FIELDS)
-assert BYTES == 34
+assert BYTES == 35
 NEEDED = ["analog_ok", "slope_deg", "rough_m", "elev_m", "t_day_k", "t_night_k", "t_swing_k", "sun_wm2",
-          "min_mafic", "min_clay", "min_sulfate", "min_carbonate", "min_ironox", "ice_prob"]
+          "min_mafic", "min_feldspathic", "min_clay", "min_sulfate", "min_carbonate", "min_ironox", "ice_prob"]
 
 
 def check_schema(schema):
@@ -150,7 +152,7 @@ def nearest_analog_km(lat, lon, sites):
 
 
 def build(df, known_sites=None, nside=NSIDE):
-    """Returns (vectors uint8 [n, 34], meta bytes, tile indices, summary dict)."""
+    """Returns (vectors uint8 [n, 35], meta bytes, tile indices, summary dict)."""
     missing = [c for c in NEEDED if c not in df.columns]
     assert not missing, f"earth.parquet is missing columns {missing}"
     assert df["cell_id"].is_unique, "cell_id must be unique"

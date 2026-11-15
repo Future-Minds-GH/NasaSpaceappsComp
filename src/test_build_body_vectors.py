@@ -39,7 +39,7 @@ def test_schema_matches_fields():
     s = B.schema()
     check_schema({**s, "nside": {**s["nside"], "earth": 256}})
     assert s["nside"] == {"earth": 256, "moon": 64, "mars": 128}
-    assert sum(len(f["fields"]) for f in s["factors"]) == BYTES == 34
+    assert sum(len(f["fields"]) for f in s["factors"]) == BYTES == 35
 
 
 @pytest.mark.parametrize("body", ["moon", "mars"])

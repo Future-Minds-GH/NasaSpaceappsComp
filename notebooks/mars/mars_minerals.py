@@ -13,10 +13,13 @@
 # 3. Other fitted components (quartz, K-feldspar, amphibole, surface dust) are dropped. They are not in the six classes.
 # 4. Share = class / (sum of the six classes). Example: plagioclase 0.3, pyroxene 0.1, olivine 0.1, hematite 0.0, sulfate 0.0, carbonate 0.0, sheet silicate 0.0 gives feldspathic 0.6, mafic 0.4.
 # 5. If the six classes add up to less than `MIN_TOTAL` (0.02), the shares are noise and the cell is null.
+# 5a. TES detection limits (Christensen et al. 2001, JGR 106(E10), 23823, summary points 3-5): carbonate ~10%, clays ~10%,
+#     sulfate ~15%. A cell value below its limit is set to 0 BEFORE the shares are made. The limits are for pixels; here they
+#     are applied to the 0.5 deg cell mean (a judgement). The sheet-silicate band also holds high-Si glass; the clay limit is used for it.
 # 6. Regrid: the 0.25 deg map is block-averaged 2 x 2 into each 0.5 deg cell (the blocks line up exactly with the grid). A band value is the mean of the valid pixels. A cell needs at least 2 of 4 valid pixels. Normalisation happens AFTER the averaging.
 #
 # **Caveats (not verified):**
-# - In the TES maps, sulfate, carbonate and sheet silicate are low-abundance components, close to the detection limit (Bandfield 2002). Treat small values as uncertain. The detection limits are not applied here.
+# - In the TES maps, sulfate, carbonate and sheet silicate are low-abundance components, close to the detection limit (Bandfield 2002). Step 5a sets values below the TES detection limits to 0.
 # - The band "sheet silicate / high-Si glass" is not pure clay. It is used for `min_clay` because it is the nearest TES class. Treat `min_clay` as an upper bound for clays.
 # - Cells with no TES data are null in all six columns. TES pixels cover about 72 percent of the grid (none poleward of about 82 N and 87 S, plus gaps).
 #
@@ -56,6 +59,9 @@ BANDS = ["quartz", "k_feldspar", "plagioclase", "amphibole", "low_ca_px", "high_
 FILL = -1.0                                          # no-data value in every band (checked: same pixels in all 13 bands)
 MIN_TOTAL = 0.02                                     # judgement: below this the class shares are noise
 MIN_VALID = 2                                        # of 4 pixels per cell
+# TES detection limits, Christensen et al. 2001 (JGR 106(E10), 23823): carbonate ~10%, clays ~10%, sulfate ~15%
+DETECTION_LIMITS = {"sulfate": 0.15, "carbonate": 0.10, "sheet": 0.10}
+NO_LIMITS = {"sulfate": 0.0, "carbonate": 0.0, "sheet": 0.0}
 
 # %% [markdown]
 # ## 0. Pure functions (tested on synthetic and real data)
@@ -107,9 +113,18 @@ def block_mean(a, f=2, min_valid=MIN_VALID):
     return m
 
 
-def class_shares(plag, lowpx, highpx, oliv, hem, sulf, carb, sheet, min_total=MIN_TOTAL):
+def below_limit_to_zero(x, limit):
+    # Values under the detection limit become 0 (not detected); NaN stays NaN.
+    x = np.asarray(x, dtype="float64")
+    return np.where(x < limit, 0.0, x)
+
+
+def class_shares(plag, lowpx, highpx, oliv, hem, sulf, carb, sheet, min_total=MIN_TOTAL, limits=DETECTION_LIMITS):
     # Arrays of the same shape (fractions, NaN = no data).
     # Returns (mafic, feldspathic, ironox, sulfate, clay, carbonate): shares of the six classes; rows sum to 1 or all NaN.
+    sulf = below_limit_to_zero(sulf, limits["sulfate"])
+    carb = below_limit_to_zero(carb, limits["carbonate"])
+    sheet = below_limit_to_zero(sheet, limits["sheet"])
     feld = np.asarray(plag, dtype="float64")
     mafic = np.asarray(lowpx, dtype="float64") + highpx + oliv
     classes = [mafic, feld, np.asarray(hem, dtype="float64"), np.asarray(sulf, dtype="float64"),
@@ -152,15 +167,18 @@ def minerals_from_cube(cube):
 # %%
 # shares: example from the text (mafic, feldspathic, ironox, sulfate, clay, carbonate)
 z = np.array([0.0])
-mf, fe, ir, su, cl, ca = class_shares(np.array([0.3]), np.array([0.05]), np.array([0.05]), np.array([0.1]), z, z, z, z)
+mf, fe, ir, su, cl, ca = class_shares(np.array([0.3]), np.array([0.05]), np.array([0.05]), np.array([0.1]), z, z, z, z, limits=NO_LIMITS)
 assert np.allclose([mf[0], fe[0], ir[0], su[0], cl[0], ca[0]], [0.4, 0.6, 0, 0, 0, 0]), (mf, fe, ir)
 # all six classes: sulfate, clay and carbonate take their share
-res = class_shares(np.array([0.2]), np.array([0.1]), z, z, np.array([0.1]), np.array([0.1]), np.array([0.1]), np.array([0.2]))
+res = class_shares(np.array([0.2]), np.array([0.1]), z, z, np.array([0.1]), np.array([0.1]), np.array([0.1]), np.array([0.2]), limits=NO_LIMITS)
 assert np.isclose(sum(r[0] for r in res), 1) and np.isclose(res[3][0], 0.1 / 0.8) and np.isclose(res[4][0], 0.2 / 0.8) and np.isclose(res[5][0], 0.1 / 0.8)
 # too small -> NaN, NaN input -> NaN, sum 1 otherwise
 res = class_shares(np.array([0.0, 0.1, np.nan]), np.zeros(3), np.zeros(3), np.array([0.0, 0.1, 0.1]), np.array([0.0, 0.0, 0.1]),
-                   np.zeros(3), np.zeros(3), np.zeros(3))
+                   np.zeros(3), np.zeros(3), np.zeros(3), limits=NO_LIMITS)
 assert np.isnan([r[0] for r in res]).all() and np.isclose(sum(r[1] for r in res), 1) and np.isnan([r[2] for r in res]).all()
+# detection limits: sulfate 0.1 (< 0.15) and carbonate 0.05 (< 0.10) are dropped; sheet 0.2 (>= 0.10) is kept
+res = class_shares(np.array([0.2]), np.array([0.1]), z, z, z, np.array([0.1]), np.array([0.05]), np.array([0.2]))
+assert res[3][0] == 0 and res[5][0] == 0 and np.isclose(res[4][0], 0.2 / 0.5) and np.isclose(sum(r[0] for r in res), 1)
 # block mean: one NaN of 4 is kept (3 valid); a block with fewer than 2 valid pixels is NaN
 a = np.array([[1, 3, np.nan, np.nan], [np.nan, 5, np.nan, np.nan]], dtype=float)
 bm = block_mean(a)
@@ -175,8 +193,8 @@ df = minerals_from_cube(syn)
 assert len(df) == NROWS * NCOLS and df["cell_id"].iloc[-1] == NROWS * NCOLS - 1
 r, c = 180, 360
 row = df.iloc[r * NCOLS + c]
-assert np.isclose(row.min_ironox, 0.1 / 0.22) and np.isclose(row.min_feldspathic, 0.1 / 0.22) and row.min_mafic == 0
-assert np.isclose(row.min_sulfate, 0.02 / 0.22) and row.min_clay == 0 and row.min_carbonate == 0
+assert np.isclose(row.min_ironox, 0.1 / 0.2) and np.isclose(row.min_feldspathic, 0.1 / 0.2) and row.min_mafic == 0
+assert row.min_sulfate == 0 and row.min_clay == 0 and row.min_carbonate == 0   # 0.02 sulfate is below the 15% limit
 assert df.loc[:NCOLS * 20 - 1, ["min_mafic", "min_feldspathic", "min_ironox", "min_sulfate", "min_clay", "min_carbonate"]].isna().all().all()
 print("synthetic tests passed")
 

@@ -27,6 +27,7 @@ def make_df():
     emit = (LAT > 0) & (LON > 0)
     glim = (LAT < 0) & (LON > 0)
     df["min_mafic"] = np.where(emit, 0.2, np.where(glim, 1.0, np.nan))
+    df["min_feldspathic"] = np.where(emit | glim, 0.0, np.nan)
     df["min_ironox"] = np.where(emit, 0.2, np.where(glim, 0.0, np.nan))
     df["min_sulfate"] = np.where(emit, 0.1, np.where(glim, 0.0, np.nan))
     df["min_clay"] = np.where(emit, 0.4, np.where(glim, 0.0, np.nan))
@@ -54,7 +55,7 @@ def row_of(built, lat, lon):
 
 def test_sizes_and_order(built):
     df, vectors, meta, tiles, summary = built
-    assert vectors.shape == (tiles.size, 34) and vectors.dtype == np.uint8
+    assert vectors.shape == (tiles.size, 35) and vectors.dtype == np.uint8
     assert len(meta) == tiles.size and meta.dtype.itemsize == 12
     assert np.all(np.diff(tiles) > 0) and np.all(meta["tile"] == tiles)
 

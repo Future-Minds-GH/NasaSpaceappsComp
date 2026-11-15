@@ -11,7 +11,7 @@ Pick a place on Earth, the Moon or Mars. The app finds the most similar places o
 ## How it works
 
 1. **Data prep (Colab):** notebooks download open NASA, ESA and JAXA data. They resample it to one grid per body and write `earth.parquet`, `moon.parquet` and `mars.parquet`. All three files have the same columns (see `contract.md`).
-2. **Site files:** `src/build_vectors.py` converts each table into HEALPix tiles. The tiles are equal-area and about 27 km across on all three bodies. Each tile becomes a 34-byte vector in `frontend/public/data/vectors/`.
+2. **Site files:** `src/build_vectors.py` converts each table into HEALPix tiles. The tiles are equal-area and about 27 km across on all three bodies. Each tile becomes a 35-byte vector in `frontend/public/data/vectors/`.
 3. **Search in the browser:** the front end scores every target tile against the clicked tile, in a Web Worker. There is no server.
 
 Factors: terrain (slope, roughness), elevation, geology, mineralogy, climate (temperature, day-night swing, sunlight), atmosphere, water and ice.
