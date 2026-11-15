@@ -74,14 +74,14 @@ export default function FindResults({ target, matchBodyName = "Earth", matches, 
 
       {matches.length > 0 && <ResultsMap matches={matches} body={matches[0].body ?? "earth"} />}
 
-      <MatchList matches={matches} matchesState={matchesState} matchBodyName={matchBodyName} isShowingDetails={isDetailsOpen} onCompare={setComparedMatch} />
+      <MatchList targetBody={target.body} matches={matches} matchesState={matchesState} matchBodyName={matchBodyName} isShowingDetails={isDetailsOpen} onCompare={setComparedMatch} />
 
       <CompareDialog target={target} match={comparedMatch} onClose={() => setComparedMatch(null)} />
     </section>
   );
 }
 
-function MatchList({ matches, matchesState, matchBodyName, isShowingDetails, onCompare }) {
+function MatchList({ targetBody, matches, matchesState, matchBodyName, isShowingDetails, onCompare }) {
   if (matchesState.error) {
     return <p className="page-message" role="alert">The matches didn't load. Check your connection, then pick the spot again.</p>;
   }
@@ -92,7 +92,7 @@ function MatchList({ matches, matchesState, matchBodyName, isShowingDetails, onC
     <ol className="match-list" aria-busy={matchesState.isLoading}>
       {matches.map((match) => (
         <li key={`${match.lat}-${match.lon}`}>
-          <MatchCard match={match} isShowingDetails={isShowingDetails} onCompare={onCompare} />
+          <MatchCard match={match} targetBody={targetBody} isShowingDetails={isShowingDetails} onCompare={onCompare} />
         </li>
       ))}
     </ol>

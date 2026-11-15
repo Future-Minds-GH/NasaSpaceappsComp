@@ -123,3 +123,7 @@
 .find-weights-used { font-size: 0.8125rem; color: var(--ink-soft); }
 .find-weights-used-label { font-weight: 700; color: var(--ink); }
 .find-approximate { padding: 10px 14px; border-left: 4px solid var(--warning); background: var(--paper-raised); border-radius: var(--radius-control); font-size: 0.9375rem; }
+
+.limits-list { display: grid; gap: 4px; margin-top: 8px; }
+.limits-list-title { font-size: 0.8125rem; font-weight: 700; color: var(--ink-soft); }
+.limits-list-items { padding-left: 1.1rem; list-style: square; font-size: 0.875rem; }

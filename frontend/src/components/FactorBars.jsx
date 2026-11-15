@@ -9,12 +9,12 @@ export default function FactorBars({ breakdown, isShowingNumbers = false, isMine
       {FACTORS.map((factor) => {
         const value = breakdown?.[factor];
         const isEstimated = factor === "mineralogy" && isMineralogyEstimated;
-        // A missing factor (the Moon has no atmosphere) is left out of the score, which is not the same as 0.
+        // A missing factor (no data, or no atmosphere on the Moon) is left out of the score, which is not the same as 0.
         if (value === null || value === undefined) {
           return (
             <div className="factor-row is-missing" key={factor} style={{ "--factor-color": `var(--factor-${factor})` }}>
               <dt className="factor-name">{FACTOR_LABELS[factor]}</dt>
-              <dd className="factor-value factor-not-scored">{factor === "atmosphere" ? "Not applicable on the Moon" : "Not applicable here"}</dd>
+              <dd className="factor-value factor-not-scored">{factor === "atmosphere" ? "Not applicable on the Moon" : "not compared (no data)"}</dd>
             </div>
           );
         }
