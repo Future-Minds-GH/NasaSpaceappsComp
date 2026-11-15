@@ -10,6 +10,7 @@ import Coordinates from "./Coordinates.jsx";
 import { FACTORS, scoreBand } from "../data/scoring.js";
 import { halfTempNote, missingFactorsOf, noDataSentence } from "../data/fieldValues.js";
 import { SAME_BODY_MIN_KM } from "../data/ranking.js";
+import { nearestButtonLabel, noScoreNote, snapNote } from "../data/earthSnap.js";
 import { BAND_LABELS, BODY_NAMES, FACTOR_LABELS, MODE_INFO } from "../content/labels.js";
 
 const SHORT_NAMES = { temp: "temperature", swing: "day-night swing", sun: "sunlight", slope: "slope", rough: "roughness", elev: "elevation", surface: "surface type", minerals: "minerals", ice: "water ice" };
@@ -41,19 +42,30 @@ function breakdown(inputBody, body) {
   return `gravity (${to.gravity} vs ${from.gravity}) · air (${to.air} vs ${from.air}) · radiation`;
 }
 
-export default function SimilarityVector({ body, isSameBody, match, matchCount, error, hasNoData, isApproximate, inputBody, weights, mode, exploreLink, clickedVector = null, layout = null }) {
+export default function SimilarityVector({ body, isSameBody, match, matchCount, error, hasNoData, isApproximate, inputBody, weights, mode, exploreLink, clickedVector = null, layout = null, snapKm = null, nearestScored = null, onUseNearest = null }) {
   const heading = (
     <p className="similarity-body">
       {BODY_NAMES[body]}
       {isSameBody && <span className="similarity-same">same planet · {SAME_BODY_MIN_KM} km+ away</span>}
     </p>
   );
+  const noScoreEarth = hasNoData && inputBody === "earth" && nearestScored;
   const message = error
     ? "Couldn't finish this search. Press Retry below."
     : hasNoData
-      ? inputBody === "earth" ? "Only dry, open land on Earth is scored. Try a desert, polar or volcanic spot." : "That spot has no data yet. Try one nearby."
+      ? noScoreEarth ? noScoreNote(nearestScored.km) : "That spot has no data yet. Try one nearby."
       : !match ? "No match found." : null;
-  if (message) return <article className={`similarity body-${body} is-message`}>{heading}<p role="status">{message}</p></article>;
+  if (message) {
+    return (
+      <article className={`similarity body-${body} is-message`}>
+        {heading}
+        <p role="status">{message}</p>
+        {noScoreEarth && onUseNearest && (
+          <button type="button" className="button" onClick={() => onUseNearest(nearestScored.lat, nearestScored.lon)}>{nearestButtonLabel(nearestScored.km)}</button>
+        )}
+      </article>
+    );
+  }
 
   const bandId = scoreBand(match.score);
   const usedFactors = FACTORS.filter((factor) => (weights[factor] ?? 0) > 0);
@@ -88,6 +100,7 @@ export default function SimilarityVector({ body, isSameBody, match, matchCount, 
 
       {scored.length > 0 && <p className="similarity-summary">{summarise(scored)}</p>}
       {limits && <p className="similarity-limits"><strong>Breaks down on:</strong> {limits}</p>}
+      {snapKm !== null && <p className="similarity-no-data" role="note">{snapNote(snapKm)}</p>}
       {isApproximate && <p className="similarity-note">Approximate: from a precomputed shortlist.</p>}
 
       <ul className="similarity-bars" aria-label="How alike each factor is, 100% = identical">

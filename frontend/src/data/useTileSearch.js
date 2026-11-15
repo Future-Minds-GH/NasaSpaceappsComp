@@ -5,6 +5,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { loadBodyMeta, loadBodyVectors, loadEarthTiles, loadPool, loadShowcase, loadVectorSchema, loadWhyRules } from "./api.js";
 import { baseCellOf, latLonToTile } from "./healpix.js";
+import { decideEarthSnap } from "./earthSnap.js";
 import { readLayout } from "./similarity.js";
 import { SAME_BODY_MIN_KM } from "./ranking.js";
 import { rescoreMatches } from "./scoring.js";
@@ -40,10 +41,33 @@ export function useTileSearch(selection, targetBody, weights, mode, attempt = 0)
     return { id: `${selection.body}_${nside}_${index}`, index, nside, body: selection.body };
   }, [selection, base.data]);
 
-  // Same planet: leave out the area around the picked spot (the tile is part of the search key, so this is too).
+  // An Earth pin on unscored land: search from the nearest scored tile within EARTH_SNAP_KM (earthSnap.js). The pin and
+  // its outline stay where the person put them; `tile` is the pin, `searchTile` is the tile the search really uses.
+  const earthPick = useMemo(() => {
+    if (!tile || tile.body !== "earth" || !base.data) return null;
+    const { vectors, tiles, rowByIndex, lats, lons } = base.data.earth;
+    const isOwnScored = Boolean(clickedTileVector("earth", tile.nside, tile.index, vectors, base.data.layout.bytesPerTile, rowByIndex));
+    const decision = decideEarthSnap(isOwnScored ? rowByIndex.get(tile.index) : -1, selection.lat, selection.lon, lats, lons);
+    const nearest = decision.row === null ? decision.nearest : null;
+    const row = decision.row;
+    const snapped = row !== null && !isOwnScored;
+    const snapTile = snapped ? tiles[row] : null;
+    return {
+      searchTile: row === null ? null : snapped ? { id: `earth_${tile.nside}_${snapTile.index}`, index: snapTile.index, nside: tile.nside, body: "earth" } : tile,
+      snapKm: snapped ? decision.km : null,
+      // The same-planet exclusion circle is centred on the snapped tile (what is scored); an unsnapped pin keeps its own point.
+      // The Explore link keeps the pin: Explore snaps it again by the same rule, to the same tile.
+      searchPoint: snapped ? { lat: snapTile.lat, lon: snapTile.lon } : null,
+      nearestScored: nearest ? { km: nearest.km, lat: tiles[nearest.row].lat, lon: tiles[nearest.row].lon } : null,
+    };
+  }, [tile, base.data, selection]);
+  const searchTile = tile?.body === "earth" ? earthPick?.searchTile ?? null : tile;
+  const searchPoint = earthPick?.searchPoint ?? selection;
+
+  // Same planet: leave out the area around the searched spot (the tile is part of the search key, so this is too).
   const exclude = useMemo(
-    () => (selection && selection.body === targetBody ? { lat: selection.lat, lon: selection.lon, km: SAME_BODY_MIN_KM } : null),
-    [selection, targetBody],
+    () => (searchPoint && selection.body === targetBody ? { lat: searchPoint.lat, lon: searchPoint.lon, km: SAME_BODY_MIN_KM } : null),
+    [searchPoint, selection, targetBody],
   );
 
   const shard = tile?.body === "mars" ? baseCellOf(tile.nside, tile.index) : null;
@@ -55,17 +79,17 @@ export function useTileSearch(selection, targetBody, weights, mode, attempt = 0)
   // As above: while another body or Mars shard loads, the previous one's bytes must not be read as this tile's.
   const sourceBytes = sourceVectors.data?.key === sourceKey ? sourceVectors.data.bytes : null;
   const clickedVector = useMemo(() => {
-    if (!tile || !base.data) return null;
-    const bytes = tile.body === "earth" ? base.data.earth.vectors : sourceBytes;
+    if (!searchTile || !base.data) return null;
+    const bytes = searchTile.body === "earth" ? base.data.earth.vectors : sourceBytes;
     if (!bytes) return null;
-    return clickedTileVector(tile.body, tile.nside, tile.index, bytes, base.data.layout.bytesPerTile, base.data.earth.rowByIndex);
-  }, [tile, base.data, sourceBytes]);
+    return clickedTileVector(searchTile.body, searchTile.nside, searchTile.index, bytes, base.data.layout.bytesPerTile, base.data.earth.rowByIndex);
+  }, [searchTile, base.data, sourceBytes]);
 
   useEffect(() => {
-    if (isWorkerReady && clickedVector && targetCandidates && weights) requestRanking(tile.id, targetBody, targetCandidates, clickedVector, weights, mode, exclude);
-  }, [isWorkerReady, clickedVector, targetCandidates, weights, mode, exclude, tile?.id, targetBody, requestRanking]);
+    if (isWorkerReady && clickedVector && targetCandidates && weights) requestRanking(searchTile.id, targetBody, targetCandidates, clickedVector, weights, mode, exclude);
+  }, [isWorkerReady, clickedVector, targetCandidates, weights, mode, exclude, searchTile?.id, targetBody, requestRanking]);
 
-  const searchKey = tile ? searchKeyOf(tile.id, targetBody, mode) : null;
+  const searchKey = searchTile ? searchKeyOf(searchTile.id, targetBody, mode) : null;
   const liveMatches = useMemo(() => {
     if (!latestPicks || latestPicks.searchKey !== searchKey || !targetCandidates || !base.data) return null;
     return buildMatches(latestPicks.picks, {
@@ -92,12 +116,15 @@ export function useTileSearch(selection, targetBody, weights, mode, attempt = 0)
   }, [liveMatches, pool.data, tile, weights, base.data]);
 
   // Fallback 2: Role 2's precomputed showcase.json, for the demo's showcase clicks.
-  const showcaseMatches = mode === "absolute" && searchError && !poolMatches && tile && targetBody === "earth" ? base.data?.showcase?.results?.[tile.id]?.matches : null;
+  const showcaseMatches = mode === "absolute" && searchError && !poolMatches && searchTile && targetBody === "earth" ? base.data?.showcase?.results?.[searchTile.id]?.matches : null;
   const isSourceLoaded = tile?.body === "earth" ? Boolean(base.data) : Boolean(sourceBytes);
   const hasNoData = Boolean(tile && isSourceLoaded && !clickedVector);
   const fallbackMatches = poolMatches ?? (showcaseMatches && weights ? rescoreMatches(showcaseMatches, weights) : null);
   return {
     tile,
+    searchPoint,
+    snapKm: earthPick?.snapKm ?? null,                 // km from the pin to the scored tile used, when the pin was moved
+    nearestScored: earthPick?.nearestScored ?? null,   // { km, lat, lon } of the nearest scored tile, when the pin is too far from one
     clickedVector,
     layout: base.data?.layout ?? null,
     data: liveMatches ?? fallbackMatches,
@@ -126,7 +153,7 @@ async function loadSearchBase() {
   return {
     schema,
     layout: readLayout(schema),
-    earth: { vectors: earthFiles.vectors, tiles: earthTiles, rowByIndex: new Map(earthTiles.map((earthTile, row) => [earthTile.index, row])) },
+    earth: { vectors: earthFiles.vectors, tiles: earthTiles, lats: Float32Array.from(earthTiles, (earthTile) => earthTile.lat), lons: Float32Array.from(earthTiles, (earthTile) => earthTile.lon), rowByIndex: new Map(earthTiles.map((earthTile, row) => [earthTile.index, row])) },
     whyRules,
     showcase,
   };

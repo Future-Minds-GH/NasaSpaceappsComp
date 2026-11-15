@@ -8,6 +8,7 @@ import { useLoaded } from "../data/useLoaded.js";
 import { useTileSearch } from "../data/useTileSearch.js";
 import { MODES } from "../data/similarity.js";
 import { describeSelection, parsePoint } from "../data/exploreSelection.js";
+import { nearestButtonLabel, noScoreNote } from "../data/earthSnap.js";
 import { BODY_NAMES } from "../content/labels.js";
 import PlanetGlobe, { GLOBE_TEXTURES } from "../components/PlanetGlobe.jsx";
 import FindResults from "../components/FindResults.jsx";
@@ -113,9 +114,14 @@ export default function ExplorePage() {
         <div id={RESULTS_PANEL_ID} role="tabpanel" aria-labelledby={`result-tab-${targetBody}`} className="explore-results-panel">
           {!selection && <p className="page-message explore-empty">Pick a spot on the globe, or a named site, to rank every place on {ON_BODY[targetBody]} against it.</p>}
           {search.hasNoData && (
-            <p className="page-message explore-empty" role="status">
-              {body === "earth" ? "This spot has no score: only dry, open land is scored (forests, cities and water are left out). Try a desert, polar or volcanic area." : "This tile has no data yet. Try a spot nearby."}
-            </p>
+            <div className="page-message explore-empty" role="status">
+              <p>{body === "earth" && search.nearestScored ? noScoreNote(search.nearestScored.km) : "This tile has no data yet. Try a spot nearby."}</p>
+              {body === "earth" && search.nearestScored && (
+                <button type="button" className="button" onClick={() => updateSearchParams({ at: `${search.nearestScored.lat.toFixed(2)},${search.nearestScored.lon.toFixed(2)}`, site: null })}>
+                  {nearestButtonLabel(search.nearestScored.km)}
+                </button>
+              )}
+            </div>
           )}
           {target && presetId && !search.hasNoData && (
             <FindResults
@@ -124,6 +130,7 @@ export default function ExplorePage() {
               matchBodyName={BODY_NAMES[targetBody]}
               matches={search.data ?? []}
               matchesState={search}
+              snapKm={search.snapKm}
               presets={presets}
               presetId={presetId}
               onSelectPreset={(nextPresetId) => { setCustomWeights(null); updateSearchParams({ preset: nextPresetId }); }}

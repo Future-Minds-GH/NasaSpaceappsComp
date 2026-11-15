@@ -7,6 +7,8 @@ import { BODY_RADIUS_KM } from "./ranking.js";
 
 /** Smallest radius for the nearest-tile fallback, in km (the rule of scripts/make-characterize.mjs: max(site radius, 100 km)). */
 export const MIN_FALLBACK_KM = 100;
+/** A pinned Earth spot that is not scored uses the nearest scored tile when one is within this many km. */
+export const EARTH_SNAP_KM = 150;
 
 const SCORE_PRESET = "balanced";
 // Fields holding the tile's percentile among Earth's scored tiles, per factor. surface and minerals have none.
