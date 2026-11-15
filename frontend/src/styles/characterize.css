@@ -78,3 +78,8 @@ body:not(.leaflet-dragging) .characterize-map .leaflet-grab { cursor: crosshair;
   .characterize-match-details, .characterize-site-factors { animation: none; }
 }
 .characterize-show-all { justify-self: start; margin-top: 12px; }
+
+/* Earth limits list on the report card. Same look as .limits-list in find.css, which this page may not load. */
+.characterize-limits { display: grid; gap: 4px; margin-top: 12px; }
+.characterize-limits .limits-list-title { font-size: 0.8125rem; font-weight: 700; color: var(--ink-soft); }
+.characterize-limits .limits-list-items { padding-left: 1.1rem; list-style: square; font-size: 0.875rem; }

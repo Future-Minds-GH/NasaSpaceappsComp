@@ -134,7 +134,7 @@ export const TARGETS = [
 
 export const REALITY_GAP = {
   moon: ["Vacuum: no air at all", "Gravity 1/6 of Earth's", "Two-week days and two-week nights", "No shielding from cosmic radiation", "Sharp, unweathered dust"],
-  mars: ["Air 1% as thick as Earth's, mostly CO₂", "Gravity 38% of Earth's", "Strong surface radiation", "Toxic perchlorate salts in the soil", "Planet-wide dust storms"],
+  mars: ["Air less than 1% as thick as Earth's, mostly CO₂", "Gravity 38% of Earth's", "Strong surface radiation", "Toxic perchlorate salts in the soil", "Planet-wide dust storms"],
 };
 
 /** Places already used as analogs; "new analog" means more than 300 km from all of these. */

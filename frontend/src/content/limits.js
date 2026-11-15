@@ -11,7 +11,7 @@ export const EARTH_LIMITS = {
     "Sharp, unweathered dust",
   ],
   mars: [
-    "Air about 0.6% as thick as Earth's, mostly CO₂",
+    "Air less than 1% as thick as Earth's, mostly CO₂",
     "Gravity 38% of Earth's (0.38 g)",
     "Strong surface radiation",
     "Toxic perchlorate salts in the soil",
