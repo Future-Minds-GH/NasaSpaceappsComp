@@ -305,7 +305,9 @@ for f in swim_files:                                   # several tiles/layers: m
 grs_prob = weh_to_prob(grs_to_cells(grs_grid, lat_c, lon_c))
 
 if cap_files:
-    cap = polygon_mask(read_cap_rings(cap_files), lat_c, lon_c)
+    # Even-odd inside one file (holes); union across files. The north file of Xiao et al. also holds the south cap,
+    # so an even-odd rule across both files cancels the south cap (checked: 2220 south cells in each file, 0 together).
+    cap = np.logical_or.reduce([polygon_mask(read_cap_rings([f]), lat_c, lon_c) for f in cap_files])
     assert (cap & (lat_c > 0)).any() and (cap & (lat_c < 0)).any(), "need one cap in each hemisphere"
 else:
     cap = np.zeros(len(cells), dtype=bool)
