@@ -327,8 +327,9 @@ assert at(0, 0, "t_day_k") > at(85, 0, "t_day_k"), "Equator should be hotter tha
 assert 350 < at(0, 0, "t_day_k") < 420, "noon at the equator should be near 390 K"
 assert 80 < at(0, 0, "t_night_k") < 130, "midnight at the equator should be near 100 K"
 assert at(0, 0, "t_swing_k") > at(85, 0, "t_swing_k")
-# LOLA extremes: highest point 5.4 N, 201.4 E (= -158.6); deepest 70.4 S, 187.5 E (= -172.5)
-assert at(5.4, -158.6, "elev_m") > 9000 and at(-70.4, -172.5, "elev_m") < -8000, "DEM orientation or longitude is wrong"
+# LOLA extremes: highest point 5.4 N, 201.4 E (= -158.6); deepest 70.4 S, 187.5 E (= -172.5).
+# Cells are 15 km means, so the extremes are smaller than the pixel values (checked: about +9660 m and -7390 m).
+assert at(5.4, -158.6, "elev_m") > 9000 and at(-70.4, -172.5, "elev_m") < -7000, "DEM orientation or longitude is wrong"
 print("NaN share:", df[["t_day_k", "t_night_k"]].isna().mean().to_dict())
 
 fig, axes = plt.subplots(3, 1, figsize=(12, 13))
