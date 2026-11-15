@@ -3,7 +3,7 @@
 // each slider move only recombines the stored logs and re-ranks (step 2, under 20 ms for 120k tiles).
 // Messages in:  { type: "init", schema }
 //               { type: "candidates", body, vectors, lats, lons }      (a body's tiles, sent once)
-//               { type: "score", requestId, clickedVector, body, weights } (a new tile, or a new body to compare with)
+//               { type: "score", requestId, clickedVector, body, weights, fieldWeights? } (a new tile, body or measurement weights)
 //               { type: "rank", requestId, weights }                   (new weights, same tile and body)
 // Messages out: { type: "ready" } | { type: "ranked", requestId, picks: [{ row, total, earthRankPct, factorScores }] }
 //               | { type: "failed", requestId, message }
@@ -29,7 +29,7 @@ self.onmessage = ({ data }) => {
     if (data.type === "score") {
       const candidates = candidatesByBody[data.body];
       if (!candidates) throw new Error(`No ${data.body} tiles have been loaded.`);
-      const scores = scoreAllEarthTiles(data.clickedVector, candidates.vectors, layout);
+      const scores = scoreAllEarthTiles(data.clickedVector, candidates.vectors, layout, data.fieldWeights ?? null);
       current = { body: data.body, scores, logs: toLogScores(scores) };
     }
     if (!current) throw new Error("No tile has been scored yet.");

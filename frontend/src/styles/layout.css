@@ -1,3 +1,6 @@
+/* Header height, shared with the one-screen landing workspace. */
+:root { --header-height: 52px; }
+
 /* Page frame shared by every route: skip link, header with mode navigation, page title block, footer. */
 
 .skip-link { position: absolute; left: var(--gutter); top: -48px; padding: 8px 12px; background: var(--ink); color: var(--paper); z-index: 2000; }
@@ -8,7 +11,7 @@ main:focus { outline: none; }
 /* NASA-style black bar: white Inter navigation, the current page underlined in red */
 .site-header {
   display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 24px;
-  min-height: 72px; padding: 10px max(var(--gutter), calc((100% - 1240px) / 2 + var(--gutter)));
+  min-height: var(--header-height); height: var(--header-height); padding: 10px max(var(--gutter), calc((100% - 1240px) / 2 + var(--gutter)));
   background: var(--space); color: var(--on-space);
 }
 .site-title { font-family: var(--font-display); font-weight: 800; font-size: 1.125rem; letter-spacing: -0.01em; text-decoration: none; }
@@ -40,4 +43,5 @@ main:focus { outline: none; }
 .site-footer-lead { color: var(--on-space); font-family: var(--font-display); font-weight: 700; font-size: 1rem; }
 .sample-data-note { color: #FFBE2E; font-weight: 650; }
 /* The landing hero is already black down to the footer: no white gap, just a hairline between them */
-main:has(.landing) + .site-footer { margin-top: 0; border-top: 1px solid rgb(255 255 255 / 0.14); }
+main:has(.workspace) + .site-footer { margin-top: 0; border-top: 1px solid rgb(255 255 255 / 0.14); }
+/* The footer (data credits) shows again below the results now that the page scrolls. */
