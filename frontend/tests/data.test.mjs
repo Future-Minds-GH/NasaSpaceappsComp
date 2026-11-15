@@ -169,7 +169,8 @@ test("pool fallback: a Moon/Mars tile's shortlist is re-scored with the current 
   const presets = JSON.parse(file("weights.json")).presets;
   const options = { earthTiles, rowByIndex, earthNside: 256 };
   const balanced = buildPoolMatches(pool, gale, { ...options, weights: presets.balanced.weights });
-  const landing = buildPoolMatches(pool, gale, { ...options, weights: presets.landing.weights });
+  const otherPreset = Object.keys(presets).find((id) => id !== "balanced");   // any second preset: sample and real names differ
+  const landing = buildPoolMatches(pool, gale, { ...options, weights: presets[otherPreset].weights });
   assert.equal(balanced.length, 10);
   assert.ok(balanced.every((match, index) => index === 0 || match.score <= balanced[index - 1].score));
   assert.ok(balanced.every((match) => match.earth_rank_pct === null && match.body === "earth"));

@@ -1,0 +1,127 @@
+{
+ "sample": false,
+ "factors": [
+  {
+   "id": "terrain",
+   "label": "Terrain"
+  },
+  {
+   "id": "elevation",
+   "label": "Elevation & topography"
+  },
+  {
+   "id": "geology",
+   "label": "Geology"
+  },
+  {
+   "id": "mineralogy",
+   "label": "Mineralogy"
+  },
+  {
+   "id": "climate",
+   "label": "Climate"
+  },
+  {
+   "id": "atmosphere",
+   "label": "Atmosphere: dust & wind"
+  },
+  {
+   "id": "water_ice",
+   "label": "Water & ice"
+  }
+ ],
+ "default_preset": "balanced",
+ "presets": {
+  "balanced": {
+   "label": "Balanced",
+   "description": "Every measured factor counts.",
+   "weights": {
+    "terrain": 0.3,
+    "elevation": 0.05,
+    "geology": 0.0,
+    "mineralogy": 0.15,
+    "climate": 0.35,
+    "atmosphere": 0.0,
+    "water_ice": 0.15
+   }
+  },
+  "drilling": {
+   "label": "Drilling",
+   "description": "Favours minerals, surface type and ice: what a drill meets.",
+   "weights": {
+    "terrain": 0.125,
+    "elevation": 0.0,
+    "geology": 0.0,
+    "mineralogy": 0.5,
+    "climate": 0.1875,
+    "atmosphere": 0.0,
+    "water_ice": 0.1875
+   }
+  },
+  "vehicles": {
+   "label": "Vehicles / rovers",
+   "description": "Favours slope and roughness: what a rover drives on.",
+   "weights": {
+    "terrain": 0.8,
+    "elevation": 0.0,
+    "geology": 0.0,
+    "mineralogy": 0.0,
+    "climate": 0.2,
+    "atmosphere": 0.0,
+    "water_ice": 0.0
+   }
+  },
+  "tooling": {
+   "label": "Test tooling",
+   "description": "Favours temperature and the day-night swing: what hardware must survive.",
+   "weights": {
+    "terrain": 0.125,
+    "elevation": 0.0625,
+    "geology": 0.0,
+    "mineralogy": 0.0625,
+    "climate": 0.75,
+    "atmosphere": 0.0,
+    "water_ice": 0.0
+   }
+  },
+  "solar": {
+   "label": "Solar panels",
+   "description": "Favours sunlight and temperature: what panels see.",
+   "weights": {
+    "terrain": 0.0667,
+    "elevation": 0.0,
+    "geology": 0.0,
+    "mineralogy": 0.0,
+    "climate": 0.9333,
+    "atmosphere": 0.0,
+    "water_ice": 0.0
+   }
+  },
+  "farming": {
+   "label": "Farming / regolith growth",
+   "description": "Favours minerals, temperature and sunlight: what plants grow in.",
+   "weights": {
+    "terrain": 0.0556,
+    "elevation": 0.0,
+    "geology": 0.0,
+    "mineralogy": 0.3333,
+    "climate": 0.6111,
+    "atmosphere": 0.0,
+    "water_ice": 0.0
+   }
+  },
+  "pharma": {
+   "label": "Pharmaceuticals (radiation)",
+   "description": "Favours sunlight and temperature. Radiation cannot be matched on Earth.",
+   "weights": {
+    "terrain": 0.0,
+    "elevation": 0.0,
+    "geology": 0.0,
+    "mineralogy": 0.1111,
+    "climate": 0.8889,
+    "atmosphere": 0.0,
+    "water_ice": 0.0
+   }
+  }
+ }
+}
