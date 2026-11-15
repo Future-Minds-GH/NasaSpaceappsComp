@@ -8,7 +8,7 @@ Before you start, check that the "sample data" note is NOT shown. If it is, say 
 | 0:00 | Show the landing page | "NASA needs places on Earth to test Moon and Mars hardware. The famous ones, like the Atacama and Devon Island, are well known. We find new ones, and we say *why* they match, with data." |
 | 0:20 | Explain the idea | "We cut Earth, the Moon and Mars into equal-area tiles about 27 km across. Every tile gets the same factors: terrain, elevation, minerals, climate, ice. So one search works between any two bodies." |
 | 0:40 | **Mars → Earth.** Click Jezero Crater. Compare with Earth | "Jezero is where Perseverance landed. These are the closest Earth tiles." Open the best match. "The score breaks down by factor: terrain matches, temperature does not." |
-| 1:20 | Show "where it breaks down" | "No Earth site matches Mars gravity, its thin air or its radiation. We say so on every result." |
+| 1:20 | Show "where the analogy breaks" on the result | "No Earth site matches Mars gravity, its thin air or its radiation." Say "we show this on every result" only after the limits are on the result cards (today they are only in the sample data). |
 | 1:40 | **Moon → Earth.** Click an Artemis III site near the south pole | "This is a candidate Artemis III region. Here are the Earth places most like it." Move the preset or a slider. "The ranking updates live, in the browser." |
 | 2:15 | **Mars → Mars.** Search from Jezero on Mars | "The same tool also scouts other landing sites on the same body." |
 | 2:35 | Show the Findings page with the validation numbers | "We checked it: known analogs and places that should never match, such as cities and rainforest." Read the real numbers from the page. |
