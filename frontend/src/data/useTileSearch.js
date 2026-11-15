@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import { loadBodyMeta, loadBodyVectors, loadEarthTiles, loadPool, loadShowcase, loadVectorSchema, loadWhyRules } from "./api.js";
 import { baseCellOf, latLonToTile } from "./healpix.js";
 import { readLayout } from "./similarity.js";
+import { SAME_BODY_MIN_KM } from "./ranking.js";
 import { rescoreMatches } from "./scoring.js";
 import { buildMatches, buildPoolMatches, clickedTileVector, readBodyTiles, readEarthTiles } from "./tileSearch.js";
 import { searchKeyOf, useSearchWorker } from "./useSearchWorker.js";
@@ -39,6 +40,12 @@ export function useTileSearch(selection, targetBody, weights, mode, attempt = 0)
     return { id: `${selection.body}_${nside}_${index}`, index, nside, body: selection.body };
   }, [selection, base.data]);
 
+  // Same planet: leave out the area around the picked spot (the tile is part of the search key, so this is too).
+  const exclude = useMemo(
+    () => (selection && selection.body === targetBody ? { lat: selection.lat, lon: selection.lon, km: SAME_BODY_MIN_KM } : null),
+    [selection, targetBody],
+  );
+
   const shard = tile?.body === "mars" ? baseCellOf(tile.nside, tile.index) : null;
   const sourceKey = tile && tile.body !== "earth" ? `${tile.body}/${shard}` : null;
   const sourceVectors = useLoaded(
@@ -55,8 +62,8 @@ export function useTileSearch(selection, targetBody, weights, mode, attempt = 0)
   }, [tile, base.data, sourceBytes]);
 
   useEffect(() => {
-    if (isWorkerReady && clickedVector && targetCandidates && weights) requestRanking(tile.id, targetBody, targetCandidates, clickedVector, weights, mode);
-  }, [isWorkerReady, clickedVector, targetCandidates, weights, mode, tile?.id, targetBody, requestRanking]);
+    if (isWorkerReady && clickedVector && targetCandidates && weights) requestRanking(tile.id, targetBody, targetCandidates, clickedVector, weights, mode, exclude);
+  }, [isWorkerReady, clickedVector, targetCandidates, weights, mode, exclude, tile?.id, targetBody, requestRanking]);
 
   const searchKey = tile ? searchKeyOf(tile.id, targetBody, mode) : null;
   const liveMatches = useMemo(() => {

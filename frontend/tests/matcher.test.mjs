@@ -5,7 +5,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { FACTORS, combineScore, isFalseFriend, scoreBand } from "../src/data/scoring.js";
 import { NULL_CODE, assertWholeTiles, combineAll, readLayout, scoreAllEarthTiles } from "../src/data/similarity.js";
-import { rankTopRows } from "../src/data/ranking.js";
+import { SAME_BODY_MIN_KM, rankTopRows } from "../src/data/ranking.js";
 import { FACTOR_LABELS } from "../src/content/labels.js";
 
 const schema = JSON.parse(readFileSync(new URL("../../data/schema.json", import.meta.url), "utf8"));
@@ -129,4 +129,16 @@ test("100k tiles score in well under a second, and a slider move is quick", () =
 test("the factor labels in labels.js are the labels in data/schema.json", () => {
   assert.deepEqual(Object.keys(FACTOR_LABELS), schema.factors.map((factor) => factor.id));
   for (const factor of schema.factors) assert.equal(FACTOR_LABELS[factor.id], factor.label);
+});
+
+test("a same-planet search skips tiles near the picked spot and still fills the list", () => {
+  // 400 tiles along the equator, 1 degree apart; the best totals sit right next to the picked spot at lon 0.
+  const lons = Float32Array.from({ length: 400 }, (_, index) => index - 200);
+  const lats = new Float32Array(400);
+  const totals = Float32Array.from(lons, (lon) => 100 - Math.abs(lon) * 0.1);
+  const exclude = { lat: 0, lon: 0, km: SAME_BODY_MIN_KM };
+  const picks = rankTopRows(totals, lats, lons, { count: 5, exclude });
+  assert.equal(picks.length, 5);
+  for (const pick of picks) assert.ok(Math.abs(lons[pick.row]) * 111.19 >= SAME_BODY_MIN_KM, `lon ${lons[pick.row]} is too close`);
+  assert.ok(Math.abs(lons[rankTopRows(totals, lats, lons, { count: 1 })[0].row]) < 1);   // without exclude: the spot itself
 });

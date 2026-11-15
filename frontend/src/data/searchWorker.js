@@ -30,11 +30,12 @@ self.onmessage = ({ data }) => {
       const candidates = candidatesByBody[data.body];
       if (!candidates) throw new Error(`No ${data.body} tiles have been loaded.`);
       const scores = scoreAllEarthTiles(data.clickedVector, candidates.vectors, layout, data.mode);
-      current = { body: data.body, scores };
+      current = { body: data.body, scores, exclude: data.exclude ?? null };
     }
     if (!current) throw new Error("No tile has been scored yet.");
+    if (data.type === "rank") current.exclude = data.exclude ?? null;   // a new click inside the same tile moves the circle
     const { lats, lons } = candidatesByBody[current.body];
-    const picks = rankTopRows(combineAll(current.scores, data.weights), lats, lons, { radiusKm: BODY_RADIUS_KM[current.body] }).map((pick) => ({
+    const picks = rankTopRows(combineAll(current.scores, data.weights), lats, lons, { radiusKm: BODY_RADIUS_KM[current.body], exclude: current.exclude }).map((pick) => ({
       ...pick,
       factorScores: Array.from(current.scores.subarray(pick.row * FACTORS.length, (pick.row + 1) * FACTORS.length)),
     }));

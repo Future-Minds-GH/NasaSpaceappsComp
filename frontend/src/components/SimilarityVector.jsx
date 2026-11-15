@@ -8,6 +8,7 @@ import ScoreRing from "./ScoreRing.jsx";
 import BodyPhoto from "./BodyPhoto.jsx";
 import Coordinates from "./Coordinates.jsx";
 import { FACTORS, scoreBand } from "../data/scoring.js";
+import { SAME_BODY_MIN_KM } from "../data/ranking.js";
 import { BAND_LABELS, BODY_NAMES, FACTOR_LABELS, MODE_INFO } from "../content/labels.js";
 
 const SHORT_NAMES = { temp: "temperature", swing: "day-night swing", sun: "sunlight", slope: "slope", rough: "roughness", elev: "elevation", surface: "surface type", minerals: "minerals", ice: "water ice" };
@@ -43,7 +44,7 @@ export default function SimilarityVector({ body, isSameBody, match, matchCount, 
   const heading = (
     <p className="similarity-body">
       {BODY_NAMES[body]}
-      {isSameBody && <span className="similarity-same">same planet · 300 km+ away</span>}
+      {isSameBody && <span className="similarity-same">same planet · {SAME_BODY_MIN_KM} km+ away</span>}
     </p>
   );
   const message = error

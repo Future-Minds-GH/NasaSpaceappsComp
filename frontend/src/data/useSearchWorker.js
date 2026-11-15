@@ -41,7 +41,7 @@ export function useSearchWorker(baseData) {
     return () => searchWorker.terminate();
   }, [baseData]);
 
-  const requestRanking = useMemo(() => (tileId, body, candidates, clickedVector, weights, mode) => {
+  const requestRanking = useMemo(() => (tileId, body, candidates, clickedVector, weights, mode, exclude = null) => {
     const state = requestRef.current;
     if (!state.sentBodies.has(body)) {
       worker.postMessage({
@@ -58,8 +58,8 @@ export function useSearchWorker(baseData) {
     state.scoredKey = searchKey;
     state.pending.set(state.id, { searchKey, weights });
     worker.postMessage(isNewSearch
-      ? { type: "score", requestId: state.id, clickedVector: Uint8Array.from(clickedVector), body, weights, mode }
-      : { type: "rank", requestId: state.id, weights });
+      ? { type: "score", requestId: state.id, clickedVector: Uint8Array.from(clickedVector), body, weights, mode, exclude }
+      : { type: "rank", requestId: state.id, weights, exclude });
   }, [worker]);
 
   return { isWorkerReady, workerError, latestPicks, requestRanking };

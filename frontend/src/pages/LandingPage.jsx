@@ -9,7 +9,7 @@ import { EXTRA_SITES, isPickableSite, shortSiteName } from "../content/notableSi
 import { useLoaded } from "../data/useLoaded.js";
 import { useTileSearch } from "../data/useTileSearch.js";
 import { FACTORS } from "../data/scoring.js";
-import { BODY_RADIUS_KM } from "../data/ranking.js";
+import { BODY_RADIUS_KM, SAME_BODY_MIN_KM } from "../data/ranking.js";
 import { BODY_NAMES } from "../content/labels.js";
 import PlanetGlobe, { GLOBE_TEXTURES } from "../components/PlanetGlobe.jsx";
 import FactorSidebar from "../components/FactorSidebar.jsx";
@@ -21,8 +21,6 @@ import { MODES } from "../data/similarity.js";
 import "../styles/landing.css";
 
 const BODIES = ["earth", "moon", "mars"];
-// Same-body searches skip tiles this close to the picked spot, or the best match is the spot itself (plan rule 2).
-const SAME_BODY_EXCLUSION_KM = 300;
 const PICK_COLOR = "#FF5A36"; // the picked spot
 const MATCH_COLOR = "#7CC8FF"; // each output planet's best match (blue: green is kept for good scores)
 
@@ -61,7 +59,8 @@ export default function LandingPage() {
   };
   const results = Object.fromEntries(BODIES.map((body) => {
     const search = searches[body];
-    const matches = (search.data ?? []).filter((match) => !(request && body === request.inputBody && distanceKm(match, request.point, body) < SAME_BODY_EXCLUSION_KM));
+    // The ranking already skips these tiles; this guards the fallbacks.
+    const matches = (search.data ?? []).filter((match) => !(request && body === request.inputBody && distanceKm(match, request.point, body) < SAME_BODY_MIN_KM));
     return [body, { search, matches, best: matches[0] ?? null }];
   }));
 
