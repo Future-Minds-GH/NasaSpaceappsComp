@@ -1,8 +1,9 @@
 /* Characterize mode: famous-site buttons and the Earth map on the left, the picked place's report card on the right
    (stacked on phones). Match rows carry a Mars-rust or Moon-slate edge, like unit boxes on a geologic map legend. */
 
-.characterize-layout { display: grid; gap: 28px; margin-top: 24px; }
-.characterize-explore { display: grid; gap: 24px; min-width: 0; }
+.characterize-layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 28px; margin-top: 24px; }
+.characterize-explore { display: grid; grid-template-columns: minmax(0, 1fr); gap: 24px; min-width: 0; }
+.characterize-explore > section { min-width: 0; }
 .characterize-report-column { min-width: 0; }
 @media (min-width: 900px) {
   .characterize-layout { grid-template-columns: minmax(0, 6fr) minmax(0, 5fr); align-items: start; gap: 32px; }
@@ -11,8 +12,9 @@
 .characterize-hint { font-size: 0.875rem; color: var(--ink-soft); max-width: 62ch; }
 
 /* Famous sites: one-click buttons; the chosen one stays inked in */
-.characterize-famous-list { list-style: none; display: flex; flex-wrap: wrap; gap: 8px; }
-.characterize-famous-button { text-align: left; }
+.characterize-famous-list { list-style: none; display: flex; flex-wrap: wrap; gap: 8px; min-width: 0; }
+.characterize-famous-list li { min-width: 0; max-width: 100%; }
+.characterize-famous-button { text-align: left; max-width: 100%; white-space: normal; }
 .characterize-famous-button[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--paper); }
 
 /* Earth map: Leaflet needs a real height, so the frame keeps the world's 2:1 shape */

@@ -31,45 +31,37 @@ export const METHOD_STAGES = [
  */
 export const FIGURES = [];
 
-/** Only well-known public datasets. Role 1's citations.md holds the complete list with formal citations. */
-// The challenge's 11 official resources (Resources tab, read Nov 14), grouped by agency, plus what the site itself shows.
+/** Only sources that feed a scored factor, the land filter or the known-analog list (earth_sources.md, moon_mars_sources.md). */
 export const DATA_CREDITS = [
   {
     agency: "NASA",
     datasets: [
-      { name: "Earthdata Search", about: "MODIS vegetation and land temperature, MERRA-2 and POWER climate, SMAP soil moisture, EMIT minerals" },
-      { name: "Worldview / GIBS", about: "True-colour Earth images on the result cards and the Earth maps" },
-      { name: "Planetary Data System", about: "Mars elevation (MOLA), minerals (CRISM, TES), THEMIS thermal inertia and Odyssey GRS hydrogen" },
-      { name: "Lunar Reconnaissance Orbiter", about: "Moon elevation and sunlight (LOLA), hydrogen (LEND) and radar (Mini-RF)" },
-      { name: "LRO Diviner", about: "Moon temperatures, thermal inertia and where ice can survive" },
-      { name: "Moon Trek and Mars Trek", about: "The globe textures and map tiles on this site (LRO WAC mosaic, Viking MDIM 2.1 colour mosaic)" },
-    ],
-  },
-  {
-    agency: "CSA",
-    datasets: [
-      { name: "RADARSAT Constellation Mission", about: "Radar checks of surface roughness over Arctic Canada" },
-      { name: "RADARSAT-1 open archive", about: "Radar fallback where newer scenes are hard to get" },
-      { name: "SAR Python tutorial", about: "Starting code for reading and calibrating radar data" },
+      { name: "Earthdata Search", about: "Earth day and night temperature and albedo (MODIS), sunlight (POWER), minerals (EMIT), and the land filter (MODIS vegetation, land cover)" },
+      { name: "Planetary Data System", about: "Mars elevation, slope and roughness (MOLA), minerals and albedo (TES), and hydrogen for ice (Odyssey GRS)" },
+      { name: "Lunar Reconnaissance Orbiter", about: "Moon elevation, slope and roughness (LOLA), albedo (LROC WAC) and hydrogen for ice (LEND)" },
+      { name: "LRO Diviner", about: "Moon day and night temperatures and the cold traps where ice can survive" },
     ],
   },
   {
     agency: "ESA",
     datasets: [
-      { name: "Copernicus Data Space", about: "Copernicus DEM elevation and Sentinel-1 radar" },
-      { name: "Open Science Catalog", about: "The ESA CCI permafrost product" },
+      { name: "Copernicus DEM GLO-90", about: "Earth elevation, slope and roughness (the public AWS Open Data copy of the ESA product)" },
+      { name: "ESA Permafrost CCI v5.0 (CEDA)", about: "Permafrost extent, used for Earth ice" },
     ],
   },
   {
-    agency: "JAXA",
+    agency: "Other sources",
     datasets: [
-      { name: "G-Portal", about: "GCOM-C/SGLI snow cover and land surface temperature" },
+      { name: "Mars Climate Database", about: "Mars day and night temperatures and sunlight" },
+      { name: "SWIM ice maps", about: "Mars mid-latitude ground ice" },
+      { name: "Lunar Prospector gamma-ray data", about: "Moon iron and titanium, for the mineral shares" },
+      { name: "GLiM lithology", about: "Earth rock types, a rough stand-in for minerals where EMIT has no data" },
     ],
   },
 ];
 
 export const FULL_CREDITS_NOTE =
-  "Also used: USGS Moon and Mars geologic maps, GLiM lithology, the Earth Impact Database, the Mars Climate Database, SWIM ice maps, the ESA and IMEWG analog catalogues, RGI glaciers. The full list with formal citations is Role 1's citations.md in the repository.";
+  "Known test sites come from public pages (mostly Wikipedia) cited in known_analogs.json. Shown on the site but not scored: the Moon Trek and Mars Trek globe textures and the Worldview / GIBS Earth images. Processing details for every source are in earth_sources.md and moon_mars_sources.md in the repository.";
 
 /** The four team roles. Member names are added by the team, never guessed. */
 export const TEAM_ROLES = [

@@ -3,7 +3,11 @@
 Output (under --out):
   vectors/earth.bin        one row (one byte per schema field) per scored Earth tile, in tile-index order
   earth_meta.bin           one 12-byte row per tile, same order (little-endian)
-  tiles/earth_meta.json    the lists earth_meta.bin points into
+  tiles/earth_meta.json    the lists earth_meta.bin points into, and "controls" (see below)
+  vectors/earth_controls.bin   one row per known site with role "negative_control" (same order as "controls" in
+                           earth_meta.json), for the accuracy check. The row is the 0.25 deg cell that holds the site
+                           point, even where analog_ok is false. Encoded like a scored tile; a percentile field is the
+                           value's place among the scored tiles: (L + E / 2) / n, L tiles below, E tiles equal.
 
 Format: data/schema.json is the one source (field list, order, min/max, kinds). HEALPix NESTED, nside 256.
   One byte per field, per tile: the factor fields in factor order, then the relative fields (25 in v0.3). 255 = null.
@@ -129,6 +133,38 @@ def nearest_analog_km(lat, lon, sites):
     return np.minimum(np.rint(d), NO_KM - 1).astype("uint16")
 
 
+def scored_tiles(df, nside=NSIDE):
+    """Returns (df by cell_id, cell per tile, tile lat, tile lon, scored tile indices, table row per scored tile)."""
+    df = df.set_index("cell_id").reindex(np.arange(NROWS * NCOLS))      # a missing cell has no data: not scored
+    df["analog_ok"] = df["analog_ok"].astype("boolean").fillna(False).astype(bool)
+    cell, lat, lon = tile_cell_ids(nside)
+    scored = df["analog_ok"].to_numpy()[cell]
+    tiles = np.flatnonzero(scored)
+    assert tiles.size > 0, "no scored tiles: analog_ok is never true"
+    return df, cell, lat, lon, tiles, df.iloc[cell[tiles]].reset_index(drop=True)
+
+
+def control_rows(df, controls, nside=NSIDE, fields=None):
+    """uint8 [len(controls), len(fields)]: the cell holding each control point, encoded like a scored tile."""
+    fields = fields or load_schema()[1]
+    df, cell, _, _, tiles, sub = scored_tiles(df, nside)
+    out = np.full((len(controls), len(fields)), NULL, dtype="uint8")
+    for i, c in enumerate(controls):
+        row = min(int((90.0 - c["lat"]) // CELL), NROWS - 1)
+        col = min(int((c["lon"] + 180.0) // CELL), NCOLS - 1)
+        one = df.iloc[[row * NCOLS + col]]
+        for j, f in enumerate(fields):
+            if f["kind"] != "percentile":
+                out[i, j] = to_byte(field_values(one, f))[0]
+                continue
+            x = one[source_column(f)].iloc[0]
+            valid = np.sort(sub[source_column(f)].dropna().to_numpy(dtype="float64"))
+            if not np.isnan(x):
+                below, equal = np.searchsorted(valid, x, "left"), np.searchsorted(valid, x, "right") - np.searchsorted(valid, x, "left")
+                out[i, j] = to_byte([(below + equal / 2) / valid.size])[0]
+    return out
+
+
 def build(df, known_sites=None, nside=NSIDE, fields=None):
     """Returns (vectors uint8 [n, len(fields)], meta bytes, tile indices, summary dict)."""
     fields = fields or load_schema()[1]
@@ -136,13 +172,7 @@ def build(df, known_sites=None, nside=NSIDE, fields=None):
     assert not missing, f"earth.parquet is missing columns {missing}"
     assert df["cell_id"].is_unique, "cell_id must be unique"
     assert df["cell_id"].between(0, NROWS * NCOLS - 1).all(), "cell_id must be 0..N-1"
-    df = df.set_index("cell_id").reindex(np.arange(NROWS * NCOLS))      # a missing cell has no data: not scored
-    df["analog_ok"] = df["analog_ok"].astype("boolean").fillna(False).astype(bool)
-    cell, lat, lon = tile_cell_ids(nside)
-    scored = df["analog_ok"].to_numpy()[cell]
-    tiles = np.flatnonzero(scored)
-    assert tiles.size > 0, "no scored tiles: analog_ok is never true"
-    sub = df.iloc[cell[tiles]].reset_index(drop=True)
+    df, cell, lat, lon, tiles, sub = scored_tiles(df, nside)
 
     vectors = np.full((tiles.size, len(fields)), NULL, dtype="uint8")
     filled = fill_vectors(sub, fields, slice(None), vectors)
@@ -180,10 +210,11 @@ def main():
     args = ap.parse_args()
 
     fields = load_schema(args.schema)[1]
-    known = []
+    known, controls = [], []
     if args.known_analogs:
         assert args.known_analogs.stat().st_size < 5_000_000, "known_analogs.json is larger than 5 MB"
         known = [s for s in json.loads(args.known_analogs.read_text(encoding="utf-8"))["sites"] if s.get("body") == "earth"]
+        controls = [s for s in known if s.get("role") == "negative_control"]
     assert args.parquet.stat().st_size < 2_000_000_000, "earth.parquet is larger than 2 GB"
     df = pd.read_parquet(args.parquet)
     vectors, meta, tiles, summary = build(df, known, fields=fields)
@@ -191,10 +222,12 @@ def main():
     (args.out / "vectors").mkdir(parents=True, exist_ok=True)
     (args.out / "tiles").mkdir(parents=True, exist_ok=True)
     (args.out / "vectors" / "earth.bin").write_bytes(vectors.tobytes())
+    (args.out / "vectors" / "earth_controls.bin").write_bytes(control_rows(df, controls, fields=fields).tobytes())
     (args.out / "earth_meta.bin").write_bytes(meta)
     (args.out / "tiles" / "earth_meta.json").write_text(json.dumps({
         "sample": False, "record_bytes": 12, "tile_count": int(tiles.size),
         "names": [], "environments": [], "tags": [], "sites": sites_for_json(known),
+        "controls": [{"id": c["id"], "name": c["name"], "lat": c["lat"], "lon": c["lon"], "radius_km": c["radius_km"]} for c in controls],
     }), encoding="utf-8")
     print(json.dumps(summary, indent=1))
 
