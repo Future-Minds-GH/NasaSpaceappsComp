@@ -8,7 +8,7 @@
 // Messages out: { type: "ready" } | { type: "ranked", requestId, picks: [{ row, total, earthRankPct, factorScores }] }
 //               | { type: "failed", requestId, message }
 import { FACTORS } from "./scoring.js";
-import { combineAll, readLayout, scoreAllEarthTiles } from "./similarity.js";
+import { combineAll, readLayout, scoreAllEarthTiles, typicalFactorsOf } from "./similarity.js";
 import { BODY_RADIUS_KM, rankTopRows } from "./ranking.js";
 
 let layout = null;
@@ -38,6 +38,7 @@ self.onmessage = ({ data }) => {
     const picks = rankTopRows(combineAll(current.scores, data.weights), lats, lons, { radiusKm: BODY_RADIUS_KM[current.body], exclude: current.exclude }).map((pick) => ({
       ...pick,
       factorScores: Array.from(current.scores.subarray(pick.row * FACTORS.length, (pick.row + 1) * FACTORS.length)),
+      typicalFactors: typicalFactorsOf(current.scores, pick.row),
     }));
     self.postMessage({ type: "ranked", requestId: data.requestId, picks });
   } catch (error) {

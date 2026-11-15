@@ -25,7 +25,7 @@ for p in (RAW, OUT):
 
 CELL = 0.25                      # grid size in degrees (shared contract)
 NROWS, NCOLS = 720, 1440
-PERIOD = ("2023-01-01", "2023-12-31")   # 12 monthly MOD11C3 files
+PERIOD = ("2023-01-01", "2023-12-31")   # 12 monthly MYD11C3 files
 
 # %% [markdown]
 # ## 1. Grid
@@ -44,15 +44,18 @@ grid = pd.DataFrame({
 grid.shape
 
 # %% [markdown]
-# ## 2. Temperature (MODIS MOD11C3 v061, 0.05 deg)
+# ## 2. Temperature (MODIS MYD11C3 v061, 0.05 deg)
+# Aqua passes at about 1:30 pm and 1:30 am local time, close to the daily high and low. Mars uses its daily
+# max and min and the Moon noon and midnight, so Aqua keeps the bodies comparable (Terra's 10:30 am/pm
+# passes, MOD11C3, gave Earth too small a day-night swing).
 
 # %%
 import earthaccess
 
 earthaccess.login()   # asks for your Earthdata login
-granules = earthaccess.search_data(short_name="MOD11C3", version="061", temporal=PERIOD)
+granules = earthaccess.search_data(short_name="MYD11C3", version="061", temporal=PERIOD)
 assert len(granules) >= 12, f"Expected 12 monthly files, found {len(granules)}"
-mod_files = earthaccess.download(granules, str(RAW / "mod11c3"))
+mod_files = earthaccess.download(granules, str(RAW / "myd11c3"))
 len(mod_files)
 
 # %%
