@@ -1,0 +1,10 @@
+[
+  {"body": "moon", "name": "Malapert Massif", "lat": -86.0, "lon": 0.3, "source_url": "https://data.lroc.im-ldi.com/lroc/view_rdr/NAC_ROI_MALAPERTLO1"},
+  {"body": "moon", "name": "Mons Mouton Plateau", "lat": -84.3, "lon": 30.6, "source_url": "https://data.lroc.im-ldi.com/lroc/view_rdr/NAC_ROI_MOUTNPLTLO1"},
+  {"body": "moon", "name": "Mons Mouton", "lat": -84.6, "lon": 31.0, "source_url": "https://planetarynames.wr.usgs.gov/Feature/16070"},
+  {"body": "moon", "name": "Nobile Rim 2", "lat": -83.9, "lon": 58.7, "source_url": "https://data.lroc.im-ldi.com/lroc/view_rdr/NAC_ROI_NOBILE02LO1"},
+  {"body": "mars", "name": "Jezero", "lat": 18.41, "lon": 77.69, "source_url": "https://planetarynames.wr.usgs.gov/Feature/14300"},
+  {"body": "mars", "name": "Gale", "lat": -5.44, "lon": 137.7, "source_url": "https://planetarynames.wr.usgs.gov/Feature/2071"},
+  {"body": "mars", "name": "Arcadia Planitia", "lat": 46.66, "lon": -168.0, "source_url": "https://planetarynames.wr.usgs.gov/Feature/348"},
+  {"body": "mars", "name": "Deuteronilus Mensae", "lat": 43.56, "lon": 22.6, "source_url": "https://planetarynames.wr.usgs.gov/Feature/1509"}
+]
