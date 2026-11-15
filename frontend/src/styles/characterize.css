@@ -33,7 +33,7 @@ body:not(.leaflet-dragging) .characterize-map .leaflet-grab { cursor: crosshair;
   display: grid; gap: 10px; justify-items: start; padding: 20px;
   border: 1px dashed var(--rule); border-radius: var(--radius-frame); color: var(--ink-soft);
 }
-.characterize-notice-title { font-stretch: var(--width-expanded); font-size: 1.125rem; font-weight: 800; color: var(--ink); }
+.characterize-notice-title { font-family: var(--font-display); font-size: 1.125rem; font-weight: 700; color: var(--ink); }
 .characterize-notice[role="alert"] { border-style: solid; border-left: 4px solid var(--warning); color: var(--ink); }
 
 /* Report card */
@@ -42,14 +42,14 @@ body:not(.leaflet-dragging) .characterize-map .leaflet-grab { cursor: crosshair;
   border: 1px solid var(--rule); border-radius: var(--radius-frame); background: var(--paper-raised);
 }
 .characterize-report-header { display: grid; gap: 8px; }
-.characterize-report-name { font-stretch: var(--width-expanded); font-size: 1.5rem; font-weight: 850; overflow-wrap: anywhere; }
+.characterize-report-name { font-family: var(--font-display); font-size: 1.5rem; font-weight: 700; overflow-wrap: anywhere; }
 .characterize-report-tags { font-size: 0.9375rem; font-weight: 600; color: var(--ink-soft); }
 .characterize-report-place { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; color: var(--ink-soft); font-weight: 600; }
 .characterize-report-toolbar {
   display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px;
   padding-top: 16px; border-top: 1px solid var(--rule);
 }
-.characterize-report-heading { font-stretch: var(--width-expanded); font-size: 1.125rem; font-weight: 800; }
+.characterize-report-heading { font-family: var(--font-display); font-size: 1.125rem; font-weight: 700; }
 .characterize-details-toggle[aria-expanded="true"] { border-color: var(--ink); }
 .characterize-report-note { font-size: 0.875rem; color: var(--ink-soft); }
 

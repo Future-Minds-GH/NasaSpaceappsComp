@@ -4,21 +4,21 @@
 
 .explore-stage {
   position: relative; height: min(78vh, 720px); min-height: 420px;
-  background: radial-gradient(ellipse at 50% 45%, #1d2833 0%, #0b1016 70%);
-  color: #e6e9e3; overflow: hidden;
+  background: radial-gradient(ellipse at 50% 45%, var(--space-raised) 0%, var(--space) 70%);
+  color: #FFFFFF; overflow: hidden;
 }
 .planet-globe { position: absolute; inset: 0; cursor: grab; }
 .planet-globe:active { cursor: grabbing; }
 
 /* Overlays sit on the globe; they take no clicks except their own controls */
 .explore-heading { position: absolute; top: 20px; left: max(16px, env(safe-area-inset-left, 0px)); max-width: min(32rem, calc(100% - 200px)); pointer-events: none; }
-.explore-title { font-stretch: var(--width-expanded); font-weight: 850; font-size: clamp(1.5rem, 1.1rem + 2vw, 2.5rem); line-height: 1.05; }
-.explore-hint { margin-top: 6px; color: #b7c0c7; font-size: 0.9375rem; }
+.explore-title { font-family: var(--font-display); font-weight: 700; font-size: clamp(1.5rem, 1.1rem + 2vw, 2.5rem); line-height: 1.05; }
+.explore-hint { margin-top: 6px; color: #B8B8BC; font-size: 0.9375rem; }
 
 .body-switchers { position: absolute; top: 16px; right: max(16px, env(safe-area-inset-right, 0px)); display: flex; gap: 4px; }
 .body-switcher {
   display: grid; justify-items: center; gap: 6px; padding: 8px; border-radius: 16px;
-  color: #e6e9e3; text-decoration: none; font-weight: 700; font-size: 0.875rem;
+  color: #FFFFFF; text-decoration: none; font-weight: 700; font-size: 0.875rem;
   transition: transform 160ms var(--ease-out);
 }
 .body-switcher-globe {
@@ -27,18 +27,18 @@
 }
 .body-switcher:active { transform: scale(0.97); }
 @media (hover: hover) and (pointer: fine) {
-  .body-switcher:hover .body-switcher-globe { box-shadow: inset -10px -8px 18px rgb(0 0 0 / 0.65), 0 0 0 2px #e6e9e3; }
+  .body-switcher:hover .body-switcher-globe { box-shadow: inset -10px -8px 18px rgb(0 0 0 / 0.65), 0 0 0 2px #FFFFFF; }
 }
 
 .explore-sites {
   position: absolute; left: 0; right: 0; bottom: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
   padding: 14px max(16px, env(safe-area-inset-right, 0px)) 16px max(16px, env(safe-area-inset-left, 0px));
-  background: linear-gradient(to top, rgb(11 16 22 / 0.92), rgb(11 16 22 / 0));
+  background: linear-gradient(to top, rgb(0 0 0 / 0.9), rgb(0 0 0 / 0));
 }
-.explore-sites .site-chip { background: rgb(255 255 255 / 0.08); color: #e6e9e3; border-color: rgb(255 255 255 / 0.25); }
-.explore-sites .site-chip[aria-pressed="true"] { background: #e6e9e3; color: #0b1016; border-color: #e6e9e3; }
-.explore-sites .cave-toggle { color: #e6e9e3; }
-.explore-sites .cave-toggle input { accent-color: #e6e9e3; }
+.explore-sites .site-chip { background: rgb(255 255 255 / 0.08); color: #FFFFFF; border-color: rgb(255 255 255 / 0.25); }
+.explore-sites .site-chip[aria-pressed="true"] { background: #FFFFFF; color: #000000; border-color: #FFFFFF; }
+.explore-sites .cave-toggle { color: #FFFFFF; }
+.explore-sites .cave-toggle input { accent-color: #FFFFFF; }
 
 /* Results column: tabs for the two other bodies, then that body's matches */
 .explore-results { width: 100%; max-width: 1080px; margin: 0 auto; padding-inline: var(--gutter); display: grid; gap: 20px; }
@@ -78,4 +78,4 @@
 }
 
 /* Moon and Mars card pictures: a crop of the globe texture */
-.body-photo { width: 100%; aspect-ratio: 16 / 10; background-repeat: no-repeat; background-color: #0E141A; }
+.body-photo { width: 100%; aspect-ratio: 16 / 10; background-repeat: no-repeat; background-color: var(--space); }

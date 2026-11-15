@@ -5,28 +5,39 @@
 main { display: block; min-height: 60vh; }
 main:focus { outline: none; }
 
+/* NASA-style black bar: white Inter navigation, the current page underlined in red */
 .site-header {
-  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px;
-  padding: 12px var(--gutter); border-bottom: 1px solid var(--rule);
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 24px;
+  min-height: 72px; padding: 10px max(var(--gutter), calc((100% - 1240px) / 2 + var(--gutter)));
+  background: var(--space); color: var(--on-space);
 }
-.site-title { font-stretch: var(--width-expanded); font-weight: 800; font-size: 1.05rem; text-decoration: none; }
-.site-nav { display: flex; flex-wrap: wrap; gap: 4px; }
-.site-nav-link { padding: 6px 10px; border-radius: var(--radius-control); text-decoration: none; font-weight: 600; }
-.site-nav-link[aria-current="page"] { background: var(--ink); color: var(--paper); }
+.site-title { font-family: var(--font-display); font-weight: 800; font-size: 1.125rem; letter-spacing: -0.01em; text-decoration: none; }
+.site-nav { display: flex; flex-wrap: wrap; gap: 4px 20px; }
+.site-nav-link {
+  padding: 8px 0 6px; border-bottom: 3px solid transparent; text-decoration: none;
+  font-family: var(--font-display); font-weight: 600; font-size: 1.0625rem;
+}
+.site-nav-link[aria-current="page"] { border-bottom-color: var(--accent); }
+.site-header :focus-visible { outline-color: #FFFFFF; }
 @media (hover: hover) and (pointer: fine) {
-  .site-nav-link:not([aria-current="page"]):hover { background: var(--rule-soft); }
+  .site-nav-link:not([aria-current="page"]):hover { border-bottom-color: var(--on-space-soft); }
 }
 
 /* Title block at the top of each mode page */
-.page { max-width: 1240px; margin: 0 auto; padding: 28px var(--gutter) 0; }
-.page-title { font-stretch: var(--width-expanded); font-weight: 850; font-size: clamp(1.75rem, 1.2rem + 2.2vw, 2.75rem); line-height: 1.05; }
-.page-lede { margin-top: 10px; max-width: 62ch; font-size: 1.0625rem; color: var(--ink-soft); }
-.section-heading { font-stretch: var(--width-expanded); font-size: 1.25rem; font-weight: 800; }
+.page { max-width: 1240px; margin: 0 auto; padding: 40px var(--gutter) 0; }
+.page-title { font-family: var(--font-display); font-weight: 700; font-size: clamp(2rem, 1.3rem + 2.6vw, 3.25rem); line-height: 1.05; letter-spacing: -0.02em; }
+.page-lede { margin-top: 12px; max-width: 62ch; font-size: 1.125rem; color: var(--ink-soft); }
+.section-heading { font-family: var(--font-display); font-size: 1.5rem; font-weight: 700; letter-spacing: -0.01em; }
 
+/* Black footer band, like NASA's, with the content kept in the page column */
 .site-footer {
-  max-width: 1240px; margin: 64px auto 0; padding: 24px var(--gutter) 32px; border-top: 1px solid var(--rule-soft);
-  color: var(--ink-soft); font-size: 0.875rem; display: grid; gap: 6px;
+  margin-top: 80px; padding: 32px max(var(--gutter), calc((100% - 1240px) / 2 + var(--gutter))) 40px;
+  background: var(--space); color: var(--on-space-soft); font-size: 0.875rem; display: grid; gap: 8px;
 }
 .site-footer p { max-width: 80ch; }
-.site-footer-lead { color: var(--ink); font-weight: 700; }
-.sample-data-note { color: var(--warning); font-weight: 650; }
+.site-footer a { color: var(--on-space); }
+.site-footer :focus-visible { outline-color: #FFFFFF; }
+.site-footer-lead { color: var(--on-space); font-family: var(--font-display); font-weight: 700; font-size: 1rem; }
+.sample-data-note { color: #FFBE2E; font-weight: 650; }
+/* The landing hero is already black down to the footer: no white gap, just a hairline between them */
+main:has(.landing) + .site-footer { margin-top: 0; border-top: 1px solid rgb(255 255 255 / 0.14); }
