@@ -222,3 +222,34 @@ def test_control_rows_encode_the_cell_and_rank_among_scored_tiles(built):
     assert rows[1, IDS_.index("slope_pct")] < 60          # gentler than most (about a fifth of scored tiles are gentler)
     # a scored cell gives the same bytes as the scored tile of that cell
     assert (rows[2] == vectors[row_of(built, 25.125, 15.125)]).all()
+
+
+def ne_folder(tmp_path):
+    sq = lambda x0, y0, x1, y1: [[x0, y0], [x1, y0], [x1, y1], [x0, y1], [x0, y0]]
+    one = lambda name, admin, ring: {"type": "Feature", "properties": {"name": name, "admin": admin, "NAME": name},
+                                     "geometry": {"type": "Polygon", "coordinates": [ring]}}
+    import json
+    for f, feats in (("ne_10m_admin_1_states_provinces.geojson", [one("East", "Landia", sq(0, -90, 180, 90))]),
+                     ("ne_10m_admin_0_countries.geojson", [one("Landia", "Landia", sq(-180, -90, 180, 90))])):
+        (tmp_path / f).write_text(json.dumps({"type": "FeatureCollection", "features": feats}), encoding="utf-8")
+    return tmp_path
+
+
+def test_names_round_trip(tmp_path, built):
+    df = built[0]
+    _, meta, tiles, summary = bv.build(df, None, natural_earth=ne_folder(tmp_path))
+    meta = np.frombuffer(meta, dtype=built[2].dtype)
+    from astropy import units as u
+    from astropy_healpix import HEALPix
+    lon, lat = HEALPix(nside=bv.NSIDE, order="nested").healpix_to_lonlat(tiles)
+    lon = (lon.to_value(u.deg) + 180.0) % 360.0 - 180.0
+    assert set(summary["names"]) == {"East, Landia", "Landia"} and summary["named_tiles"] == tiles.size
+    got = np.array(summary["names"])[meta["name"]]
+    assert np.array_equal(got, np.where(lon >= 0, "East, Landia", "Landia"))
+
+
+def test_missing_natural_earth_folder_keeps_no_names(tmp_path, built, capsys):
+    _, meta, tiles, summary = bv.build(built[0], None, natural_earth=tmp_path / "nope")
+    meta = np.frombuffer(meta, dtype=built[2].dtype)
+    assert summary["names"] == [] and (meta["name"] == bv.NO_NAME).all()
+    assert capsys.readouterr().out.count("warning: Natural Earth") == 1

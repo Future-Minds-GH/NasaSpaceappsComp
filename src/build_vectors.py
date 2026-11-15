@@ -24,14 +24,20 @@ role "negative_control" do not count for the km field.
 
 Install:  pip install astropy-healpix pandas pyarrow numpy   (healpy also works but does not build on Windows)
 Usage:  python build_vectors.py earth.parquet --out web/public/data [--schema data/schema.json]
-                                [--known-analogs known_analogs.json]
+                                [--known-analogs known_analogs.json] [--natural-earth DIR]
+  --natural-earth: folder with the Natural Earth admin-1 and admin-0 GeoJSON files (place names, see place_names.py).
+  If the files are missing, tiles get no name and one warning is printed.
 """
 import argparse
 import json
+import sys
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))      # python -I does not add the script folder
+import place_names  # noqa: E402
 
 NSIDE = 256
 NULL = 255
@@ -165,8 +171,9 @@ def control_rows(df, controls, nside=NSIDE, fields=None):
     return out
 
 
-def build(df, known_sites=None, nside=NSIDE, fields=None):
-    """Returns (vectors uint8 [n, len(fields)], meta bytes, tile indices, summary dict)."""
+def build(df, known_sites=None, nside=NSIDE, fields=None, natural_earth=None):
+    """Returns (vectors uint8 [n, len(fields)], meta bytes, tile indices, summary dict).
+    summary["names"] is the list the name index points into ([] without natural_earth or when its files are missing)."""
     fields = fields or load_schema()[1]
     missing = [c for c in needed_columns(fields) if c not in df.columns]
     assert not missing, f"earth.parquet is missing columns {missing}"
@@ -182,6 +189,13 @@ def build(df, known_sites=None, nside=NSIDE, fields=None):
     meta["km"] = nearest_analog_km(lat[tiles], lon[tiles], known_sites)
     meta["tags"] = 0
     meta["name"] = NO_NAME
+    names = []
+    if natural_earth is not None and place_names.find_files(natural_earth):
+        meta["name"], names = place_names.name_points(lat[tiles], lon[tiles], natural_earth)
+    elif natural_earth is not None:
+        print(f"warning: Natural Earth files not found in {natural_earth}; tiles get no place name")
+    else:
+        print("warning: no --natural-earth folder given; tiles get no place name")
     meta["env"] = NO_ENV
     # GLiM-only cells (estimated): the rock class is set and all four EMIT classes are known zeros.
     emit_classes = sub[["min_ironox", "min_sulfate", "min_clay", "min_carbonate"]]
@@ -189,7 +203,8 @@ def build(df, known_sites=None, nside=NSIDE, fields=None):
     meta["flags"] = estimated.to_numpy().astype("uint8")
     assert meta.dtype.itemsize == 12
     summary = {"tiles": int(tiles.size), "bytes_per_tile": len(fields), "share_filled": filled,
-               "estimated_mineralogy_tiles": int(estimated.sum())}
+               "estimated_mineralogy_tiles": int(estimated.sum()),
+               "named_tiles": int((meta["name"] != NO_NAME).sum()), "names": names}
     return vectors, meta.tobytes(), tiles, summary
 
 
@@ -207,6 +222,7 @@ def main():
     ap.add_argument("--out", type=Path, required=True)
     ap.add_argument("--schema", type=Path, default=DEFAULT_SCHEMA, help="data/schema.json (tile format v0.3)")
     ap.add_argument("--known-analogs", type=Path, help="known_analogs.json: fills the km-to-nearest-analog field")
+    ap.add_argument("--natural-earth", type=Path, default=None, help="folder with Natural Earth admin-1/admin-0 GeoJSON (without it, tiles get no place name)")
     args = ap.parse_args()
 
     fields = load_schema(args.schema)[1]
@@ -217,7 +233,7 @@ def main():
         controls = [s for s in known if s.get("role") == "negative_control"]
     assert args.parquet.stat().st_size < 2_000_000_000, "earth.parquet is larger than 2 GB"
     df = pd.read_parquet(args.parquet)
-    vectors, meta, tiles, summary = build(df, known, fields=fields)
+    vectors, meta, tiles, summary = build(df, known, fields=fields, natural_earth=args.natural_earth)
 
     (args.out / "vectors").mkdir(parents=True, exist_ok=True)
     (args.out / "tiles").mkdir(parents=True, exist_ok=True)
@@ -226,10 +242,10 @@ def main():
     (args.out / "earth_meta.bin").write_bytes(meta)
     (args.out / "tiles" / "earth_meta.json").write_text(json.dumps({
         "sample": False, "record_bytes": 12, "tile_count": int(tiles.size),
-        "names": [], "environments": [], "tags": [], "sites": sites_for_json(known),
+        "names": summary["names"], "environments": [], "tags": [], "sites": sites_for_json(known),
         "controls": [{"id": c["id"], "name": c["name"], "lat": c["lat"], "lon": c["lon"], "radius_km": c["radius_km"]} for c in controls],
     }), encoding="utf-8")
-    print(json.dumps(summary, indent=1))
+    print(json.dumps({k: v for k, v in summary.items() if k != "names"} | {"unique_names": len(summary["names"])}, indent=1))
 
 
 if __name__ == "__main__":
