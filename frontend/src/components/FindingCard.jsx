@@ -3,6 +3,7 @@
 import { useId } from "react";
 import ScoreRing from "./ScoreRing.jsx";
 import FactorBars from "./FactorBars.jsx";
+import LimitsList from "./LimitsList.jsx";
 import { EnvironmentTag } from "./SiteTags.jsx";
 import { FINDINGS_EXPLORATION_USES } from "../content/about.js";
 import { FACTOR_LABELS } from "../content/labels.js";
@@ -52,6 +53,7 @@ export default function FindingCard({ finding, target }) {
           <h3 className="findings-item-part-title">Where the analogy breaks</h3>
           <FactorList label="Weakest factors" factors={weakestFactors} />
           <PhraseList phrases={finding.cant_reproduce} />
+          <LimitsList body={finding.body} />
         </div>
         <div className="findings-item-part">
           <h3 className="findings-item-part-title">How it helps exploration</h3>

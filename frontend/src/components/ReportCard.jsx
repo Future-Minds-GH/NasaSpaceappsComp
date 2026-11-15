@@ -2,6 +2,7 @@
 import { useState } from "react";
 import ScoreRing from "./ScoreRing.jsx";
 import FactorBars from "./FactorBars.jsx";
+import LimitsList from "./LimitsList.jsx";
 import { EnvironmentTag } from "./SiteTags.jsx";
 import { BODY_NAMES } from "../content/labels.js";
 import { formatCoordinates } from "../data/format.js";
@@ -99,6 +100,7 @@ function TargetMatch({ match, targetName, presetLabel, isShowingDetails }) {
       <div className="characterize-match-lists">
         <ReasonList title="Mission tests it suits" items={match.good_for} />
         <ReasonList title="What it can't reproduce" items={match.cant_reproduce} />
+        <LimitsList body={match.body} className="limits-list characterize-limits" />
       </div>
 
       {isShowingDetails && match.breakdown && (
