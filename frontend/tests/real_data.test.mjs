@@ -16,7 +16,8 @@ const stride = layout.bytesPerTile;
 const tiles = earth.length / stride;
 const idx = (factor) => FACTORS.indexOf(factor);
 
-test("JS decode of a byte equals the Python encoding's source value within half a step", () => {
+// Needs Python with numpy (the export's own encoder). The GitHub Pages build has Node only, so it skips there.
+test("JS decode of a byte equals the Python encoding's source value within half a step", (t) => {
   const values = [0, 0.001, 0.25, 0.3333, 0.5, 0.7071, 0.99, 1];
   const script = `
 import json, sys
@@ -25,7 +26,7 @@ import numpy as np, build_vectors as bv
 x = np.array(${JSON.stringify(values)})
 print(json.dumps([int(b) for b in bv.to_byte(x)]))`;
   let out;
-  try { out = execFileSync("python", ["-c", script], { encoding: "utf8" }); } catch (error) { return assert.fail(`python failed: ${error.message}`); }
+  try { out = execFileSync("python", ["-c", script], { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }); } catch { return t.skip("Python with numpy is not available"); }
   const bytes = JSON.parse(out.trim().split("\n").pop());
   for (const field of Object.values(layout.fields)) {
     values.forEach((fraction, position) => {
