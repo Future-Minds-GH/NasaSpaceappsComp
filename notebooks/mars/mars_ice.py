@@ -19,7 +19,8 @@
 # 2. GRS wt% becomes `min(wt% / ICE_WEH_FULL, 1)` (see the scaling cell). It is low in the tropics on purpose: hydrogen there is mostly hydrated minerals, not ice.
 # 3. Polar-cap cells are 1.
 # 4. Where sources overlap, SWIM wins where it has a value (it is the finest map and its -1 means "no ice", which a coarse hydrogen map must not override). Elsewhere GRS. Polar caps are always 1.
-# 5. A cell with no source stays NaN, not 0.
+# 5. Poleward of about 60 deg (where GRS ends; the fill starts at 57.5 deg but GRS wins up to 60), a cell with no source value outside a cap gets `ICE_HIGHLAT_PROB` (0.8). This is an ASSUMPTION (see the constants): it keeps the Phoenix area and the high latitudes from dropping out. Any other cell with no source stays NaN, not 0.
+# 6. A missing SWIM file or cap shapefile is skipped with a warning (the notebook still runs). Without the caps, `ice_surface` is 0 everywhere.
 #
 # `ice_surface` = 1 inside the polar-cap polygons, 0 everywhere else. Buried mid-latitude ice is not surface ice. Seasonal frost is not mapped.
 
@@ -54,6 +55,14 @@ GRS_BIN = 5.0
 # soil as tens of wt% at high latitude; pure ice is 100 wt%. All real values in this map are <= 7.4 wt%,
 # so the equatorial probability stays below 0.25. Change one number to change the scale.
 ICE_WEH_FULL = 30.0
+
+# High latitudes with no source. The GRS hydrogen map has bins centred up to 57.5 deg (so it reaches about 60 deg) and SWIM covers only the northern mid-latitudes,
+# so cells poleward of ICE_HIGHLAT_MIN that are not in a polar cap would have no value. Ground ice is known there: the
+# Phoenix landing site (68 N) found shallow ground ice, and Odyssey sees high hydrogen poleward of about 60 deg.
+# ASSUMPTION (UNVERIFIED as a number, and the citations were not checked): fill these cells with ICE_HIGHLAT_PROB.
+# It is applied only where no source has a value, so SWIM, GRS and the caps always win.
+ICE_HIGHLAT_MIN = 57.5
+ICE_HIGHLAT_PROB = 0.8
 
 # %% [markdown]
 # ## 0. Pure functions (tested on synthetic data)
@@ -143,6 +152,12 @@ def combine_sources(swim_p, grs_p, cap_mask):
     return np.where(cap_mask, 1.0, out)
 
 
+def fill_high_latitude(ice, lat, min_lat=ICE_HIGHLAT_MIN, value=ICE_HIGHLAT_PROB):
+    # Cells at or poleward of min_lat with no value from any source get `value` (an assumption, see the constants).
+    ice = np.asarray(ice, dtype="float64")
+    return np.where(np.isnan(ice) & (np.abs(np.asarray(lat, dtype="float64")) >= min_lat), value, ice)
+
+
 def ice_surface_from_caps(cap_mask):
     return np.where(cap_mask, 1.0, 0.0)
 
@@ -215,6 +230,9 @@ def run_tests():
                           np.array([False, False, False, True]))
     assert np.allclose(out[:2], [0.2, 0.3]) and np.isnan(out[2]) and out[3] == 1.0
     assert list(ice_surface_from_caps(np.array([True, False]))) == [1.0, 0.0]
+    # high latitudes: filled only where nothing else has a value, both hemispheres
+    f = fill_high_latitude(np.array([np.nan, np.nan, 0.1, np.nan, np.nan]), np.array([70.0, -65.0, 70.0, 30.0, -57.4]))
+    assert np.allclose(f[:3], [ICE_HIGHLAT_PROB, ICE_HIGHLAT_PROB, 0.1]) and np.isnan(f[3]) and np.isnan(f[4])
     # SWIM GeoTIFF path on a synthetic geographic raster (value 0.5 north of 40 N, -1 elsewhere in the north, NaN south)
     import tempfile, rasterio
     from rasterio.transform import from_origin
@@ -265,8 +283,13 @@ print("GRS bins with data:", int(np.isfinite(grs_grid).sum()), "of", grs_grid.si
 # %%
 swim_files = sorted(SWIM_DIR.glob("*.tif*"))
 cap_files = sorted(CAP_DIR.glob("*.shp"))
-assert swim_files, f"No SWIM GeoTIFF in {SWIM_DIR}. See section 3."
-assert cap_files, f"No cap shapefile in {CAP_DIR}. See section 3."
+import warnings
+
+if not swim_files:
+    warnings.warn(f"No SWIM GeoTIFF in {SWIM_DIR}: SWIM is skipped. Northern mid-latitudes then use the GRS map only. See section 3.")
+if not cap_files:
+    warnings.warn(f"No cap shapefile in {CAP_DIR}: the polar caps are skipped. ice_surface will be 0 everywhere, so the caps are "
+                  "missing from the surface type (surf_ice), and the cap cells get no ice_prob of 1. See section 3.")
 
 # %% [markdown]
 # ## 4. Build ice_prob and ice_surface
@@ -276,16 +299,18 @@ cells = cell_centres()
 lat_c, lon_c = cells.lat.values, cells.lon.values
 
 swim_prob = np.full(len(cells), np.nan)
-for f in swim_files:                                   # several tiles/layers: maximum
+for f in swim_files:                                   # (an empty list leaves swim_prob all NaN)                                   # several tiles/layers: maximum
     swim_prob = np.fmax(swim_prob, swim_to_prob(swim_tif_to_cells(f)))
 
 grs_prob = weh_to_prob(grs_to_cells(grs_grid, lat_c, lon_c))
 
-rings = read_cap_rings(cap_files)
-cap = polygon_mask(rings, lat_c, lon_c)
-assert (cap & (lat_c > 0)).any() and (cap & (lat_c < 0)).any(), "need one cap in each hemisphere"
+if cap_files:
+    cap = polygon_mask(read_cap_rings(cap_files), lat_c, lon_c)
+    assert (cap & (lat_c > 0)).any() and (cap & (lat_c < 0)).any(), "need one cap in each hemisphere"
+else:
+    cap = np.zeros(len(cells), dtype=bool)
 
-ice_prob = combine_sources(swim_prob, grs_prob, cap)
+ice_prob = fill_high_latitude(combine_sources(swim_prob, grs_prob, cap), lat_c)
 ice_surface = ice_surface_from_caps(cap)
 
 part = pd.DataFrame({"cell_id": cells.cell_id.astype("int64"), "ice_prob": ice_prob, "ice_surface": ice_surface})
@@ -295,3 +320,4 @@ part.to_parquet(RAW / "part_ice.parquet", index=False)
 print(part.describe())
 print("cells: swim", int(np.isfinite(swim_prob).sum()), "grs", int(np.isfinite(grs_prob).sum()),
       "cap", int(cap.sum()), "NaN ice_prob", int(np.isnan(ice_prob).sum()))
+print("SOURCES USED: SWIM" if swim_files else "SOURCES SKIPPED: SWIM", "|", "caps" if cap_files else "caps SKIPPED", "| GRS | high-latitude assumption")

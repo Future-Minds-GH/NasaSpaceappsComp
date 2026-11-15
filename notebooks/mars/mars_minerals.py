@@ -1,22 +1,24 @@
 # %% [markdown]
 # # Job 2 depth: Mars minerals from TES
 #
-# Output: `analog-finder/raw/mars/part_minerals.parquet` (Google Drive). Columns: `cell_id, min_mafic, min_feldspathic, min_ironox, min_sulfate, min_clay, min_carbonate`.
+# Output: `analog-finder/raw/mars/part_minerals.parquet` (Google Drive). Columns: `cell_id, min_mafic, min_feldspathic, min_ironox, min_sulfate, min_clay, min_carbonate`. The six fractions sum to 1 in a covered cell; a cell with no TES data is null in all six.
 #
 # Source: the Mars Global Surveyor TES global mineral maps (Bandfield 2002, JGR 107(E6), "Global mineral distributions on Mars"), 13 bands at 4 pixels per degree, from the TES data node at ASU.
 #
-# **Important: rows are partly null by design.**
-# - `min_sulfate`, `min_clay` and `min_carbonate` are ALWAYS null in this file. The task keeps them for OMEGA/CRISM, which is a stretch goal. (The TES cube has sulfate, carbonate and sheet-silicate bands, but they are near the detection limit and are not used here.)
-# - Cells with no TES data are null in all six columns. TES pixels cover about 72 percent of the grid (none poleward of about 82 N and 87 S, plus gaps). After the 0.02 total cut, 58 percent of cells (150,008) have shares.
-# - The three measured classes (`min_mafic`, `min_feldspathic`, `min_ironox`) are shares of the three measured classes only. They sum to 1 inside each covered cell. They are NOT shares of the whole surface.
+# All six classes come from the TES cube, so a covered cell has a full mineral mix (the six fractions sum to 1). A mix with a null in it counts as missing in the matcher, so a Mars cell must never be partly null.
 #
-# How TES abundances become shares:
-# 1. Bands used (fraction of the surface-spectrum fit): plagioclase, low-Ca pyroxene, high-Ca pyroxene, olivine, hematite.
-# 2. `feldspathic = plagioclase`, `mafic = low-Ca pyroxene + high-Ca pyroxene + olivine`, `ironox = hematite`.
-# 3. Other fitted components (quartz, K-feldspar, amphibole, sulfate, carbonate, sheet silicate / high-Si glass, surface dust) are dropped. They are not in the three classes.
-# 4. Share = class / (feldspathic + mafic + ironox). Example: plagioclase 0.3, pyroxene 0.1, olivine 0.1, hematite 0.0 gives feldspathic 0.6, mafic 0.4, ironox 0.0.
-# 5. If the three classes add up to less than `MIN_TOTAL` (0.02), the shares are noise and the cell is null.
+# How TES abundances become the six classes:
+# 1. Bands used (fraction of the surface-spectrum fit): plagioclase, low-Ca pyroxene, high-Ca pyroxene, olivine, hematite, sulfate, carbonate, sheet silicate / high-Si glass.
+# 2. `min_feldspathic = plagioclase`, `min_mafic = low-Ca pyroxene + high-Ca pyroxene + olivine`, `min_ironox = hematite`, `min_sulfate = sulfate`, `min_carbonate = carbonate`, `min_clay = sheet silicate / high-Si glass`.
+# 3. Other fitted components (quartz, K-feldspar, amphibole, surface dust) are dropped. They are not in the six classes.
+# 4. Share = class / (sum of the six classes). Example: plagioclase 0.3, pyroxene 0.1, olivine 0.1, hematite 0.0, sulfate 0.0, carbonate 0.0, sheet silicate 0.0 gives feldspathic 0.6, mafic 0.4.
+# 5. If the six classes add up to less than `MIN_TOTAL` (0.02), the shares are noise and the cell is null.
 # 6. Regrid: the 0.25 deg map is block-averaged 2 x 2 into each 0.5 deg cell (the blocks line up exactly with the grid). A band value is the mean of the valid pixels. A cell needs at least 2 of 4 valid pixels. Normalisation happens AFTER the averaging.
+#
+# **Caveats (not verified):**
+# - In the TES maps, sulfate, carbonate and sheet silicate are low-abundance components, close to the detection limit (Bandfield 2002). Treat small values as uncertain. The detection limits are not applied here.
+# - The band "sheet silicate / high-Si glass" is not pure clay. It is used for `min_clay` because it is the nearest TES class. Treat `min_clay` as an upper bound for clays.
+# - Cells with no TES data are null in all six columns. TES pixels cover about 72 percent of the grid (none poleward of about 82 N and 87 S, plus gaps).
 #
 # Before you run: no login needed. The download is 54 MB. Run cells in order. Existing files are not downloaded again.
 
@@ -105,33 +107,32 @@ def block_mean(a, f=2, min_valid=MIN_VALID):
     return m
 
 
-def class_shares(plag, lowpx, highpx, oliv, hem, min_total=MIN_TOTAL):
-    # Arrays of the same shape (fractions, NaN = no data). Returns (mafic, feldspathic, ironox).
-    # Shares of the three measured classes; rows sum to 1 or all NaN.
+def class_shares(plag, lowpx, highpx, oliv, hem, sulf, carb, sheet, min_total=MIN_TOTAL):
+    # Arrays of the same shape (fractions, NaN = no data).
+    # Returns (mafic, feldspathic, ironox, sulfate, clay, carbonate): shares of the six classes; rows sum to 1 or all NaN.
     feld = np.asarray(plag, dtype="float64")
     mafic = np.asarray(lowpx, dtype="float64") + highpx + oliv
-    iron = np.asarray(hem, dtype="float64")
-    assert not (np.nanmin(np.stack([feld, mafic, iron])) < 0), "negative abundance"
-    tot = feld + mafic + iron                          # NaN if any input is NaN
+    classes = [mafic, feld, np.asarray(hem, dtype="float64"), np.asarray(sulf, dtype="float64"),
+               np.asarray(sheet, dtype="float64"), np.asarray(carb, dtype="float64")]
+    assert not (np.nanmin(np.stack(classes)) < 0), "negative abundance"
+    tot = sum(classes)                                   # NaN if any input is NaN
     ok = np.isfinite(tot) & (tot >= min_total)
     with np.errstate(invalid="ignore", divide="ignore"):
-        res = [np.where(ok, x / tot, np.nan) for x in (mafic, feld, iron)]
-    return tuple(res)
+        return tuple(np.where(ok, x / tot, np.nan) for x in classes)
 
 
-def cell_table(mafic, feld, iron):
+def cell_table(mafic, feld, iron, sulf, clay, carb):
     # Arrays (NROWS, NCOLS) -> DataFrame with cell_id = row * NCOLS + col, row 0 = lat 89.75, col 0 = lon -179.75.
     assert mafic.shape == (NROWS, NCOLS)
     n = NROWS * NCOLS
-    nan = np.full(n, np.nan)
     return pd.DataFrame({
         "cell_id": np.arange(n),
         "min_mafic": mafic.ravel(),
         "min_feldspathic": feld.ravel(),
         "min_ironox": iron.ravel(),
-        "min_sulfate": nan,
-        "min_clay": nan,
-        "min_carbonate": nan,
+        "min_sulfate": sulf.ravel(),
+        "min_clay": clay.ravel(),
+        "min_carbonate": carb.ravel(),
     })
 
 
@@ -141,20 +142,26 @@ def minerals_from_cube(cube):
     assert cube.shape == (13, 2 * NROWS, 2 * NCOLS)
     m = block_mean(mask_fill(cube))
     g = lambda name: m[BANDS.index(name)]
-    mafic, feld, iron = class_shares(g("plagioclase"), g("low_ca_px"), g("high_ca_px"), g("olivine"), g("hematite"))
-    return cell_table(mafic, feld, iron)
+    shares = class_shares(g("plagioclase"), g("low_ca_px"), g("high_ca_px"), g("olivine"), g("hematite"),
+                          g("sulfate"), g("carbonate"), g("sheet_hi_si_glass"))
+    return cell_table(*shares)
 
 # %% [markdown]
 # ## 1. Synthetic tests
 
 # %%
-# shares: example from the text
-mf, fe, ir = class_shares(np.array([0.3]), np.array([0.05]), np.array([0.05]), np.array([0.1]), np.array([0.0]))
-assert np.allclose([mf[0], fe[0], ir[0]], [0.4, 0.6, 0.0]), (mf, fe, ir)
-# sum 1, too small -> NaN, NaN input -> NaN
-mf, fe, ir = class_shares(np.array([0.0, 0.1, np.nan]), np.zeros(3), np.zeros(3), np.array([0.0, 0.1, 0.1]), np.array([0.0, 0.0, 0.1]))
-assert np.isnan([mf[0], fe[0], ir[0]]).all() and np.isclose(mf[1] + fe[1] + ir[1], 1) and np.isnan(mf[2])
-# block mean: one NaN of 4 is kept (3 valid); two NaN is dropped to NaN? (2 valid = kept); three NaN = NaN
+# shares: example from the text (mafic, feldspathic, ironox, sulfate, clay, carbonate)
+z = np.array([0.0])
+mf, fe, ir, su, cl, ca = class_shares(np.array([0.3]), np.array([0.05]), np.array([0.05]), np.array([0.1]), z, z, z, z)
+assert np.allclose([mf[0], fe[0], ir[0], su[0], cl[0], ca[0]], [0.4, 0.6, 0, 0, 0, 0]), (mf, fe, ir)
+# all six classes: sulfate, clay and carbonate take their share
+res = class_shares(np.array([0.2]), np.array([0.1]), z, z, np.array([0.1]), np.array([0.1]), np.array([0.1]), np.array([0.2]))
+assert np.isclose(sum(r[0] for r in res), 1) and np.isclose(res[3][0], 0.1 / 0.8) and np.isclose(res[4][0], 0.2 / 0.8) and np.isclose(res[5][0], 0.1 / 0.8)
+# too small -> NaN, NaN input -> NaN, sum 1 otherwise
+res = class_shares(np.array([0.0, 0.1, np.nan]), np.zeros(3), np.zeros(3), np.array([0.0, 0.1, 0.1]), np.array([0.0, 0.0, 0.1]),
+                   np.zeros(3), np.zeros(3), np.zeros(3))
+assert np.isnan([r[0] for r in res]).all() and np.isclose(sum(r[1] for r in res), 1) and np.isnan([r[2] for r in res]).all()
+# block mean: one NaN of 4 is kept (3 valid); a block with fewer than 2 valid pixels is NaN
 a = np.array([[1, 3, np.nan, np.nan], [np.nan, 5, np.nan, np.nan]], dtype=float)
 bm = block_mean(a)
 assert np.isclose(bm[0, 0], 3.0) and np.isnan(bm[0, 1])
@@ -162,14 +169,15 @@ assert np.isclose(bm[0, 0], 3.0) and np.isnan(bm[0, 1])
 syn = np.zeros((13, 720, 1440))
 syn[2] = 0.1
 syn[7, 360:362, 720:722] = 0.1          # hematite in one cell at lat ~0, lon ~0
+syn[8] = 0.02                           # a little sulfate everywhere
 syn[:, :40, :] = FILL                   # no data in the north
 df = minerals_from_cube(syn)
 assert len(df) == NROWS * NCOLS and df["cell_id"].iloc[-1] == NROWS * NCOLS - 1
 r, c = 180, 360
 row = df.iloc[r * NCOLS + c]
-assert np.isclose(row.min_ironox, 0.5) and np.isclose(row.min_feldspathic, 0.5) and row.min_mafic == 0
-assert df.loc[:NCOLS * 20 - 1, ["min_mafic", "min_feldspathic", "min_ironox"]].isna().all().all()
-assert df[["min_sulfate", "min_clay", "min_carbonate"]].isna().all().all()
+assert np.isclose(row.min_ironox, 0.1 / 0.22) and np.isclose(row.min_feldspathic, 0.1 / 0.22) and row.min_mafic == 0
+assert np.isclose(row.min_sulfate, 0.02 / 0.22) and row.min_clay == 0 and row.min_carbonate == 0
+assert df.loc[:NCOLS * 20 - 1, ["min_mafic", "min_feldspathic", "min_ironox", "min_sulfate", "min_clay", "min_carbonate"]].isna().all().all()
 print("synthetic tests passed")
 
 # %% [markdown]
@@ -225,8 +233,10 @@ hdr = parse_envi_header(hdr_path.read_text())
 cube = read_cube(cube_path, hdr)
 df = minerals_from_cube(cube)
 cov = df["min_mafic"].notna().mean()
-shares = df[["min_mafic", "min_feldspathic", "min_ironox"]]
+MIN_COLS = ["min_mafic", "min_feldspathic", "min_ironox", "min_sulfate", "min_clay", "min_carbonate"]
+shares = df[MIN_COLS]
 ok = shares.notna().all(axis=1)
+assert (shares.notna().sum(axis=1).isin([0, 6])).all(), "a row is only partly null"
 assert np.allclose(shares[ok].sum(axis=1), 1.0)
 assert (shares[ok] >= 0).all().all() and (shares[ok] <= 1).all().all()
 print(f"cells with shares: {ok.sum()} of {len(df)} ({cov:.1%})")
