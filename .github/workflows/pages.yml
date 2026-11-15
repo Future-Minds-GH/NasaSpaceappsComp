@@ -27,7 +27,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - run: npm install
+      - run: npm ci
       - name: Sample data if the real data is not committed yet
         run: |
           if [ ! -f public/data/weights.json ]; then
