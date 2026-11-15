@@ -34,12 +34,12 @@ def moon_parts(ice_surface=0.0):
 
 def mars_parts():
     rng = np.random.default_rng(1)
-    third = np.where(LAT > 0, 1 / 3, np.nan)
+    sixth = np.where(LAT > 0, 1 / 6, np.nan)
     return {
         "part_sun_albedo_caves.parquet": pd.DataFrame({"cell_id": IDS, "sun_wm2": 100.0, "albedo": 0.2, "ati": rng.uniform(0.01, 0.06, N), "cave_km": 300.0}),
         "part_ice.parquet": pd.DataFrame({"cell_id": IDS, "ice_prob": 0.1, "ice_surface": np.where(LAT > 85, 1.0, 0.0)}),
-        "part_minerals.parquet": pd.DataFrame({"cell_id": IDS, "min_mafic": third, "min_feldspathic": third, "min_ironox": third,
-                                               "min_sulfate": np.nan, "min_clay": np.nan, "min_carbonate": np.nan}),
+        "part_minerals.parquet": pd.DataFrame({"cell_id": IDS, "min_mafic": sixth, "min_feldspathic": sixth, "min_ironox": sixth,
+                                               "min_sulfate": sixth, "min_clay": sixth, "min_carbonate": sixth}),
     }
 
 
@@ -51,11 +51,11 @@ def test_moon_merge_has_contract_columns_and_valid_groups():
     assert df["min_mafic"].isna().sum() == (LAT <= 0).sum()
 
 
-def test_mars_merge_keeps_unmeasured_minerals_null():
+def test_mars_merge_has_full_six_class_minerals():
     df = mb.merge_parts("mars", thin(), mars_parts())
     mb.check_contract("mars", df)
-    assert df["min_sulfate"].isna().all() and df["min_clay"].isna().all() and df["min_carbonate"].isna().all()
-    assert np.allclose(df.loc[LAT > 0, ["min_mafic", "min_feldspathic", "min_ironox"]].sum(axis=1), 1)
+    assert np.allclose(df.loc[LAT > 0, mb.MIN].sum(axis=1), 1)
+    assert df.loc[LAT > 0, mb.MIN].notna().all().all()          # no partly null row: the matcher would drop the factor
 
 
 def test_surface_ice_only_from_ice_surface():
@@ -83,9 +83,10 @@ def test_missing_part_leaves_columns_null():
     mb.check_contract("moon", df)
 
 
-def test_unmeasured_mineral_with_data_fails_check():
+def test_partly_null_mineral_row_fails_check():
     df = mb.merge_parts("mars", thin(), mars_parts())
-    df.loc[0, "min_clay"] = 0.2
+    row = int(np.flatnonzero(LAT > 0)[0])
+    df.loc[row, "min_clay"] = np.nan                           # one null makes the whole mix "no data"
     with pytest.raises(AssertionError):
         mb.check_contract("mars", df)
 

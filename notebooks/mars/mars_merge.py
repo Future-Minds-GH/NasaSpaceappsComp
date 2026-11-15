@@ -7,8 +7,8 @@
 #
 # Surface type uses Job 1's `surface_fractions()` with cuts from Mars's own ATI ranks (ATI depends on day length and
 # measuring time, so one set of cuts does not fit all bodies). `analog_ok` is true everywhere (contract).
-# `min_sulfate`, `min_clay` and `min_carbonate` are not measured on Mars here, so they stay null; the three measured
-# classes (mafic, feldspathic, iron oxide) sum to 1.
+# All six mineral classes come from the TES cube, so a covered cell has all six (they sum to 1) and an uncovered cell has
+# none. A partly null mix would count as missing in the matcher.
 #
 # Before you run: copy `src/merge_body.py` and `src/surface_fractions.py` (Job 1, PR #3) to `analog-finder/code/` on Drive.
 

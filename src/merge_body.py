@@ -7,8 +7,8 @@ Rules (same as the Earth merge):
 - Missing = NaN, never 0.
 - Surface type = surface_fractions(albedo, ati, ice_surface, cuts) with cuts taken from the body's own
   ATI ranks (ati_cuts), because ATI depends on day length and measuring time.
-- A fraction group (surf_*, min_*) sums to 1 or is null. Exception, Mars: sulfate, clay and carbonate are
-  not measured (always null), so the three measured mineral classes sum to 1 and the other three are null.
+- A fraction group (surf_*, min_*) sums to 1 or is null. A partly null group counts as missing in the matcher, so
+  every cell must have all six mineral classes or none (Mars: all six come from the TES cube).
 - analog_ok is true for every cell on the Moon and Mars (contract).
 """
 import numpy as np
@@ -32,7 +32,6 @@ SPECS = {
             "part_albedo_ice.parquet": ["albedo", "ati", "ice_prob", "ice_surface"],
             "part_minerals_sun_caves.parquet": ["sun_wm2", *MIN, "cave_km"],
         },
-        "unmeasured": [],
     },
     "mars": {
         "parts": {
@@ -40,7 +39,6 @@ SPECS = {
             "part_ice.parquet": ["ice_prob", "ice_surface"],
             "part_minerals.parquet": MIN,
         },
-        "unmeasured": ["min_sulfate", "min_clay", "min_carbonate"],
     },
 }
 
@@ -82,13 +80,10 @@ def merge_parts(body, thin, parts):
 def check_contract(body, df):
     assert list(df.columns) == CONTRACT
     assert df["cell_id"].is_unique
-    measured = [c for c in MIN if c not in SPECS[body]["unmeasured"]]
-    for group in (SURF, measured):
+    for group in (SURF, MIN):
         n_null = df[group].isna().sum(axis=1)
         assert n_null.isin([0, len(group)]).all(), f"{group[0]}..: a row is only partly null"
         s = df[group].sum(axis=1, skipna=False).dropna()
         assert np.allclose(s, 1, atol=1e-6), f"{group[0]}..: fractions do not sum to 1"
-    for c in SPECS[body]["unmeasured"]:
-        assert df[c].isna().all(), f"{c} is not measured on {body} and must stay null"
     ice = df["ice_prob"].dropna()
     assert ice.between(0, 1).all(), "ice_prob must be 0-1"
