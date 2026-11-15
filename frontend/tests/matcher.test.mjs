@@ -148,7 +148,6 @@ test("missing data: a tile without a factor gets that factor's median score and 
   const schema = JSON.parse(readFileSync(new URL("../../data/schema.json", import.meta.url), "utf8"));
   const layout = readLayout(schema);
   const stride = layout.bytesPerTile;
-  const minerals = layout.fields.min_mafic.offset;
   const mineralBytes = schema.factors.find((factor) => factor.id === "minerals").fields.map((field) => layout.fields[field.id].offset);
   const clicked = new Uint8Array(stride).fill(100);
   const tiles = new Uint8Array(stride * 4).fill(100);
@@ -162,5 +161,15 @@ test("missing data: a tile without a factor gets that factor's median score and 
   assert.ok(Math.abs(scores[FACTORS.length + m] - (present[0] + present[1]) / 2) < 1e-6, "median of the tiles that have minerals");
   assert.deepEqual(typicalFactorsOf(scores, 1), ["minerals"]);
   assert.deepEqual(typicalFactorsOf(scores, 3), []);
-  assert.ok(minerals >= 0);
+  // Odd count: three tiles with minerals, one without -> the middle value.
+  const five = new Uint8Array(stride * 4).fill(100);
+  for (const offset of mineralBytes) { five[offset] = NULL_CODE; five[stride + offset] = 0; five[2 * stride + offset] = 50; }
+  const oddScores = scoreAllEarthTiles(clicked, five, layout);
+  const odd = [1, 2, 3].map((tile) => oddScores[tile * FACTORS.length + m]).sort();
+  assert.ok(Math.abs(oddScores[m] - odd[1]) < 1e-6, "odd count: the middle value");
+  // The clicked tile lacks minerals: nobody gets a typical score, the factor stays out.
+  const noMinerals = Uint8Array.from(clicked);
+  for (const offset of mineralBytes) noMinerals[offset] = NULL_CODE;
+  const none = scoreAllEarthTiles(noMinerals, tiles, layout);
+  for (let tile = 0; tile < 4; tile++) assert.ok(Number.isNaN(none[tile * FACTORS.length + m]));
 });
