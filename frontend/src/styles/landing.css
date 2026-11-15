@@ -136,9 +136,9 @@
 .similarity.body-mars { --body-color: var(--mars); }
 .similarity :focus-visible { outline-color: var(--focus); }
 .similarity.is-message { color: var(--ink-soft); }
-.similarity.band-green { --band: #2E8540; }
-.similarity.band-yellow { --band: #D9A400; }
-.similarity.band-red { --band: #D83933; }
+.similarity.band-green { --band: var(--band-green); }
+.similarity.band-yellow { --band: var(--band-yellow); }
+.similarity.band-red { --band: var(--band-red); }
 .similarity .score-ring-fill { stroke: var(--band); }
 .similarity-select {
   display: flex; align-items: center; gap: 14px; padding: 0; border: 0; background: none; color: inherit;
@@ -154,11 +154,12 @@
 .similarity-bar { display: grid; grid-template-columns: 1fr 3rem; grid-template-rows: auto auto; column-gap: 8px; row-gap: 2px; align-items: center; font-size: 0.8125rem; }
 .similarity-bar-name { display: flex; align-items: center; font-weight: 600; }
 .similarity-bar-value { grid-column: 2; grid-row: 1; font-family: var(--font-mono); text-align: right; }
+.similarity-bar-real { grid-column: 1 / -1; font-size: 0.75rem; color: var(--ink-soft); }
 .similarity-bar-track { grid-column: 1 / -1; grid-row: 2; height: 8px; border-radius: 4px; background: var(--rule-soft); overflow: hidden; }
 .similarity-bar-fill { display: block; height: 100%; width: 100%; transform-origin: left; border-radius: 4px; animation: bar-grow 700ms var(--ease-out) both; }
-.similarity-bar.band-green .similarity-bar-fill { background: #2E8540; }
-.similarity-bar.band-yellow .similarity-bar-fill { background: #E5B000; }
-.similarity-bar.band-red .similarity-bar-fill { background: #D83933; }
+.similarity-bar.band-green .similarity-bar-fill { background: var(--band-green); }
+.similarity-bar.band-yellow .similarity-bar-fill { background: var(--band-yellow); }
+.similarity-bar.band-red .similarity-bar-fill { background: var(--band-red); }
 .similarity-bar.is-missing { color: var(--ink-soft); }
 .similarity-bar.is-missing .factor-swatch { background: transparent; border: 1px dashed currentColor; }
 .similarity-bar.is-missing .similarity-bar-value { font-style: italic; font-family: var(--font); }
@@ -188,6 +189,7 @@
 }
 
 /* ---- Sidebar caption ---- */
+.factor-sidebar .mode-toggle-option span, .factor-sidebar .factor-group, .factor-sidebar .control-label { color: var(--on-space-soft); }
 .factor-sidebar-intro { margin-top: -12px; font-size: 0.75rem; color: var(--on-space-soft); }
 
 /* ---- Output planets: each one clicked on the right becomes another globe in a row ---- */
@@ -223,13 +225,6 @@
 }
 @media (prefers-reduced-motion: reduce) { .target-globe { animation: none; } }
 
-/* ---- Single measurements under a factor ---- */
-.measurement-list { list-style: none; display: grid; gap: 8px; margin: 6px 0 2px 6px; padding-left: 12px; border-left: 2px solid var(--factor-color); }
-.measurement-slider { display: grid; gap: 2px; }
-.measurement-slider .factor-slider-head { font-size: 0.8125rem; font-weight: 500; color: var(--on-space-soft); }
-.measurement-slider input[type="range"] { width: 100%; accent-color: var(--factor-color); }
-.measurement-note { font-size: 0.75rem; color: #FFBE2E; }
-.similarity-measurements { font-size: 0.75rem; color: var(--ink-soft); }
 
 /* ---- Coordinates: two compact readouts instead of one long mono string ---- */
 .coords { display: inline-flex; gap: 8px; font-family: var(--font-display); font-weight: 600; font-size: 0.875rem; letter-spacing: 0; color: inherit; white-space: nowrap; }
@@ -240,7 +235,7 @@
 .compute-from .coords { margin-top: 2px; }
 .similarity .coord { background: var(--paper-raised); }
 
-/* "+ Add a measurement" dropdown */
+/* "+ Add a factor" dropdown */
 .factor-add-select select {
   width: 100%; min-height: 44px; padding: 10px 36px 10px 12px; appearance: none; cursor: pointer;
   font: inherit; font-weight: 600; color: var(--on-space);
@@ -283,7 +278,7 @@
 
 /* 8. Nothing under 12px */
 .coord-hemi, .similarity-same, .compute-from .eyebrow { font-size: 0.75rem; }
-.similarity-footer, .similarity-measurements, .similarity-caption { font-size: 0.75rem; }
+.similarity-footer, .similarity-caption { font-size: 0.75rem; }
 
 /* 9. Less motion once a result is showing */
 .workspace:has(.similarity-results) .hovering-planet { animation: none; }
@@ -309,7 +304,8 @@
 @media (min-width: 641px) {
   .workspace { grid-template-rows: auto auto auto; align-items: start; min-height: 0; }
   .factor-sidebar { position: sticky; top: 0; height: 100dvh; max-height: 100dvh; align-self: start; overflow: hidden; padding-block: 16px; gap: 12px; }
-  .factor-slider-list { gap: 10px; flex: 1 1 auto; min-height: 0; overflow-y: auto; padding-right: 4px; margin-right: -4px; }
+  .factor-slider-list { gap: 10px; }
+  .factor-groups { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding-right: 4px; margin-right: -4px; display: grid; gap: 10px; align-content: start; }
   .factor-add-select { flex: none; }
   .workspace-stage { height: calc(100dvh - var(--header-height) - 92px); min-height: 360px; container-type: size; overflow: hidden; padding-block: 12px; }
   .hovering-planet,

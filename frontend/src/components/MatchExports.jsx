@@ -2,7 +2,7 @@
 import { FACTORS, normaliseWeights } from "../data/scoring.js";
 import { downloadText, toCsv } from "../data/format.js";
 
-const BASE_COLUMNS = ["rank", "tile_id", "name", "lat", "lon", "score", "earth_rank_pct", "km_to_nearest_known_analog", "false_friend"];
+const BASE_COLUMNS = ["rank", "tile_id", "name", "lat", "lon", "score", "band", "mode", "earth_rank_pct", "km_to_nearest_known_analog", "false_friend"];
 
 export default function MatchExports({ matches, fileStem, weights, clickedTileId }) {
   const usedWeights = normaliseWeights(weights ?? {});

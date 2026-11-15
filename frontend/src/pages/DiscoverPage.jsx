@@ -63,6 +63,7 @@ function DiscoveryCatalogue({ discoveries, targets, weightsFile }) {
           presets={ranking.presets}
           presetId={ranking.presetId}
           weights={ranking.weights}
+          groups={ranking.groups}
           isCustom={ranking.isCustom}
           onSelectPreset={ranking.selectPreset}
           onChangeWeights={ranking.setCustomWeights}

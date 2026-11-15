@@ -1,17 +1,20 @@
-// One slider per factor. The seven weights always sum to 1: moving one slider rescales the others in proportion,
+// One slider per factor. The nine weights always sum to 1: moving one slider rescales the others in proportion,
 // and a slider at 0 leaves that factor out of the score. Each move re-ranks the matches live.
 import { FACTORS, normaliseWeights, rebalanceWeights } from "../data/scoring.js";
-import { FACTOR_LABELS } from "../content/labels.js";
+import { DEFAULT_GROUPS, FACTOR_LABELS, GROUP_LABELS } from "../content/labels.js";
 
 const SLIDER_STEP = 0.01;
 
-export default function WeightSliders({ weights, onChange, onReset, isCustom }) {
+export default function WeightSliders({ weights, groups = DEFAULT_GROUPS, onChange, onReset, isCustom }) {
   const shares = normaliseWeights(weights);
 
   return (
     <fieldset className="weight-sliders">
       <legend className="control-label">How much each factor counts (always adds up to 100%)</legend>
-      {FACTORS.map((factor) => (
+      {Object.entries(groups).map(([group, factors]) => (
+        <div className="weight-group" key={group} role="group" aria-label={GROUP_LABELS[group] ?? group}>
+        <p className="factor-group">{GROUP_LABELS[group] ?? group}</p>
+        {factors.map((factor) => (
         <div className="weight-row" key={factor} style={{ "--factor-color": `var(--factor-${factor})` }}>
           <label htmlFor={`weight-${factor}`}>{FACTOR_LABELS[factor]}</label>
           <input
@@ -25,6 +28,8 @@ export default function WeightSliders({ weights, onChange, onReset, isCustom }) 
             onChange={(event) => onChange(rebalanceWeights(shares, factor, Number(event.target.value)))}
           />
           <output htmlFor={`weight-${factor}`}>{Math.round(shares[factor] * 100)}%</output>
+        </div>
+        ))}
         </div>
       ))}
       <button className="button button-quiet" type="button" onClick={onReset} disabled={!isCustom}>

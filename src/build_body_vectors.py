@@ -1,19 +1,18 @@
-"""Turn moon.parquet and mars.parquet into the binary files the website reads, and write vectors/schema.json.
+"""Turn moon.parquet and mars.parquet into the binary files the website reads (tile format v0.3).
 
-Output (under --out), in the format of the front end's make-sample-vectors.mjs (schema v0.1):
-  vectors/schema.json      field order, encoding and lookups (same fields as build_vectors.py)
-  vectors/moon.bin         EVERY Moon tile, HEALPix NESTED nside 64, 34 bytes each, in tile-index order
+Output (under --out):
+  vectors/schema.json      a copy of data/schema.json (field order, encoding, scoring rules)
+  vectors/moon.bin         EVERY Moon tile, HEALPix NESTED nside 64, one byte per schema field each, in tile-index order
   vectors/mars_<0-11>.bin  EVERY Mars tile, nside 128, split by base cell (tiles base*nside^2 .. (base+1)*nside^2-1)
   tiles/<body>_meta.json   reality gap, named tiles, the target sites for the globe buttons, min_estimated
 
 How a tile gets its values: each tile takes the 0.5 deg cell that contains the tile centre. Tiles whose cell has
-analog_ok = false (or no row) get 255 (null) in every byte. Percentile fields are ranks among the scored tiles of
-that body only. Fields the tables do not have (embeddings, codes, flags, atmosphere, ...) are 255.
-Known gaps: min_feldspathic and the surf_* fractions have no field in schema v0.1, so they are not exported.
+analog_ok = false (or no row) get 255 (null) in every byte. Percentile fields (elev_pct and the relative fields)
+are ranks among the scored tiles of that body only. Encoding of every field: see build_vectors.py.
 
 Install:  pip install astropy-healpix pandas pyarrow numpy
 Usage:    python src/build_body_vectors.py --moon moon.parquet --mars mars.parquet --out frontend/public/data
-                                           [--targets data/targets.json]
+                                           [--targets data/targets.json] [--schema data/schema.json]
 """
 import argparse
 import json
@@ -25,7 +24,7 @@ import numpy as np
 import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from build_vectors import BYTES, FIELDS, NEEDED, NULL, field_values, to_byte  # noqa: E402
+from build_vectors import DEFAULT_SCHEMA, NULL, fill_vectors, load_schema, needed_columns  # noqa: E402
 
 NSIDE = {"earth": 256, "moon": 64, "mars": 128}
 CELL = 0.5
@@ -40,40 +39,6 @@ TREK = {  # same layers as trekImageUrl() in frontend/scripts/make-sample-data.m
     "mars": ("Mars/EQ/THEMIS_DayIR_ControlledMosaics_100m_v2_oct2018", 9, "png"),
     "moon": ("Moon/EQ/LRO_WAC_Mosaic_Global_303ppd_v02", 8, "jpg"),
 }
-
-FACTOR_ORDER = ["terrain", "elevation", "geology", "mineralogy", "climate", "atmosphere", "water_ice"]
-LOOKUP_OF = {"topo_position": "topo_position", "rock_class": "rock_class", "ice_depth": "ice_depth", "ice_form": "ice_form"}
-LOOKUPS = {  # copied from SCHEMA in frontend/scripts/make-sample-vectors.mjs
-    "topo_position": {"names": ["basin", "lower slope", "flat", "upper slope", "ridge"],
-                      "rule": "same 1, neighbouring code 0.5, else 0"},
-    "rock_class": {"names": ["anorthosite", "basalt", "other igneous", "sedimentary", "evaporite", "impact breccia", "ice"],
-                   "groups": ["igneous", "igneous", "igneous", "sedimentary", "sedimentary", "impact", "ice"],
-                   "rule": "same 1, same group 0.5, else 0"},
-    "ice_depth": {"names": ["surface", "under 1 m", "deeper", "none"], "rule": "same 1, else 0"},
-    "ice_form": {"names": ["none", "seasonal", "ground ice", "buried glacial ice", "exposed ice sheet"],
-                 "related": [[2, 3]], "rule": "same 1, ground vs buried 0.5, else 0"},
-}
-
-
-def schema():
-    factors = []
-    for fac in FACTOR_ORDER:
-        fields = []
-        for factor, fid, kind, _src in FIELDS:
-            if factor == fac:
-                f = {"id": fid, "kind": kind}
-                if fid in LOOKUP_OF:
-                    f["lookup"] = LOOKUP_OF[fid]
-                fields.append(f)
-        factors.append({"id": fac, "fields": fields})
-    flat = [f["id"] for fac in factors for f in fac["fields"]]
-    assert flat == [f[1] for f in FIELDS], "FIELDS are not grouped by factor in factor order"
-    return {
-        "version": "0.1", "sample": False, "nside": NSIDE, "scheme": "nested", "null_code": NULL,
-        "encoding": {"percentile": "round(p × 254)", "fraction": "round(f × 254)",
-                     "embedding": "round((e + 1) / 2 × 254)", "code": "integer code", "flag": "0 or 1"},
-        "mars_shards": "mars_<base cell 0-11>.bin", "factors": factors, "lookups": LOOKUPS,
-    }
 
 
 def tile_centres(nside):
@@ -98,9 +63,10 @@ def cell_of(lat, lon):
     return row * NCOLS + col
 
 
-def build_body(df, nside):
-    """Returns (vectors uint8 [npix, 34] for EVERY tile, summary)."""
-    missing = [c for c in NEEDED if c not in df.columns]
+def build_body(df, nside, fields=None):
+    """Returns (vectors uint8 [npix, len(fields)] for EVERY tile, summary)."""
+    fields = fields or load_schema()[1]
+    missing = [c for c in needed_columns(fields) if c not in df.columns]
     assert not missing, f"table is missing columns {missing}"
     assert df["cell_id"].is_unique, "cell_id must be unique"
     assert df["cell_id"].between(0, NROWS * NCOLS - 1).all(), "cell_id must be 0..N-1"
@@ -111,13 +77,8 @@ def build_body(df, nside):
     scored = np.flatnonzero(df["analog_ok"].to_numpy()[cell])
     assert scored.size > 0, "no scored tiles: analog_ok is never true"
     sub = df.iloc[cell[scored]].reset_index(drop=True)
-    vectors = np.full((lat.size, BYTES), NULL, dtype="uint8")
-    filled = {}
-    for j, (_f, fid, _kind, source) in enumerate(FIELDS):
-        v = field_values(sub, source)
-        if v is not None:
-            vectors[scored, j] = to_byte(v)
-        filled[fid] = float((vectors[scored, j] != NULL).mean())
+    vectors = np.full((lat.size, len(fields)), NULL, dtype="uint8")
+    filled = fill_vectors(sub, fields, scored, vectors)
     return vectors, {"tiles": int(lat.size), "scored_tiles": int(scored.size), "share_filled": filled}
 
 
@@ -145,9 +106,9 @@ def body_meta(body, targets):
             "named": named, "sites": sites, "min_estimated": []}
 
 
-def write_body(out, body, vectors):
+def write_body(out, body, vectors, nbytes):
     nside = NSIDE[body]
-    assert vectors.shape == (12 * nside * nside, BYTES)
+    assert vectors.shape == (12 * nside * nside, nbytes)
     if body == "mars":
         per = nside * nside
         for shard in range(12):
@@ -161,18 +122,20 @@ def main():
     ap.add_argument("--moon", type=Path)
     ap.add_argument("--mars", type=Path)
     ap.add_argument("--out", type=Path, required=True)
+    ap.add_argument("--schema", type=Path, default=DEFAULT_SCHEMA, help="data/schema.json (tile format v0.3)")
     ap.add_argument("--targets", type=Path, default=Path(__file__).resolve().parent.parent / "data" / "targets.json")
     a = ap.parse_args()
     (a.out / "vectors").mkdir(parents=True, exist_ok=True)
     (a.out / "tiles").mkdir(parents=True, exist_ok=True)
-    (a.out / "vectors" / "schema.json").write_text(json.dumps(schema(), indent=1, ensure_ascii=False), encoding="utf-8")
+    fields = load_schema(a.schema)[1]
+    (a.out / "vectors" / "schema.json").write_bytes(a.schema.read_bytes())
     targets = json.loads(a.targets.read_text(encoding="utf-8")) if a.targets.exists() else []
     for body, path in (("moon", a.moon), ("mars", a.mars)):
         if path is None:
             continue
         assert path.stat().st_size < 2_000_000_000, f"{path} is larger than 2 GB"
-        vectors, summary = build_body(pd.read_parquet(path), NSIDE[body])
-        write_body(a.out, body, vectors)
+        vectors, summary = build_body(pd.read_parquet(path), NSIDE[body], fields)
+        write_body(a.out, body, vectors, len(fields))
         (a.out / "tiles" / f"{body}_meta.json").write_text(
             json.dumps(body_meta(body, targets), ensure_ascii=False), encoding="utf-8")
         print(body, json.dumps(summary))

@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { startSearchWorker } from "./startSearchWorker.js";
 
-/** Owns the worker: sends the schema once, each body's tiles once, then "score" per new search and "rank" per new weights. */
+/** Owns the worker: sends the schema once, each body's tiles once, then "score" per new search or mode and "rank" per new weights. */
 export function useSearchWorker(baseData) {
   const [worker, setWorker] = useState(null);
   const [isWorkerReady, setIsWorkerReady] = useState(false);
@@ -41,7 +41,7 @@ export function useSearchWorker(baseData) {
     return () => searchWorker.terminate();
   }, [baseData]);
 
-  const requestRanking = useMemo(() => (tileId, body, candidates, clickedVector, weights, fieldWeights = null) => {
+  const requestRanking = useMemo(() => (tileId, body, candidates, clickedVector, weights, mode) => {
     const state = requestRef.current;
     if (!state.sentBodies.has(body)) {
       worker.postMessage({
@@ -52,20 +52,20 @@ export function useSearchWorker(baseData) {
       state.sentBodies.add(body);
     }
     state.id += 1;
-    // Measurement weights change the factor scores themselves, so a change re-scores rather than re-ranks.
-    const searchKey = searchKeyOf(tileId, body, fieldWeights);
+    // The mode changes the factor scores themselves, so a change re-scores rather than re-ranks.
+    const searchKey = searchKeyOf(tileId, body, mode);
     const isNewSearch = state.scoredKey !== searchKey;
     state.scoredKey = searchKey;
     state.pending.set(state.id, { searchKey, weights });
     worker.postMessage(isNewSearch
-      ? { type: "score", requestId: state.id, clickedVector: Uint8Array.from(clickedVector), body, weights, fieldWeights }
+      ? { type: "score", requestId: state.id, clickedVector: Uint8Array.from(clickedVector), body, weights, mode }
       : { type: "rank", requestId: state.id, weights });
   }, [worker]);
 
   return { isWorkerReady, workerError, latestPicks, requestRanking };
 }
 
-/** One key per (tile, body, measurement weights): what the worker has scored. */
-export function searchKeyOf(tileId, body, fieldWeights) {
-  return `${tileId}>${body}${fieldWeights ? `|${JSON.stringify(fieldWeights)}` : ""}`;
+/** One key per (tile, body, mode): what the worker has scored. */
+export function searchKeyOf(tileId, body, mode) {
+  return `${tileId}>${body}|${mode}`;
 }

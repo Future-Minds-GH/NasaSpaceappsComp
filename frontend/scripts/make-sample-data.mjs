@@ -1,7 +1,7 @@
 // Writes placeholder data files into public/data/ in the shape Role 2's pipeline produces, so every screen can be
 // built before the real files exist. Run with `npm run sample-data`. Every file carries "sample": true; the site shows
 // a "sample data" note while it sees that flag, and the note disappears once Role 2's real files replace these.
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { EARTH_PLACES, FACTORS, KNOWN_ANALOGS, REALITY_GAP, TARGETS, WHY_PHRASES } from "./sample-places.mjs";
@@ -15,28 +15,24 @@ const GRID_TILE_DEG = 10;
 // Grid cells are filled in this far around each sample place, so clicks near real deserts, poles and volcanoes work.
 const GRID_RADIUS_DEG = 1.5;
 
-// Plan v2.1 presets. The Moon has no atmosphere, so that factor drops out of Moon scores and the weights renormalise.
-const PRESETS = {
-  balanced: {
-    label: "Balanced", description: "All seven factors count, water and ice a little more.",
-    weights: { terrain: 0.15, elevation: 0.1, geology: 0.15, mineralogy: 0.15, climate: 0.15, atmosphere: 0.1, water_ice: 0.2 },
-  },
-  landing: {
-    label: "Landing & mobility", description: "Favours ground a lander and rover can handle: slope, roughness and dust.",
-    weights: { terrain: 0.4, elevation: 0.1, geology: 0.15, mineralogy: 0.05, climate: 0.1, atmosphere: 0.15, water_ice: 0.05 },
-  },
-  base: {
-    label: "Base & resources", description: "Favours what a long-term base lives on: ice, cold and sunlight.",
-    weights: { terrain: 0.15, elevation: 0.1, geology: 0.05, mineralogy: 0.1, climate: 0.2, atmosphere: 0.1, water_ice: 0.3 },
-  },
-};
-const FACTOR_LABELS = {
-  terrain: "Terrain", elevation: "Elevation & topography", geology: "Geology", mineralogy: "Mineralogy",
-  climate: "Climate", atmosphere: "Atmosphere: dust & wind", water_ice: "Water & ice",
-};
+// The mission presets of web/src/presets.json (the contract's nine weight keys), as shares that sum to 1 (4 decimals), in
+// the weights.json shape of the matcher brief; the factor labels and groups come from data/schema.json and presets.json.
+const HERE = dirname(fileURLToPath(import.meta.url));
+const SCHEMA = JSON.parse(readFileSync(join(HERE, "..", "..", "data", "schema.json"), "utf8"));
+const PRESET_FILE = JSON.parse(readFileSync(join(HERE, "..", "..", "web", "src", "presets.json"), "utf8"));
+const FACTOR_LABELS = Object.fromEntries(SCHEMA.factors.map((factor) => [factor.id, factor.label]));
+const GROUPS = PRESET_FILE.groups;
+const GROUP_OF = Object.fromEntries(Object.entries(GROUPS).flatMap(([group, ids]) => ids.map((id) => [id, group])));
+const DEFAULT_MODE = "absolute";
+const PRESETS = Object.fromEntries(Object.entries(PRESET_FILE.presets).map(([id, preset]) => {
+  const total = PRESET_FILE.weightKeys.reduce((sum, key) => sum + preset[key], 0);
+  const weights = Object.fromEntries(PRESET_FILE.weightKeys.map((key) => [key, Math.round((preset[key] / total) * 10000) / 10000]));
+  const top = PRESET_FILE.weightKeys.filter((key) => weights[key] > 0).sort((first, second) => weights[second] - weights[first]).slice(0, 3);
+  return [id, { label: preset.label, description: `Counts ${top.map((key) => FACTOR_LABELS[key].toLowerCase()).join(", ")} most.`, weights }];
+}));
 const NSIDE = { moon: 64, mars: 128 };
 
-// Habitability and process tags (plan v2.1), by environment; real tags come from Role 2's rules.
+// Habitability and process tags, by environment; real tags come from Role 2's rules.
 const TAGS_BY_ENVIRONMENT = {
   desert: ["hyperarid soil", "aeolian"],
   arid: ["evaporite", "sedimentary"],
@@ -56,8 +52,10 @@ const random = seededRandom(20261114);
 // Role 2's weights.json: the only source of weights on the site.
 writeJson("weights.json", {
   sample: true,
-  factors: FACTORS.map((id) => ({ id, label: FACTOR_LABELS[id] })),
   default_preset: "balanced",
+  default_mode: DEFAULT_MODE,
+  factors: FACTORS.map((id) => ({ id, label: FACTOR_LABELS[id], group: GROUP_OF[id] })),
+  groups: GROUPS,
   presets: PRESETS,
 });
 // Named sites for the globe's buttons live in Role 1's tiles/<body>_meta.json; make-sample-vectors.mjs adds the rest.
@@ -71,14 +69,14 @@ writeJson("validation.json", {
   value: 10,
   out_of: KNOWN_ANALOGS.length,
   summary: `10 of ${KNOWN_ANALOGS.length} well-known analog sites land in the top 10% of Earth for the target they are used for.`,
-  // Plan v2.1's four tests, placeholder results: Role 2's validation run replaces them.
+  // Four placeholder tests: Role 2's validation run replaces them.
   tests: [
     { id: "recall", name: "Known analogs rank high", result: "10 of 12 known analog sites fall in our top 10% for their target (target 70%).", passed: true },
-    { id: "specificity", name: "The right analog wins", result: "Icy sites beat dry ones for Mars ice targets, and dry ones win for Jezero and Gale, in 9 of 10 target pairs.", passed: true },
-    { id: "baseline", name: "Beats a simple baseline", result: "Ranking by dryness and cold alone gets 6 of the 10 pairs right; the seven factors get 9.", passed: true },
+    { id: "specificity", name: "The right analog wins", result: "Icy sites beat ice-free ones for Mars ice targets, and ice-free ones win for Jezero and Gale, in 9 of 10 target pairs.", passed: true },
+    { id: "baseline", name: "Beats a simple baseline", result: "Ranking by temperature alone gets 6 of the 10 pairs right; the nine factors get 9.", passed: true },
     { id: "hard_negatives", name: "Wrong places rank low", result: "Humid farmland, temperate grassland and a city edge all land in Earth's bottom 15%.", passed: true },
   ],
-  // Plan v2.1 test 2 (specificity), placeholder numbers: Role 2's validation run replaces them.
+  // Specificity test, placeholder numbers: Role 2's validation run replaces them.
   specificity: {
     analogs: ["Devon Island", "Svalbard", "Dry Valleys", "Atacama", "Death Valley", "Hawaii lava"],
     rows: [
@@ -132,8 +130,8 @@ function writeCharacterizeFiles() {
   }
 }
 
-// Plan v2.1 Discover: per body, Earth places more than 300 km from any catalogued analog, each under the target of
-// that body it matches best, with all seven factor scores so the page can re-rank them live with the sliders.
+// Discover: per body, Earth places more than 300 km from any catalogued analog, each under the target of
+// that body it matches best, with all nine factor scores so the page can re-rank them live with the sliders.
 function writeDiscoveries() {
   const balanced = PRESETS.balanced.weights;
   const discoveries = [];
@@ -210,8 +208,6 @@ function sampleBreakdown(target, place) {
   }[target.body][place.env_type];
   const caveBoost = target.track === "cave" && place.env_type === "volcanic" ? 0.12 : 0;
   return Object.fromEntries(FACTORS.map((factor) => {
-    // The Moon has no atmosphere: that factor is missing, not zero.
-    if (factor === "atmosphere" && target.body === "moon") return [factor, null];
     const value = affinity + caveBoost + (random() - 0.5) * 0.36;
     return [factor, round(Math.min(0.99, Math.max(0.12, value)), 2)];
   }));
@@ -269,13 +265,12 @@ function writeText(relativePath, text) {
   writeFileSync(path, text);
 }
 
-// Role 3's model_check.md (placeholder): which terrain image set ranked known analog pairs better.
-writeText("model_check.md", `# Terrain model check (sample)
+// Role 3's model_check.md (placeholder).
+writeText("model_check.md", `# Model check (sample)
 
-We ran the known-analog check twice with DINOv2 ViT-S/14.
+The score has no learned model: every factor is a measured value compared with a tolerance.
 
-- Hillshade, slope and thermal inertia: 8 of 10 known analog pairs ranked in the top 5%.
-- Hillshade, slope and normalised elevation: 7 of 10.
+- Known analog pairs rank in the top 5% of Earth's land in the sample run.
 
-We kept hillshade, slope and thermal inertia. Role 3 replaces this file with the real run.
+Role 3 replaces this file with the real run.
 `);

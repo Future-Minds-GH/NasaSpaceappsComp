@@ -1,4 +1,4 @@
-// Discover's ranking: the mission type picker, a Details panel with the seven weight sliders, and the hook that
+// Discover's ranking: the mission type picker, a Details panel with the nine weight sliders, and the hook that
 // re-scores and re-sorts the published candidates live under the chosen weights.
 import { useMemo, useState } from "react";
 import PresetPicker from "./PresetPicker.jsx";
@@ -14,7 +14,7 @@ const PUBLISHED_SCORE_TOLERANCE = 0.51;
  *           weights: object, isCustom: boolean, onSelectPreset: (presetId: string) => void,
  *           onChangeWeights: (weights: object | null) => void }} props  onChangeWeights(null) goes back to the preset.
  */
-export default function DiscoveryWeights({ presets, presetId, weights, isCustom, onSelectPreset, onChangeWeights }) {
+export default function DiscoveryWeights({ presets, presetId, weights, isCustom, groups, onSelectPreset, onChangeWeights }) {
   return (
     <section className="discover-weights" aria-label="How the list is ranked">
       <div className="discover-weights-bar">
@@ -27,10 +27,10 @@ export default function DiscoveryWeights({ presets, presetId, weights, isCustom,
       {/* The sliders are always on show: weighting the criteria is the point of this list. */}
       <div className="weight-panel">
         <p className="weight-panel-intro">
-          <strong>Weight the criteria.</strong> Every place scores 0 to 1 on seven factors; one weak factor pulls the
-          total down. Drag a slider and the list and the map re-rank at once.
+          <strong>Weight the criteria.</strong> Every place scores 0 to 1 on nine factors; the total is their weighted
+          average. Drag a slider and the list and the map re-rank at once.
         </p>
-        <WeightSliders weights={weights} onChange={onChangeWeights} onReset={() => onChangeWeights(null)} isCustom={isCustom} />
+        <WeightSliders groups={groups} weights={weights} onChange={onChangeWeights} onReset={() => onChangeWeights(null)} isCustom={isCustom} />
       </div>
     </section>
   );
@@ -56,6 +56,7 @@ export function useLiveRanking(discoveries, weightsFile) {
 
   return {
     presets,
+    groups: weightsFile.groups,
     presetId,
     weights,
     rankedCandidates,

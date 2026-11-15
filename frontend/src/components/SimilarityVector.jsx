@@ -1,15 +1,16 @@
 // One output planet's answer after Compute. It leads with a picture of the matched place, the overall score (green
 // 90–100, yellow 60–90, red under 60) and one plain sentence on why it matches; then how it ranks, what can never
-// match (gravity, air, radiation) and one bar per scored factor. Factors with no data are listed on one line instead
+// match (gravity, air, radiation: fixed limits of each planet, not scored data) and one bar per scored factor, with the
+// real values underneath. Factors with no data are listed on one line instead
 // of drawn as empty bars.
 import { Link } from "react-router-dom";
 import ScoreRing from "./ScoreRing.jsx";
 import BodyPhoto from "./BodyPhoto.jsx";
 import Coordinates from "./Coordinates.jsx";
-import { FACTORS } from "../data/scoring.js";
-import { BODY_NAMES, FACTOR_LABELS } from "../content/labels.js";
+import { FACTORS, scoreBand } from "../data/scoring.js";
+import { BAND_LABELS, BODY_NAMES, FACTOR_LABELS, MODE_INFO } from "../content/labels.js";
 
-const SHORT_NAMES = { terrain: "terrain", elevation: "elevation", geology: "geology", mineralogy: "minerals", climate: "climate", atmosphere: "dust & wind", water_ice: "water & ice" };
+const SHORT_NAMES = { temp: "temperature", swing: "day-night swing", sun: "sunlight", slope: "slope", rough: "roughness", elev: "elevation", surface: "surface type", minerals: "minerals", ice: "water ice" };
 // What no place on another body can reproduce: shown as "breaks down on" when the two planets differ.
 const PLANET_LIMITS = {
   earth: { gravity: "1 g", air: "thick air" },
@@ -18,17 +19,11 @@ const PLANET_LIMITS = {
 };
 const SURFACE_NAMES = { earth: "Earth's land", moon: "the Moon", mars: "Mars" };
 
-function band(score) {
-  if (score >= 90) return { id: "green", label: "Strong analog" };
-  if (score >= 60) return { id: "yellow", label: "Partial analog" };
-  return { id: "red", label: "Weak analog" };
-}
-
 function joinNames(names) {
   return names.length < 2 ? names.join("") : `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
 }
 
-/** "Very close on terrain and water & ice; differs most on climate." */
+/** "Very close on slope and water ice; differs most on temperature." */
 function summarise(scored) {
   const sorted = [...scored].sort((a, b) => b.value - a.value);
   const close = sorted.filter((item) => item.value >= 0.9).slice(0, 2).map((item) => SHORT_NAMES[item.factor]);
@@ -44,7 +39,7 @@ function breakdown(inputBody, body) {
   return `gravity (${to.gravity} vs ${from.gravity}) · air (${to.air} vs ${from.air}) · radiation`;
 }
 
-export default function SimilarityVector({ body, isSameBody, match, matchCount, error, hasNoData, isApproximate, inputBody, weights, measurementNote, exploreLink }) {
+export default function SimilarityVector({ body, isSameBody, match, matchCount, error, hasNoData, isApproximate, inputBody, weights, mode, exploreLink }) {
   const heading = (
     <p className="similarity-body">
       {BODY_NAMES[body]}
@@ -58,7 +53,7 @@ export default function SimilarityVector({ body, isSameBody, match, matchCount, 
       : !match ? "No match found." : null;
   if (message) return <article className={`similarity body-${body} is-message`}>{heading}<p role="status">{message}</p></article>;
 
-  const scoreBand = band(match.score);
+  const bandId = scoreBand(match.score);
   const usedFactors = FACTORS.filter((factor) => (weights[factor] ?? 0) > 0);
   const scored = usedFactors.filter((factor) => match.breakdown?.[factor] != null).map((factor) => ({ factor, value: match.breakdown[factor] }));
   const notScored = usedFactors.filter((factor) => match.breakdown?.[factor] == null);
@@ -66,7 +61,7 @@ export default function SimilarityVector({ body, isSameBody, match, matchCount, 
   const placeLabel = `${BODY_NAMES[body]} match at ${Math.abs(match.lat).toFixed(2)}°, ${Math.abs(match.lon).toFixed(2)}°`;
 
   return (
-    <article className={`similarity body-${body} band-${scoreBand.id}`} aria-label={`Best match on ${BODY_NAMES[body]}`}>
+    <article className={`similarity body-${body} band-${bandId}`} aria-label={`Best match on ${BODY_NAMES[body]}`}>
       <div className="similarity-select">
         <span className="similarity-photo">
           {match.image_url ? <img src={match.image_url} alt={`Satellite view of the ${placeLabel}`} loading="lazy" /> : <BodyPhoto body={body} lat={match.lat} lon={match.lon} label={`Orbital map of the ${placeLabel}`} />}
@@ -80,7 +75,7 @@ export default function SimilarityVector({ body, isSameBody, match, matchCount, 
         </span>
         <span className="similarity-score">
           <ScoreRing score={match.score} size={56} isPercent />
-          <span className="similarity-band">{scoreBand.label}</span>
+          <span className="similarity-band">{BAND_LABELS[bandId]}</span>
         </span>
       </div>
 
@@ -90,17 +85,18 @@ export default function SimilarityVector({ body, isSameBody, match, matchCount, 
 
       <ul className="similarity-bars" aria-label="How alike each factor is, 100% = identical">
         {scored.map(({ factor, value }) => (
-          <li key={factor} className={`similarity-bar band-${band(value * 100).id}`} style={{ "--factor-color": `var(--factor-${factor})` }}>
+          <li key={factor} className={`similarity-bar band-${scoreBand(value * 100)}`} style={{ "--factor-color": `var(--factor-${factor})` }}>
             <span className="similarity-bar-name"><span className="factor-swatch" aria-hidden="true" />{FACTOR_LABELS[factor]}</span>
             <span className="similarity-bar-track"><span className="similarity-bar-fill" style={{ transform: `scaleX(${value})` }} /></span>
             <span className="similarity-bar-value">{Math.round(value * 100)}%</span>
+            {match.values?.[factor] && <span className="similarity-bar-real">{match.values[factor]}</span>}
           </li>
         ))}
       </ul>
 
       <p className="similarity-footer">
         {notScored.length > 0 && <span>Not scored here: {notScored.map((factor) => FACTOR_LABELS[factor]).join(", ")}. </span>}
-        {measurementNote && <span>Weights: {measurementNote}. </span>}
+        {mode && <span>{MODE_INFO[mode].label} mode. </span>}
         {matchCount > 1 && <span>Best of {matchCount}. </span>}
         {exploreLink && <Link className="arrow-link" to={exploreLink}>All matches</Link>}
       </p>

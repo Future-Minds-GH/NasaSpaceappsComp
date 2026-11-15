@@ -1,4 +1,4 @@
-// HEALPix in the NESTED scheme, the tile grid every body uses (plan v2.1): a clicked lat/lon becomes the same tile
+// HEALPix in the NESTED scheme, the tile grid every body uses : a clicked lat/lon becomes the same tile
 // index healpy computes in Colab (healpy.ang2pix(nside, theta, phi, nest=True)), and a tile index becomes its
 // centre and outline. Ported from the reference healpix_base (Górski et al. 2005). Longitudes are east-positive.
 

@@ -1,5 +1,7 @@
 // A 0–100 match score drawn as a ring that fills clockwise, with the number in the middle.
 import { formatScore } from "../data/format.js";
+import { scoreBand } from "../data/scoring.js";
+import { BAND_LABELS } from "../content/labels.js";
 
 const STROKE_WIDTH = 6;
 
@@ -9,7 +11,7 @@ export default function ScoreRing({ score, size = 72, isPercent = false }) {
   const filledLength = (Math.min(Math.max(score, 0), 100) / 100) * circumference;
 
   return (
-    <div className="score-ring" style={{ width: size, height: size }} role="img" aria-label={`Match score ${formatScore(score)} out of 100`}>
+    <div className={`score-ring band-${scoreBand(score)}`} style={{ width: size, height: size }} role="img" aria-label={`Match score ${formatScore(score)} out of 100, ${BAND_LABELS[scoreBand(score)].toLowerCase()}`}>
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} aria-hidden="true">
         <circle className="score-ring-track" cx={size / 2} cy={size / 2} r={radius} strokeWidth={STROKE_WIDTH} />
         <circle

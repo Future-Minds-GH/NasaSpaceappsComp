@@ -1,23 +1,25 @@
-"""Turn earth.parquet into the binary files the website reads.
+"""Turn earth.parquet into the binary files the website reads (tile format v0.3).
 
 Output (under --out):
-  vectors/earth.bin        one 34-byte row per scored Earth tile, in tile-index order
+  vectors/earth.bin        one row (one byte per schema field) per scored Earth tile, in tile-index order
   earth_meta.bin           one 12-byte row per tile, same order (little-endian)
   tiles/earth_meta.json    the lists earth_meta.bin points into
 
-Format (from the front end's make-sample-vectors.mjs, schema v0.1):
-  HEALPix NESTED, nside 256. 34 bytes per tile, fields in schema order below.
-  Percentile and fraction fields: round(x * 254). Code and flag fields: the integer. 255 = null.
+Format: data/schema.json is the one source (field list, order, min/max, kinds). HEALPix NESTED, nside 256.
+  One byte per field, per tile: the factor fields in factor order, then the relative fields (25 in v0.3). 255 = null.
+  value fields: round((clip(x, min, max) - min) / (max - min) * 254). fraction fields: round(f * 254).
+  percentile fields: round(p * 254), p = (average rank - 0.5) / n over the scored tiles.
+  elev_pct ranks elev_m; each relative field ranks its rel_of column.
   earth_meta row: uint32 tile index, uint16 km to the nearest known analog (65535 = unknown),
   uint16 tag bits, uint16 name index (65535 = none), uint8 environment (255 = none),
   uint8 flags (bit 0 = mineralogy is estimated, not measured).
 
 How a tile gets its values: each tile takes the 0.25 deg cell that contains the tile centre (no
-gaps, no double counting). A tile is scored only where analog_ok is true. Percentile fields are
-the rank among the scored tiles.
+gaps, no double counting). A tile is scored only where analog_ok is true. Known analogs with
+role "negative_control" do not count for the km field.
 
 Install:  pip install astropy-healpix pandas pyarrow numpy   (healpy also works but does not build on Windows)
-Usage:  python build_vectors.py earth.parquet --out web/public/data [--schema schema.json]
+Usage:  python build_vectors.py earth.parquet --out web/public/data [--schema data/schema.json]
                                 [--known-analogs known_analogs.json]
 """
 import argparse
@@ -36,56 +38,27 @@ NO_NAME = 65535
 NO_ENV = 255
 EARTH_RADIUS_KM = 6371.0
 
-# (factor, field id, kind, source). Order = byte order. source:
-#   ("pct", col)             percentile rank of a column among the scored tiles
-#   ("pct_mean", [c1, c2])   percentile rank of the mean of two columns
-#   ("frac", col)            the column as a 0-1 fraction
-#   None                     Earth has no data for this field: always 255
-FIELDS = [
-    ("terrain", "emb0", "embedding", None), ("terrain", "emb1", "embedding", None),
-    ("terrain", "emb2", "embedding", None), ("terrain", "emb3", "embedding", None),
-    ("terrain", "emb4", "embedding", None), ("terrain", "emb5", "embedding", None),
-    ("terrain", "emb6", "embedding", None), ("terrain", "emb7", "embedding", None),
-    ("terrain", "slope", "percentile", ("pct", "slope_deg")),
-    ("terrain", "roughness", "percentile", ("pct", "rough_m")),
-    ("elevation", "relief", "percentile", ("pct", "elev_m")),
-    ("elevation", "topo_position", "code", None),
-    ("geology", "rock_class", "code", None),
-    ("geology", "volcanic", "flag", None),
-    ("geology", "impact", "flag", None),
-    ("mineralogy", "mafic", "fraction", ("frac", "min_mafic")),
-    ("mineralogy", "clays", "fraction", ("frac", "min_clay")),
-    ("mineralogy", "sulfates", "fraction", ("frac", "min_sulfate")),
-    ("mineralogy", "carbonates", "fraction", ("frac", "min_carbonate")),
-    ("mineralogy", "iron_oxides", "fraction", ("frac", "min_ironox")),
-    ("mineralogy", "salts", "fraction", None),
-    ("climate", "aridity", "percentile", None),
-    ("climate", "mean_temp", "percentile", ("pct_mean", ["t_day_k", "t_night_k"])),
-    ("climate", "day_night_range", "percentile", ("pct", "t_swing_k")),
-    ("climate", "cold_extreme", "percentile", None),
-    ("climate", "sunlit_fraction", "percentile", ("pct", "sun_wm2")),
-    ("atmosphere", "pressure", "percentile", None),
-    ("atmosphere", "wind", "percentile", None),
-    ("atmosphere", "dust", "percentile", None),
-    ("atmosphere", "dust_storms", "percentile", None),
-    ("water_ice", "ice_fraction", "fraction", ("frac", "ice_prob")),
-    ("water_ice", "ice_depth", "code", None),
-    ("water_ice", "ice_form", "code", None),
-    ("water_ice", "liquid_water", "fraction", None),
-]
-BYTES = len(FIELDS)
-assert BYTES == 34
-NEEDED = ["analog_ok", "slope_deg", "rough_m", "elev_m", "t_day_k", "t_night_k", "t_swing_k", "sun_wm2",
-          "min_mafic", "min_clay", "min_sulfate", "min_carbonate", "min_ironox", "ice_prob"]
+DEFAULT_SCHEMA = Path(__file__).resolve().parent.parent / "data" / "schema.json"
+PCT_SOURCE = {"elev_pct": "elev_m"}          # a percentile field with no rel_of ranks this column
 
 
-def check_schema(schema):
-    """The field order of the front end's schema.json must equal FIELDS."""
-    theirs = [f["id"] for factor in schema["factors"] for f in factor["fields"]]
-    ours = [f[1] for f in FIELDS]
-    assert theirs == ours, f"schema.json field order differs:\n theirs {theirs}\n ours   {ours}"
-    assert schema["nside"]["earth"] == NSIDE and schema["scheme"] == "nested"
-    assert schema["null_code"] == NULL
+def load_schema(path=DEFAULT_SCHEMA):
+    """Read data/schema.json. Returns (schema, fields): the 18 factor fields, then the 7 relative fields."""
+    assert Path(path).stat().st_size < 5_000_000, "schema.json is larger than 5 MB"
+    schema = json.loads(Path(path).read_text(encoding="utf-8"))
+    fields = [f for fac in schema["factors"] for f in fac["fields"]] + schema["relative_fields"]
+    assert schema["version"] == "0.3" and schema["scheme"] == "nested" and schema["null_code"] == NULL
+    assert schema["byte_scale"] == 254 and schema["relative_fields"], "schema.json is not tile format v0.3"
+    return schema, fields
+
+
+def source_column(f):
+    """The table column a field is built from."""
+    return f.get("rel_of") or PCT_SOURCE.get(f["id"], f["id"])
+
+
+def needed_columns(fields):
+    return ["analog_ok", *dict.fromkeys(source_column(f) for f in fields)]
 
 
 def tile_cell_ids(nside=NSIDE):
@@ -117,18 +90,23 @@ def percentile_rank(x):
     return ((s.rank(method="average") - 0.5) / s.notna().sum()).to_numpy()
 
 
-def field_values(df_tiles, source):
-    """The 0-1 values (or None when Earth has no data) of one field for the scored tiles."""
-    if source is None:
-        return None
-    kind, arg = source
-    if kind == "pct":
-        return percentile_rank(df_tiles[arg])
-    if kind == "pct_mean":
-        return percentile_rank(df_tiles[arg].mean(axis=1, skipna=False))
-    if kind == "frac":
-        return df_tiles[arg].to_numpy(dtype="float64")
-    raise ValueError(kind)
+def field_values(df_tiles, f):
+    """The 0-1 values of one schema field for the scored tiles (NaN = missing)."""
+    col = df_tiles[source_column(f)].to_numpy(dtype="float64")
+    if f["kind"] == "value":
+        return np.clip((col - f["min"]) / (f["max"] - f["min"]), 0, 1)
+    if f["kind"] == "fraction":
+        return col
+    return percentile_rank(col)
+
+
+def fill_vectors(sub, fields, rows, vectors):
+    """Write every field of the scored tiles `sub` into vectors[rows]. Returns the non-null share per field."""
+    filled = {}
+    for j, f in enumerate(fields):
+        vectors[rows, j] = to_byte(field_values(sub, f))
+        filled[f["id"]] = float((vectors[rows, j] != NULL).mean())
+    return filled
 
 
 def haversine_km(lat1, lon1, lat2, lon2):
@@ -139,7 +117,9 @@ def haversine_km(lat1, lon1, lat2, lon2):
 
 
 def nearest_analog_km(lat, lon, sites):
-    """Distance in km from each tile centre to the nearest known Earth site (65535 if no sites)."""
+    """Distance in km from each tile centre to the nearest known Earth site (65535 if none).
+    Sites with role "negative_control" are skipped."""
+    sites = [s for s in sites or [] if s.get("role") != "negative_control"]
     if not sites:
         return np.full(lat.shape, NO_KM, dtype="uint16")
     assert len(sites) <= 1000, f"{len(sites)} known sites is too many"
@@ -149,9 +129,10 @@ def nearest_analog_km(lat, lon, sites):
     return np.minimum(np.rint(d), NO_KM - 1).astype("uint16")
 
 
-def build(df, known_sites=None, nside=NSIDE):
-    """Returns (vectors uint8 [n, 34], meta bytes, tile indices, summary dict)."""
-    missing = [c for c in NEEDED if c not in df.columns]
+def build(df, known_sites=None, nside=NSIDE, fields=None):
+    """Returns (vectors uint8 [n, len(fields)], meta bytes, tile indices, summary dict)."""
+    fields = fields or load_schema()[1]
+    missing = [c for c in needed_columns(fields) if c not in df.columns]
     assert not missing, f"earth.parquet is missing columns {missing}"
     assert df["cell_id"].is_unique, "cell_id must be unique"
     assert df["cell_id"].between(0, NROWS * NCOLS - 1).all(), "cell_id must be 0..N-1"
@@ -163,13 +144,8 @@ def build(df, known_sites=None, nside=NSIDE):
     assert tiles.size > 0, "no scored tiles: analog_ok is never true"
     sub = df.iloc[cell[tiles]].reset_index(drop=True)
 
-    vectors = np.full((tiles.size, BYTES), NULL, dtype="uint8")
-    filled = {}
-    for j, (_, fid, _kind, source) in enumerate(FIELDS):
-        v = field_values(sub, source)
-        if v is not None:
-            vectors[:, j] = to_byte(v)
-        filled[fid] = float((vectors[:, j] != NULL).mean())
+    vectors = np.full((tiles.size, len(fields)), NULL, dtype="uint8")
+    filled = fill_vectors(sub, fields, slice(None), vectors)
 
     meta = np.zeros(tiles.size, dtype=[("tile", "<u4"), ("km", "<u2"), ("tags", "<u2"), ("name", "<u2"), ("env", "u1"), ("flags", "u1")])
     meta["tile"] = tiles
@@ -182,14 +158,14 @@ def build(df, known_sites=None, nside=NSIDE):
     estimated = sub["min_mafic"].notna() & emit_classes.notna().all(axis=1) & (emit_classes == 0).all(axis=1)
     meta["flags"] = estimated.to_numpy().astype("uint8")
     assert meta.dtype.itemsize == 12
-    summary = {"tiles": int(tiles.size), "bytes_per_tile": BYTES, "share_filled": filled,
+    summary = {"tiles": int(tiles.size), "bytes_per_tile": len(fields), "share_filled": filled,
                "estimated_mineralogy_tiles": int(estimated.sum())}
     return vectors, meta.tobytes(), tiles, summary
 
 
 def sites_for_json(known):
     out = []
-    for s in known or []:
+    for s in [s for s in known or [] if s.get("role") != "negative_control"]:   # controls are not analogs
         out.append({"target_id": s["id"], "name": s["name"], "lat": s["lat"], "lon": s["lon"],
                     "track": "base", "summary": s.get("source_note", "")})
     return out
@@ -199,20 +175,18 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("parquet", type=Path)
     ap.add_argument("--out", type=Path, required=True)
-    ap.add_argument("--schema", type=Path, help="the front end's vectors/schema.json: checks the field order")
+    ap.add_argument("--schema", type=Path, default=DEFAULT_SCHEMA, help="data/schema.json (tile format v0.3)")
     ap.add_argument("--known-analogs", type=Path, help="known_analogs.json: fills the km-to-nearest-analog field")
     args = ap.parse_args()
 
-    if args.schema:
-        assert args.schema.stat().st_size < 5_000_000, "schema.json is larger than 5 MB"
-        check_schema(json.loads(args.schema.read_text(encoding="utf-8")))
+    fields = load_schema(args.schema)[1]
     known = []
     if args.known_analogs:
         assert args.known_analogs.stat().st_size < 5_000_000, "known_analogs.json is larger than 5 MB"
         known = [s for s in json.loads(args.known_analogs.read_text(encoding="utf-8"))["sites"] if s.get("body") == "earth"]
     assert args.parquet.stat().st_size < 2_000_000_000, "earth.parquet is larger than 2 GB"
     df = pd.read_parquet(args.parquet)
-    vectors, meta, tiles, summary = build(df, known)
+    vectors, meta, tiles, summary = build(df, known, fields=fields)
 
     (args.out / "vectors").mkdir(parents=True, exist_ok=True)
     (args.out / "tiles").mkdir(parents=True, exist_ok=True)

@@ -1,10 +1,11 @@
-// One Earth match: photo, place, score and plain reasons. The seven factor bars show only with Details open.
+// One Earth match: photo, place, score and plain reasons. The nine factor bars show only with Details open.
 import ScoreRing from "./ScoreRing.jsx";
 import BodyPhoto from "./BodyPhoto.jsx";
 import FactorBars from "./FactorBars.jsx";
 import { EnvironmentTag, SiteBadges } from "./SiteTags.jsx";
 import { formatCoordinates } from "../data/format.js";
-import { FACTOR_REASONS } from "../content/labels.js";
+import { BAND_LABELS, FACTOR_REASONS } from "../content/labels.js";
+import { scoreBand } from "../data/scoring.js";
 
 const SURFACE_NAMES = { earth: "Earth's land", moon: "the Moon's surface", mars: "Mars's surface" };
 
@@ -32,13 +33,14 @@ export default function MatchCard({ match, isShowingDetails, onCompare }) {
         <p className="match-meta">
           {match.name && <span>{coordinates}</span>}
           <EnvironmentTag envType={match.env_type} />
+          <span className={`band-text band-${scoreBand(match.score)}`}>{BAND_LABELS[scoreBand(match.score)]}</span>
         </p>
         {reasons.length > 0 && <p className="match-reasons">{reasons.join(". ")}.</p>}
         {match.tags?.length > 0 && <p className="match-tags">{match.tags.join(", ")}</p>}
         {/* One decimal, capped below 100: the best tile beats everything except itself. */}
         {typeof match.earth_rank_pct === "number" && <p className="match-rank-pct">Better than {Math.min(99.9, match.earth_rank_pct).toFixed(1)}% of {SURFACE_NAMES[match.body ?? "earth"]}</p>}
         <SiteBadges site={match} />
-        {isShowingDetails && <FactorBars breakdown={match.breakdown} isShowingNumbers isMineralogyEstimated={match.mineralogy_estimated} />}
+        {isShowingDetails && <FactorBars breakdown={match.breakdown} isShowingNumbers isMineralogyEstimated={match.mineralogy_estimated} values={match.values} />}
         <button className="button button-quiet match-compare" type="button" onClick={() => onCompare(match)}>
           Compare side by side
         </button>

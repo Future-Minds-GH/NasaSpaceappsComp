@@ -1,0 +1,57 @@
+{
+ "version": "0.3",
+ "sample": false,
+ "nside": { "earth": 256, "moon": 64, "mars": 128 },
+ "scheme": "nested",
+ "null_code": 255,
+ "byte_scale": 254,
+ "mars_shards": "mars_<base cell 0-11>.bin",
+ "encoding": {
+  "value": "round((clip(x, min, max) - min) / (max - min) * 254); decode min + b / 254 * (max - min)",
+  "fraction": "round(f * 254), f in 0-1",
+  "percentile": "round(p * 254), p = rank within its own body in 0-1: (average rank - 0.5) / n over the scored tiles"
+ },
+ "scoring": {
+  "scalar": "s = max(0, 1 - |a - b| / tol), a and b decoded",
+  "vector": "s = max(0, 1 - 0.5 * sum |p - q|); null if any component is null on either tile",
+  "temp": "mean of the day and night scores that are present (the weight is split evenly)",
+  "total": "S = 100 * sum(w * s) / sum(w) over factors with w > 0 that are present on both tiles; no factor present -> tile skipped",
+  "bands": { "green": 90, "yellow": 60 },
+  "modes": "absolute (default): fields of the factors. relative: each factor scalar is replaced by its relative field (rel_of), tol = relative_tol"
+ },
+ "relative_tol": 0.25,
+ "factors": [
+  { "id": "temp", "label": "Temperature (day and night)", "fields": [
+   { "id": "t_day_k", "kind": "value", "min": 0, "max": 420, "unit": "K", "tol": 40 },
+   { "id": "t_night_k", "kind": "value", "min": 0, "max": 420, "unit": "K", "tol": 40 } ] },
+  { "id": "swing", "label": "Day-night swing", "fields": [
+   { "id": "t_swing_k", "kind": "value", "min": 0, "max": 350, "unit": "K", "tol": 30 } ] },
+  { "id": "sun", "label": "Sunlight", "fields": [
+   { "id": "sun_wm2", "kind": "value", "min": 0, "max": 500, "unit": "W/m²", "tol": 100 } ] },
+  { "id": "slope", "label": "Slope", "fields": [
+   { "id": "slope_deg", "kind": "value", "min": 0, "max": 40, "unit": "°", "tol": 5 } ] },
+  { "id": "rough", "label": "Roughness", "fields": [
+   { "id": "rough_m", "kind": "value", "min": 0, "max": 1016, "unit": "m", "tol": 20 } ] },
+  { "id": "elev", "label": "Relative elevation", "fields": [
+   { "id": "elev_pct", "kind": "percentile", "tol": 0.25, "note": "rank within its own body in both modes" } ] },
+  { "id": "surface", "label": "Surface type", "vector": true, "fields": [
+   { "id": "surf_dust", "kind": "fraction" }, { "id": "surf_sand", "kind": "fraction" },
+   { "id": "surf_rock", "kind": "fraction" }, { "id": "surf_ice", "kind": "fraction" } ] },
+  { "id": "minerals", "label": "Minerals", "vector": true, "fields": [
+   { "id": "min_mafic", "kind": "fraction" }, { "id": "min_feldspathic", "kind": "fraction" },
+   { "id": "min_ironox", "kind": "fraction" }, { "id": "min_sulfate", "kind": "fraction" },
+   { "id": "min_clay", "kind": "fraction" }, { "id": "min_carbonate", "kind": "fraction" } ] },
+  { "id": "ice", "label": "Water ice", "fields": [
+   { "id": "ice_prob", "kind": "fraction", "tol": 0.3 } ] }
+ ],
+ "relative_fields": [
+  { "id": "t_day_pct", "kind": "percentile", "rel_of": "t_day_k" },
+  { "id": "t_night_pct", "kind": "percentile", "rel_of": "t_night_k" },
+  { "id": "t_swing_pct", "kind": "percentile", "rel_of": "t_swing_k" },
+  { "id": "sun_pct", "kind": "percentile", "rel_of": "sun_wm2" },
+  { "id": "slope_pct", "kind": "percentile", "rel_of": "slope_deg" },
+  { "id": "rough_pct", "kind": "percentile", "rel_of": "rough_m" },
+  { "id": "ice_pct", "kind": "percentile", "rel_of": "ice_prob" }
+ ],
+ "byte_order": "every factor field in the order above (18 bytes), then every relative field (7 bytes): 25 bytes per tile"
+}

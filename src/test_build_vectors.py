@@ -4,6 +4,10 @@ import pytest
 
 import build_vectors as bv
 
+SCHEMA, FIELDS = bv.load_schema()
+IDS_ = [f["id"] for f in FIELDS]
+FIELD = {f["id"]: f for f in FIELDS}
+
 N = bv.NROWS * bv.NCOLS
 IDS = np.arange(N)
 ROW, COL = np.divmod(IDS, bv.NCOLS)
@@ -31,13 +35,15 @@ def make_df():
     df["min_sulfate"] = np.where(emit, 0.1, np.where(glim, 0.0, np.nan))
     df["min_clay"] = np.where(emit, 0.4, np.where(glim, 0.0, np.nan))
     df["min_carbonate"] = np.where(emit, 0.1, np.where(glim, 0.0, np.nan))
+    df["min_feldspathic"] = np.where(emit, 0.0, np.where(glim, 0.0, np.nan))
+    df["surf_dust"], df["surf_sand"], df["surf_rock"], df["surf_ice"] = 0.1, 0.2, 0.7, 0.0
     return df
 
 
 @pytest.fixture(scope="module")
 def built():
     df = make_df()
-    known = [{"lat": 25.0, "lon": 15.0}]
+    known = [{"lat": 25.0, "lon": 15.0}, {"lat": -50.0, "lon": 60.0, "role": "negative_control"}]
     vectors, meta, tiles, summary = bv.build(df, known)
     return df, vectors, np.frombuffer(meta, dtype=[("tile", "<u4"), ("km", "<u2"), ("tags", "<u2"), ("name", "<u2"), ("env", "u1"), ("flags", "u1")]), tiles, summary
 
@@ -54,7 +60,7 @@ def row_of(built, lat, lon):
 
 def test_sizes_and_order(built):
     df, vectors, meta, tiles, summary = built
-    assert vectors.shape == (tiles.size, 34) and vectors.dtype == np.uint8
+    assert vectors.shape == (tiles.size, 25) and vectors.dtype == np.uint8
     assert len(meta) == tiles.size and meta.dtype.itemsize == 12
     assert np.all(np.diff(tiles) > 0) and np.all(meta["tile"] == tiles)
 
@@ -70,37 +76,60 @@ def test_only_scored_tiles(built):
     assert not inbox.any()
 
 
-def test_always_null_fields(built):
-    vectors = built[1]
-    ids = [f[1] for f in bv.FIELDS]
-    for fid in ("emb0", "emb7", "topo_position", "rock_class", "volcanic", "impact", "salts", "aridity",
-                "cold_extreme", "pressure", "wind", "dust", "dust_storms", "ice_depth", "ice_form", "liquid_water"):
-        assert (vectors[:, ids.index(fid)] == bv.NULL).all(), fid
+def col(built, fid):
+    return built[1][:, IDS_.index(fid)]
+
+
+def test_field_order_is_the_schema(built):
+    assert len(FIELDS) == 25     # 18 factor fields + 7 relative fields in data/schema.json
+    assert IDS_[:18] == ["t_day_k", "t_night_k", "t_swing_k", "sun_wm2", "slope_deg", "rough_m", "elev_pct",
+                         "surf_dust", "surf_sand", "surf_rock", "surf_ice", "min_mafic", "min_feldspathic",
+                         "min_ironox", "min_sulfate", "min_clay", "min_carbonate", "ice_prob"]
+    assert IDS_[18:] == [f["id"] for f in SCHEMA["relative_fields"]]
+
+
+def test_value_encoding_round_trip(built):
+    # decode within half a step; values outside min/max are clipped
+    df, vectors, meta, tiles, summary = built
+    r = row_of(built, 45.0, 60.0)
+    for fid, x in (("t_day_k", 300 - 0.3 * 45), ("t_night_k", 280 - 0.3 * 45), ("sun_wm2", 205.0), ("slope_deg", 7.5)):
+        f = FIELD[fid]
+        back = f["min"] + col(built, fid)[r] / 254 * (f["max"] - f["min"])
+        assert abs(back - x) <= (f["max"] - f["min"]) / 254 / 2 + 0.2, fid       # 0.2: the tile sits in a 0.25 deg cell
+    assert col(built, "rough_m")[row_of(built, 1.0, 179.0)] == round(179.9 / 3 / 1016 * 254)
+    assert col(built, "slope_deg").max() <= 254
+
+
+def test_value_is_clipped():
+    f = {"id": "x", "kind": "value", "min": 0, "max": 10}
+    v = bv.field_values(pd.DataFrame({"x": [-5.0, 5.0, 50.0, np.nan]}), f)
+    assert list(bv.to_byte(v)) == [0, 127, 254, bv.NULL]
 
 
 def test_fraction_encoding(built):
-    df, vectors, meta, tiles, summary = built
-    ids = [f[1] for f in bv.FIELDS]
     r = row_of(built, 45.0, 60.0)          # emit cell
-    assert vectors[r, ids.index("mafic")] == round(0.2 * 254)
-    assert vectors[r, ids.index("clays")] == round(0.4 * 254)
-    assert vectors[r, ids.index("ice_fraction")] == 0
+    assert col(built, "min_mafic")[r] == round(0.2 * 254)
+    assert col(built, "min_clay")[r] == round(0.4 * 254)
+    assert col(built, "surf_rock")[r] == round(0.7 * 254)
+    assert col(built, "ice_prob")[r] == 0
     r = row_of(built, -50.0, 60.0)         # glim-only cell, ice 0.5
-    assert vectors[r, ids.index("mafic")] == 254
-    assert vectors[r, ids.index("ice_fraction")] == round(0.5 * 254)
+    assert col(built, "min_mafic")[r] == 254 and col(built, "ice_prob")[r] == round(0.5 * 254)
     r = row_of(built, 45.0, -60.0)         # no minerals
-    assert vectors[r, ids.index("mafic")] == bv.NULL and vectors[r, ids.index("iron_oxides")] == bv.NULL
+    assert col(built, "min_mafic")[r] == bv.NULL and col(built, "min_ironox")[r] == bv.NULL
 
 
-def test_percentiles_are_ranks(built):
-    vectors = built[1]
-    ids = [f[1] for f in bv.FIELDS]
-    slope = vectors[:, ids.index("slope")]
-    assert slope.min() >= 0 and slope.max() == 254 and (slope != bv.NULL).all()
+def test_percentile_rule(built):
+    # elev_pct and the relative fields: (average rank - 0.5) / n among the scored tiles
+    df, vectors, meta, tiles, summary = built
+    assert (col(built, "elev_pct") != bv.NULL).all()
+    for fid, src in (("elev_pct", "elev_m"), ("slope_pct", "slope_deg"), ("t_day_pct", "t_day_k")):
+        want = bv.to_byte(bv.percentile_rank(df[src].to_numpy()[bv.tile_cell_ids()[0][tiles]]))
+        assert (col(built, fid) == want).all(), fid
     lo, hi = row_of(built, 1.0, 0.0), row_of(built, 55.0, 0.0)
-    assert slope[hi] > slope[lo]
-    mean_t = vectors[:, ids.index("mean_temp")]
-    assert mean_t[lo] > mean_t[hi]          # warmer near the equator in the synthetic data
+    assert col(built, "slope_pct")[hi] > col(built, "slope_pct")[lo]
+    assert col(built, "t_day_pct")[lo] > col(built, "t_day_pct")[hi]
+    assert col(built, "slope_pct").min() <= 2 and col(built, "slope_pct").max() >= 252
+    assert len(set(col(built, "ice_pct")[col(built, "ice_prob") == 0])) == 1       # ties share one average rank
 
 
 def test_flags_and_km(built):
@@ -120,21 +149,19 @@ def test_no_known_sites_gives_unknown_km():
     assert (km == bv.NO_KM).all()
 
 
-def schema_from_fields():
-    factors = []
-    for factor, fid, kind, _ in bv.FIELDS:
-        if not factors or factors[-1]["id"] != factor:
-            factors.append({"id": factor, "fields": []})
-        factors[-1]["fields"].append({"id": fid, "kind": kind})
-    return {"factors": factors, "nside": {"earth": bv.NSIDE}, "scheme": "nested", "null_code": bv.NULL}
+def test_negative_controls_are_skipped():
+    lat, lon = np.array([-50.0]), np.array([60.0])
+    ctrl = [{"lat": -50.0, "lon": 60.0, "role": "negative_control"}]
+    assert bv.nearest_analog_km(lat, lon, ctrl)[0] == bv.NO_KM
+    both = ctrl + [{"lat": -50.0, "lon": 61.0, "role": "site"}]
+    assert 60 < bv.nearest_analog_km(lat, lon, both)[0] < 80       # the real site, not the control
 
 
-def test_schema_check():
-    bv.check_schema(schema_from_fields())
-    bad = schema_from_fields()
-    bad["factors"][0]["fields"].reverse()
+def test_load_schema_rejects_old_format(tmp_path):
+    bad = tmp_path / "s.json"
+    bad.write_text('{"version": "0.1", "scheme": "nested", "null_code": 255, "byte_scale": 254, "factors": [], "relative_fields": []}')
     with pytest.raises(AssertionError):
-        bv.check_schema(bad)
+        bv.load_schema(bad)
 
 
 def test_table_without_ocean_rows():
@@ -142,9 +169,8 @@ def test_table_without_ocean_rows():
     part = make_df()
     part = part[np.abs(part["lat"]) < 30].copy()
     vectors, _, tiles, _ = bv.build(part, [])
-    ids = [f[1] for f in bv.FIELDS]
     assert vectors.shape[0] == tiles.size and tiles.size > 0
-    assert (vectors[:, ids.index("slope")] != bv.NULL).all()
+    assert (vectors[:, IDS_.index("slope_deg")] != bv.NULL).all()
 
 
 def test_half_rounds_up_like_js():
@@ -170,3 +196,10 @@ def test_missing_column_fails_fast():
     df = make_df().drop(columns=["ice_prob"])
     with pytest.raises(AssertionError):
         bv.build(df, [])
+
+
+def test_percentile_rank_formula():
+    # fixed case: ties share the average rank, NaN stays NaN and is left out of n
+    got = bv.percentile_rank([10.0, 20.0, 20.0, np.nan])
+    want = [(1 - 0.5) / 3, (2.5 - 0.5) / 3, (2.5 - 0.5) / 3]
+    assert np.allclose(got[:3], want) and np.isnan(got[3])

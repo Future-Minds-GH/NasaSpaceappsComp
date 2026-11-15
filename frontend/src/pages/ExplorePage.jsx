@@ -1,11 +1,12 @@
 // Explore: pick a spot on Earth, the Moon or Mars, and rank every tile of one of the other two bodies against it.
-// The URL keeps the choice: #/explore/moon?to=earth&site=shackleton_ridge or ?at=-89.45,-136.00, plus &preset=landing.
+// The URL keeps the choice: #/explore/moon?to=earth&site=shackleton_ridge or ?at=-89.45,-136.00, plus &preset=landing and &mode=relative.
 // After a pick the globe stays free to turn and zoom; it only flies on its own when a named site is chosen.
 import { useMemo, useState } from "react";
 import { Link, Navigate, useParams, useSearchParams } from "react-router-dom";
 import { loadBodyMeta, loadTargets, loadWeights } from "../data/api.js";
 import { useLoaded } from "../data/useLoaded.js";
 import { useTileSearch } from "../data/useTileSearch.js";
+import { MODES } from "../data/similarity.js";
 import { describeSelection, parsePoint } from "../data/exploreSelection.js";
 import { BODY_NAMES } from "../content/labels.js";
 import PlanetGlobe, { GLOBE_TEXTURES } from "../components/PlanetGlobe.jsx";
@@ -44,7 +45,9 @@ export default function ExplorePage() {
   const requestedPresetId = searchParams.get("preset");
   const presetId = requestedPresetId in presets ? requestedPresetId : presetsState.data?.default_preset ?? Object.keys(presets)[0];
   const weights = customWeights ?? presets[presetId]?.weights;
-  const search = useTileSearch(selection, targetBody, weights);
+  const requestedMode = searchParams.get("mode");
+  const mode = MODES.includes(requestedMode) ? requestedMode : (MODES.includes(presetsState.data?.default_mode) ? presetsState.data.default_mode : "absolute");
+  const search = useTileSearch(selection, targetBody, weights, mode);
 
   if (!BODIES.includes(body)) return <Navigate to="/explore/mars" replace />;
   const target = selection && search.tile ? describeSelection({ body, targetBody, namedSite, selection, tile: search.tile, meta: bodyMeta.data, sites: targetsState.data }) : null;
@@ -119,6 +122,9 @@ export default function ExplorePage() {
               presets={presets}
               presetId={presetId}
               onSelectPreset={(nextPresetId) => { setCustomWeights(null); updateSearchParams({ preset: nextPresetId }); }}
+              groups={presetsState.data?.groups}
+              mode={mode}
+              onChangeMode={(nextMode) => updateSearchParams({ mode: nextMode })}
               customWeights={customWeights}
               onChangeWeights={setCustomWeights}
             />

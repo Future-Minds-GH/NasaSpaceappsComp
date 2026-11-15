@@ -1,39 +1,39 @@
-rank,name,lat,lon,env_type,tags,body,best_target_id,score,km_to_nearest_known_analog,terrain,elevation,geology,mineralogy,climate,atmosphere,water_ice
-1,"Lava Beds, California",41.71,-121.51,volcanic,"volcanic; hydrothermal",moon,marius_hills_pit,91,681,0.99,0.99,0.8,0.97,0.88,,0.88
-2,"Danakil Depression, Ethiopia",14.24,40.3,volcanic,"volcanic; hydrothermal",moon,marius_hills_pit,87.5,5289,0.99,0.7,0.99,0.88,0.82,,0.85
-3,"Badain Jaran Desert, China",39.8,102.4,desert,"hyperarid soil; aeolian",mars,arsia_mons_pits,87.1,5653,0.79,0.95,0.95,0.93,0.9,0.9,0.77
-4,"Holuhraun lava field, Iceland",64.87,-16.83,volcanic,"volcanic; hydrothermal",moon,marius_hills_pit,86.3,1867,0.95,0.84,0.95,0.74,0.86,,0.85
-5,"Tibesti Mountains, Chad",19.79,18.55,volcanic,"volcanic; hydrothermal",moon,marius_hills_pit,84,3139,0.91,0.88,0.79,0.93,0.76,,0.81
-6,"Dasht-e Lut, Iran",30.4,57.9,desert,"hyperarid soil; aeolian",mars,jezero_crater,83.5,5826,0.81,0.86,0.91,0.94,0.85,0.63,0.82
-7,"Rubʿ al Khali, Arabia",20.5,50,desert,"hyperarid soil; aeolian",mars,gale_crater,83.2,5726,0.93,0.84,0.68,0.95,0.68,0.8,0.95
-8,"Salar de Uyuni, Bolivia",-20.13,-67.49,arid,"evaporite; sedimentary",mars,gale_crater,83.1,506,0.87,0.8,0.61,0.9,0.87,0.9,0.9
-9,"Axel Heiberg Island, Canada",79.42,-90.77,polar,"permafrost; ice dynamics",moon,nobile_rim_1,82.6,450,0.93,0.67,0.71,0.89,0.85,,0.87
-10,"Dome C, Antarctica",-75.1,123.35,polar,"permafrost; ice dynamics",moon,marius_hills_pit,82.2,1027,0.92,0.8,0.91,0.81,0.79,,0.74
-11,"Pilbara, Australia",-21.1,119.4,arid,"evaporite; sedimentary",mars,arcadia_planitia,81.8,6670,0.79,0.7,0.87,0.93,0.81,0.61,0.92
-12,"Wolfe Creek Crater, Australia",-19.17,127.8,arid,"evaporite; sedimentary",mars,jezero_crater,81.8,6747,0.6,0.87,0.89,0.77,0.91,0.8,0.92
-13,"Kerguelen Islands",-49.3,69.5,polar,"permafrost; ice dynamics",moon,nobile_rim_1,81.7,4752,0.88,0.79,0.9,0.79,0.86,,0.72
-14,"Pinacate lava field, Mexico",31.77,-113.5,volcanic,"volcanic; hydrothermal",moon,marius_hills_pit,81.3,429,0.78,0.81,0.72,0.77,0.86,,0.92
-15,"Lonar Crater, India",19.98,76.51,volcanic,"volcanic; hydrothermal",moon,marius_hills_pit,81.2,7290,0.73,0.98,0.73,0.84,0.82,,0.84
-16,"Qaidam Basin, China",38.5,91.4,arid,"evaporite; sedimentary",mars,jezero_crater,80.8,5569,0.85,0.72,0.74,0.89,0.92,0.68,0.81
-17,"Western Sahara plateau",21.12,-11.4,desert,"hyperarid soil; aeolian",mars,arcadia_planitia,80.5,908,0.84,0.81,0.87,0.81,0.72,0.85,0.77
-18,"Ellef Ringnes Island, Canada",78.78,-103.53,polar,"permafrost; ice dynamics",moon,shackleton_ridge,80,509,0.63,0.61,0.96,0.95,0.69,,0.94
-19,"Pinacate lava field, Mexico",31.77,-113.5,volcanic,"volcanic; hydrothermal",mars,arsia_mons_pits,80,429,0.9,0.59,0.89,0.77,0.85,0.59,0.9
-20,"Namib Desert, Namibia",-24.73,15.29,desert,"hyperarid soil; aeolian",mars,arcadia_planitia,79.2,6732,0.74,0.93,0.73,0.83,0.78,0.62,0.9
-21,"Holuhraun lava field, Iceland",64.87,-16.83,volcanic,"volcanic; hydrothermal",mars,arsia_mons_pits,75.4,1867,0.87,0.58,0.74,0.89,0.82,0.63,0.71
-22,"Kerguelen Islands",-49.3,69.5,polar,"permafrost; ice dynamics",mars,arcadia_planitia,71.6,4752,0.77,0.52,0.75,0.71,0.76,0.8,0.7
-23,"Lonar Crater, India",19.98,76.51,volcanic,"volcanic; hydrothermal",mars,arsia_mons_pits,71.6,7290,0.67,0.89,0.56,0.81,0.74,0.83,0.67
-24,"Ellef Ringnes Island, Canada",78.78,-103.53,polar,"permafrost; ice dynamics",mars,gale_crater,70.6,509,0.83,0.48,0.51,0.79,0.77,0.83,0.77
-25,"Danakil Depression, Ethiopia",14.24,40.3,volcanic,"volcanic; hydrothermal",mars,arsia_mons_pits,70,5289,0.75,0.72,0.63,0.85,0.7,0.68,0.62
-26,"Lava Beds, California",41.71,-121.51,volcanic,"volcanic; hydrothermal",mars,arsia_mons_pits,67.9,681,0.76,0.75,0.66,0.61,0.63,0.8,0.64
-27,"Axel Heiberg Island, Canada",79.42,-90.77,polar,"permafrost; ice dynamics",mars,gale_crater,67.1,450,0.8,0.8,0.57,0.63,0.61,0.7,0.67
-28,"Dome C, Antarctica",-75.1,123.35,polar,"permafrost; ice dynamics",mars,arsia_mons_pits,66.9,1027,0.8,0.78,0.68,0.64,0.53,0.56,0.72
-29,"Salar de Uyuni, Bolivia",-20.13,-67.49,arid,"evaporite; sedimentary",moon,shackleton_ridge,66.3,506,0.73,0.71,0.75,0.54,0.64,,0.65
-30,"Tibesti Mountains, Chad",19.79,18.55,volcanic,"volcanic; hydrothermal",mars,arsia_mons_pits,66.3,3139,0.58,0.84,0.68,0.73,0.7,0.64,0.58
-31,"Pilbara, Australia",-21.1,119.4,arid,"evaporite; sedimentary",moon,marius_hills_pit,65.4,6670,0.63,0.61,0.74,0.7,0.58,,0.66
-32,"Wolfe Creek Crater, Australia",-19.17,127.8,arid,"evaporite; sedimentary",moon,nobile_rim_1,64,6747,0.74,0.62,0.6,0.48,0.74,,0.68
-33,"Qaidam Basin, China",38.5,91.4,arid,"evaporite; sedimentary",moon,shackleton_ridge,63,5569,0.73,0.43,0.74,0.48,0.74,,0.66
-34,"Western Sahara plateau",21.12,-11.4,desert,"hyperarid soil; aeolian",moon,shackleton_ridge,61.5,908,0.66,0.48,0.67,0.6,0.59,,0.65
-35,"Badain Jaran Desert, China",39.8,102.4,desert,"hyperarid soil; aeolian",moon,nobile_rim_1,60.2,5653,0.68,0.67,0.7,0.68,0.7,,0.38
-36,"Namib Desert, Namibia",-24.73,15.29,desert,"hyperarid soil; aeolian",moon,nobile_rim_1,57.7,6732,0.59,0.37,0.5,0.63,0.61,,0.71
-37,"Rubʿ al Khali, Arabia",20.5,50,desert,"hyperarid soil; aeolian",moon,marius_hills_pit,56.7,5726,0.4,0.57,0.7,0.67,0.51,,0.6
-38,"Dasht-e Lut, Iran",30.4,57.9,desert,"hyperarid soil; aeolian",moon,shackleton_ridge,53.4,5826,0.69,0.64,0.47,0.48,0.62,,0.43
+rank,name,lat,lon,env_type,tags,body,best_target_id,score,km_to_nearest_known_analog,temp,swing,sun,slope,rough,elev,surface,minerals,ice
+1,"Lava Beds, California",41.71,-121.51,volcanic,"volcanic; hydrothermal",moon,marius_hills_pit,90.5,681,0.99,0.72,0.99,0.98,0.99,0.69,0.99,0.72,0.98
+2,"Tibesti Mountains, Chad",19.79,18.55,volcanic,"volcanic; hydrothermal",moon,marius_hills_pit,88.3,3139,0.76,0.71,0.99,0.92,0.99,0.99,0.99,0.99,0.76
+3,"Pinacate lava field, Mexico",31.77,-113.5,volcanic,"volcanic; hydrothermal",moon,marius_hills_pit,87.7,429,0.76,0.82,0.97,0.99,0.95,0.82,0.99,0.86,0.82
+4,"Lonar Crater, India",19.98,76.51,volcanic,"volcanic; hydrothermal",moon,marius_hills_pit,85.8,7290,0.8,0.71,0.76,0.97,0.9,0.99,0.99,0.83,0.91
+5,"Danakil Depression, Ethiopia",14.24,40.3,volcanic,"volcanic; hydrothermal",moon,marius_hills_pit,84.9,5289,0.83,0.8,0.75,0.99,0.99,0.83,0.94,0.77,0.77
+6,"Western Sahara plateau",21.12,-11.4,desert,"hyperarid soil; aeolian",mars,arcadia_planitia,84.7,908,0.87,0.92,0.69,0.77,0.92,0.71,0.82,0.93,0.85
+7,"Badain Jaran Desert, China",39.8,102.4,desert,"hyperarid soil; aeolian",mars,arsia_mons_pits,84.6,5653,0.82,0.61,0.94,0.87,0.9,0.74,0.9,0.88,0.89
+8,"Dasht-e Lut, Iran",30.4,57.9,desert,"hyperarid soil; aeolian",mars,gale_crater,84.1,5826,0.92,0.8,0.91,0.81,0.79,0.74,0.84,0.9,0.8
+9,"Salar de Uyuni, Bolivia",-20.13,-67.49,arid,"evaporite; sedimentary",mars,arsia_mons_pits,83.4,506,0.92,0.89,0.72,0.61,0.91,0.82,0.64,0.87,0.9
+10,"Axel Heiberg Island, Canada",79.42,-90.77,polar,"permafrost; ice dynamics",moon,malapert_massif,83.3,450,0.88,0.92,0.75,0.93,0.67,0.71,0.89,0.85,0.87
+11,"Ellef Ringnes Island, Canada",78.78,-103.53,polar,"permafrost; ice dynamics",moon,nobile_rim_1,83.1,509,0.91,0.6,0.82,0.92,0.89,0.82,0.91,0.86,0.74
+12,"Dome C, Antarctica",-75.1,123.35,polar,"permafrost; ice dynamics",moon,shackleton_ridge,82.9,1027,0.95,0.91,0.76,0.84,0.65,0.61,0.85,0.85,0.92
+13,"Kerguelen Islands",-49.3,69.5,polar,"permafrost; ice dynamics",moon,nobile_rim_1,82.8,4752,0.76,0.92,0.83,0.95,0.84,0.81,0.87,0.81,0.72
+14,"Holuhraun lava field, Iceland",64.87,-16.83,volcanic,"volcanic; hydrothermal",moon,marius_hills_pit,82,1867,0.68,0.69,0.99,0.81,0.9,0.85,0.99,0.79,0.88
+15,"Namib Desert, Namibia",-24.73,15.29,desert,"hyperarid soil; aeolian",mars,utopia_planitia,81,6732,0.95,0.66,0.78,0.72,0.78,0.84,0.71,0.79,0.92
+16,"Pilbara, Australia",-21.1,119.4,arid,"evaporite; sedimentary",mars,utopia_planitia,80.2,6670,0.92,0.61,0.91,0.79,0.87,0.61,0.92,0.78,0.77
+17,"Wolfe Creek Crater, Australia",-19.17,127.8,arid,"evaporite; sedimentary",mars,jezero_crater,80.1,6747,0.79,0.9,0.94,0.66,0.8,0.75,0.76,0.72,0.89
+18,"Qaidam Basin, China",38.5,91.4,arid,"evaporite; sedimentary",mars,jezero_crater,79.5,5569,0.89,0.71,0.73,0.77,0.67,0.89,0.65,0.93,0.78
+19,"Rubʿ al Khali, Arabia",20.5,50,desert,"hyperarid soil; aeolian",mars,gale_crater,78.2,5726,0.76,0.69,0.63,0.91,0.86,0.7,0.92,0.8,0.77
+20,"Holuhraun lava field, Iceland",64.87,-16.83,volcanic,"volcanic; hydrothermal",mars,arsia_mons_pits,77.9,1867,0.9,0.81,0.78,0.77,0.67,0.69,0.91,0.91,0.65
+21,"Lonar Crater, India",19.98,76.51,volcanic,"volcanic; hydrothermal",mars,arsia_mons_pits,75.4,7290,0.9,0.59,0.73,0.7,0.78,0.9,0.76,0.85,0.62
+22,"Tibesti Mountains, Chad",19.79,18.55,volcanic,"volcanic; hydrothermal",mars,arsia_mons_pits,75,3139,0.74,0.9,0.84,0.86,0.59,0.63,0.66,0.6,0.84
+23,"Pinacate lava field, Mexico",31.77,-113.5,volcanic,"volcanic; hydrothermal",mars,arsia_mons_pits,74.1,429,0.6,0.87,0.91,0.82,0.81,0.7,0.62,0.64,0.65
+24,"Kerguelen Islands",-49.3,69.5,polar,"permafrost; ice dynamics",mars,jezero_crater,72.2,4752,0.82,0.83,0.72,0.7,0.7,0.6,0.79,0.75,0.61
+25,"Danakil Depression, Ethiopia",14.24,40.3,volcanic,"volcanic; hydrothermal",mars,arsia_mons_pits,72,5289,0.74,0.59,0.79,0.87,0.66,0.71,0.88,0.63,0.74
+26,"Lava Beds, California",41.71,-121.51,volcanic,"volcanic; hydrothermal",mars,arsia_mons_pits,72,681,0.63,0.77,0.73,0.63,0.77,0.66,0.88,0.84,0.71
+27,"Dome C, Antarctica",-75.1,123.35,polar,"permafrost; ice dynamics",mars,utopia_planitia,71,1027,0.84,0.8,0.6,0.6,0.8,0.48,0.57,0.72,0.68
+28,"Ellef Ringnes Island, Canada",78.78,-103.53,polar,"permafrost; ice dynamics",mars,gale_crater,69.6,509,0.57,0.66,0.72,0.8,0.79,0.6,0.77,0.68,0.68
+29,"Axel Heiberg Island, Canada",79.42,-90.77,polar,"permafrost; ice dynamics",mars,jezero_crater,69.6,450,0.57,0.58,0.68,0.82,0.75,0.73,0.49,0.67,0.75
+30,"Qaidam Basin, China",38.5,91.4,arid,"evaporite; sedimentary",moon,shackleton_ridge,66.1,5569,0.77,0.63,0.62,0.69,0.44,0.63,0.73,0.71,0.75
+31,"Namib Desert, Namibia",-24.73,15.29,desert,"hyperarid soil; aeolian",moon,malapert_massif,65,6732,0.68,0.67,0.7,0.68,0.7,0.38,0.41,0.57,0.66
+32,"Salar de Uyuni, Bolivia",-20.13,-67.49,arid,"evaporite; sedimentary",moon,malapert_massif,64.4,506,0.69,0.62,0.62,0.5,0.76,0.53,0.44,0.66,0.68
+33,"Rubʿ al Khali, Arabia",20.5,50,desert,"hyperarid soil; aeolian",moon,marius_hills_pit,62.5,5726,0.72,0.61,0.45,0.6,0.6,0.66,0.67,0.66,0.66
+34,"Wolfe Creek Crater, Australia",-19.17,127.8,arid,"evaporite; sedimentary",moon,malapert_massif,62.4,6747,0.64,0.64,0.7,0.64,0.43,0.67,0.7,0.61,0.72
+35,"Badain Jaran Desert, China",39.8,102.4,desert,"hyperarid soil; aeolian",moon,marius_hills_pit,62.2,5653,0.57,0.61,0.67,0.71,0.63,0.58,0.45,0.46,0.73
+36,"Dasht-e Lut, Iran",30.4,57.9,desert,"hyperarid soil; aeolian",moon,nobile_rim_1,62.1,5826,0.67,0.38,0.63,0.7,0.68,0.44,0.56,0.64,0.63
+37,"Pilbara, Australia",-21.1,119.4,arid,"evaporite; sedimentary",moon,shackleton_ridge,60.6,6670,0.45,0.43,0.78,0.77,0.51,0.76,0.71,0.53,0.72
+38,"Western Sahara plateau",21.12,-11.4,desert,"hyperarid soil; aeolian",moon,shackleton_ridge,57.8,908,0.56,0.49,0.38,0.71,0.59,0.42,0.59,0.56,0.71

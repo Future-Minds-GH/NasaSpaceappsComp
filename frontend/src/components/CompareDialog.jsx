@@ -55,8 +55,8 @@ export default function CompareDialog({ target, match, onClose }) {
 
           {match.figure_url && (
             <figure className="compare-figure">
-              <img src={match.figure_url} alt={`Terrain comparison of ${target.name} and ${matchName}`} />
-              <figcaption>Terrain shape compared from elevation data.</figcaption>
+              <img src={match.figure_url} alt={`Ground comparison of ${target.name} and ${matchName}`} />
+              <figcaption>Ground shape compared from elevation data.</figcaption>
             </figure>
           )}
 

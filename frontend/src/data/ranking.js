@@ -12,6 +12,9 @@ const FIRST_CANDIDATE_POOL = 512;
  * @returns {{ row: number, total: number, earthRankPct: number }[]}
  */
 export function rankTopRows(totals, lats, lons, { count = 10, minSeparationKm = 250, radiusKm = BODY_RADIUS_KM.earth } = {}) {
+  // A negative total marks a tile with no factor to compare: it is not a candidate.
+  let candidateCount = 0;
+  for (let row = 0; row < totals.length; row++) if (totals[row] >= 0) candidateCount++;
   // Widen the pool until it holds enough well-separated tiles (or every tile).
   for (let poolSize = FIRST_CANDIDATE_POOL; ; poolSize *= 4) {
     const pool = bestRows(totals, Math.min(poolSize, totals.length));
@@ -21,18 +24,18 @@ export function rankTopRows(totals, lats, lons, { count = 10, minSeparationKm = 
       if (chosen.some((pick) => distanceKm(lats[pick.row], lons[pick.row], lats[row], lons[row], radiusKm) < minSeparationKm)) continue;
       // Every tile above this one is in the pool, so the first pool position with its total is how many tiles beat it.
       const beatenBy = pool.findIndex((other) => totals[other] === totals[row]);
-      chosen.push({ row, total: totals[row], earthRankPct: Math.round(((totals.length - 1 - beatenBy) / Math.max(1, totals.length - 1)) * 1000) / 10 });
+      chosen.push({ row, total: totals[row], earthRankPct: Math.round(((candidateCount - 1 - beatenBy) / Math.max(1, candidateCount - 1)) * 1000) / 10 });
     }
-    if (chosen.length === count || pool.length === totals.length) return chosen;
+    if (chosen.length === count || poolSize >= totals.length) return chosen;
   }
 }
 
 /** Indices of the `size` highest totals, best first, without sorting the whole array. */
 function bestRows(totals, size) {
-  if (size >= totals.length) return Array.from(totals.keys()).sort((first, second) => totals[second] - totals[first]);
+  if (size >= totals.length) return Array.from(totals.keys()).filter((row) => totals[row] >= 0).sort((first, second) => totals[second] - totals[first]);
   const threshold = kthLargest(totals, size);
   const rows = [];
-  for (let row = 0; row < totals.length; row++) if (totals[row] >= threshold) rows.push(row);
+  for (let row = 0; row < totals.length; row++) if (totals[row] >= 0 && totals[row] >= threshold) rows.push(row);
   return rows.sort((first, second) => totals[second] - totals[first]);
 }
 
