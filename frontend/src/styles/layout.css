@@ -40,4 +40,4 @@ main:focus { outline: none; }
 .site-footer-lead { color: var(--on-space); font-family: var(--font-display); font-weight: 700; font-size: 1rem; }
 .sample-data-note { color: #FFBE2E; font-weight: 650; }
 /* The landing hero is already black down to the footer: no white gap, just a hairline between them */
-main:has(.landing) + .site-footer { margin-top: 0; border-top: 1px solid rgb(255 255 255 / 0.14); }
+main:has(.workspace) + .site-footer { margin-top: 0; border-top: 1px solid rgb(255 255 255 / 0.14); }

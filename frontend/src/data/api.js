@@ -105,6 +105,8 @@ function fetchJson(path, { isOptional = false } = {}) {
   if (!responseCache.has(path)) {
     const request = fetch(`${DATA_ROOT}${path}`).then(async (response) => {
       if (response.status === 404 && isOptional) return null;
+      // The Vite dev server answers a missing file with index.html (200), not a 404: treat that as missing too.
+      if (isOptional && !(response.headers.get("content-type") ?? "").includes("json")) return null;
       if (!response.ok) throw new Error(`Could not load ${path} (HTTP ${response.status}).`);
       const file = await response.json();
       if (file?.sample) markSampleData();
