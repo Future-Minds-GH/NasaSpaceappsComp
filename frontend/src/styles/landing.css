@@ -149,7 +149,7 @@
 .similarity-body { font-family: var(--font-display); font-weight: 700; font-size: 1.25rem; color: var(--body-color); display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; }
 .similarity-same { font-family: var(--font-mono); font-size: 0.6875rem; font-weight: 400; color: var(--ink-soft); }
 .similarity-place { font-family: var(--font-mono); font-size: 0.8125rem; color: var(--ink-soft); }
-.similarity-vector-text code { font-family: var(--font-mono); font-size: 0.8125rem; background: var(--paper-raised); padding: 3px 6px; border-radius: 4px; overflow-wrap: anywhere; }
+.similarity-caption { font-size: 0.75rem; color: var(--ink-soft); margin-bottom: -4px; }
 .similarity-note { font-size: 0.8125rem; color: var(--warning); }
 .similarity-bars { list-style: none; display: grid; gap: 6px; }
 .similarity-bar { display: grid; grid-template-columns: 1fr 3rem; grid-template-rows: auto auto; column-gap: 8px; row-gap: 2px; align-items: center; font-size: 0.8125rem; }

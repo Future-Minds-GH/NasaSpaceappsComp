@@ -1,6 +1,6 @@
 // One body's answer after Compute (three of these sit side by side: Earth, Moon, Mars). It shows the best match, its
 // overall score in the plan's colours (green 90–100, yellow 60–90, red under 60) and the similarity vector: one 0–1
-// score per factor, written out and drawn as bars. Clicking the card shows that body on the right-hand globe.
+// score per factor, drawn as labelled bars. Clicking the card shows that body on the right-hand globe.
 import { Link } from "react-router-dom";
 import ScoreRing from "./ScoreRing.jsx";
 import { FACTORS } from "../data/scoring.js";
@@ -31,7 +31,6 @@ export default function SimilarityVector({
 
   const scoreBand = band(match.score);
   const usedFactors = FACTORS.filter((factor) => (weights[factor] ?? 0) > 0);
-  const vectorText = usedFactors.map((factor) => (match.breakdown?.[factor] == null ? "—" : match.breakdown[factor].toFixed(2))).join(", ");
 
   return (
     <article className={`similarity body-${body} band-${scoreBand.id}${isSelected ? " is-selected" : ""}`} aria-label={`Best match on ${BODY_NAMES[body]}`}>
@@ -43,7 +42,7 @@ export default function SimilarityVector({
           <span className="similarity-place">{match.name ?? <Coordinates lat={match.lat} lon={match.lon} />}</span>
         </span>
       </button>
-      <p className="similarity-vector-text"><code>s = [{vectorText}]</code></p>
+      <p className="similarity-caption">How alike each factor is · 1.00 = identical</p>
       {isApproximate && <p className="similarity-note">Approximate: from a precomputed shortlist.</p>}
 
       <ul className="similarity-bars">
