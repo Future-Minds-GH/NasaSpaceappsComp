@@ -1,7 +1,7 @@
 // Explore: pick a spot on Earth, the Moon or Mars, and rank every tile of one of the other two bodies against it.
 // The URL keeps the choice: #/explore/moon?to=earth&site=shackleton_ridge or ?at=-89.45,-136.00, plus &preset=landing and &mode=relative.
 // After a pick the globe stays free to turn and zoom; it only flies on its own when a named site is chosen.
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, Navigate, useParams, useSearchParams } from "react-router-dom";
 import { loadBodyMeta, loadTargets, loadWeights } from "../data/api.js";
 import { useLoaded } from "../data/useLoaded.js";
@@ -24,7 +24,12 @@ export default function ExplorePage() {
   const { body } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
   const [isShowingCaves, setIsShowingCaves] = useState(false);
-  const [customWeights, setCustomWeights] = useState(null);
+  // Slider weights belong to one planet: they are stored with their body, so each body starts again from the preset.
+  const [customState, setCustomState] = useState(null);
+  const customWeights = customState?.body === body ? customState.weights : null;
+  const setCustomWeights = (weights) => setCustomState(weights ? { body, weights } : null);
+  // Leaving a planet drops its custom weights, so coming back (Mars → Earth → Mars) also starts from the preset.
+  useEffect(() => setCustomState(null), [body]);
   const [focus, setFocus] = useState(null);
   const targetsState = useLoaded(loadTargets, []);
   const presetsState = useLoaded(loadWeights, []);

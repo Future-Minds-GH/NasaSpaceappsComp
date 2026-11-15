@@ -203,3 +203,22 @@ def test_percentile_rank_formula():
     got = bv.percentile_rank([10.0, 20.0, 20.0, np.nan])
     want = [(1 - 0.5) / 3, (2.5 - 0.5) / 3, (2.5 - 0.5) / 3]
     assert np.allclose(got[:3], want) and np.isnan(got[3])
+
+
+def test_control_rows_encode_the_cell_and_rank_among_scored_tiles(built):
+    df, vectors, meta, tiles, summary = built
+    controls = [{"lat": 75.1, "lon": 20.1}, {"lat": 10.1, "lon": 100.1}, {"lat": 25.1, "lon": 15.1}]   # unscored, unscored, scored
+    rows = bv.control_rows(df, controls)
+    assert rows.shape == (3, 25) and rows.dtype == np.uint8
+    scored = df["slope_deg"].to_numpy()[bv.tile_cell_ids()[0][tiles]]
+    for i, c in enumerate(controls):
+        cell = int((90 - c["lat"]) // bv.CELL) * bv.NCOLS + int((c["lon"] + 180) // bv.CELL)
+        x = df["slope_deg"].to_numpy()[cell]
+        below, equal = (scored < x).sum(), (scored == x).sum()
+        assert rows[i, IDS_.index("slope_pct")] == bv.to_byte([(below + equal / 2) / scored.size])[0]
+        f = FIELD["slope_deg"]
+        assert rows[i, IDS_.index("slope_deg")] == bv.to_byte([np.clip((x - f["min"]) / (f["max"] - f["min"]), 0, 1)])[0]
+    assert rows[0, IDS_.index("slope_pct")] == 254        # steeper than every scored tile
+    assert rows[1, IDS_.index("slope_pct")] < 60          # gentler than most (about a fifth of scored tiles are gentler)
+    # a scored cell gives the same bytes as the scored tile of that cell
+    assert (rows[2] == vectors[row_of(built, 25.125, 15.125)]).all()
