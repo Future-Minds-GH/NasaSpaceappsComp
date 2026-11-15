@@ -22,7 +22,7 @@
   background: var(--paper-raised);
 }
 .about-validation-number {
-  font-stretch: var(--width-expanded); font-weight: 850; line-height: 1;
+  font-family: var(--font-display); font-weight: 700; line-height: 1;
   font-size: clamp(2.25rem, 1.6rem + 2.5vw, 3.25rem); color: var(--earth);
 }
 .about-validation-out-of { font-size: 0.5em; font-weight: 700; color: var(--ink-soft); }
@@ -41,7 +41,7 @@
 .about-credits { columns: 3 16rem; column-gap: 32px; }
 .about-credit-group { break-inside: avoid; display: grid; gap: 8px; margin-bottom: 22px; }
 .about-credit-agency {
-  font-stretch: var(--width-expanded); font-size: 1.0625rem; font-weight: 800;
+  font-family: var(--font-display); font-size: 1.0625rem; font-weight: 700;
   padding-bottom: 6px; border-bottom: 1px solid var(--rule);
 }
 .about-credit-list { list-style: none; display: grid; gap: 8px; }

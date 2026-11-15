@@ -1,17 +1,27 @@
 /* Design tokens and shared building blocks (buttons, segmented controls, tags, badges, score ring, factor bars).
-   Concept: a USGS planetary geologic-map plate. Legend swatches, unit boxes and coordinate readouts carry the look;
-   Mars rust, Moon slate and Earth green mark which body a thing belongs to. Screen files only add layout. */
+   Look: NASA's public web design language (nasa.gov, built on the U.S. Web Design System): a black header bar,
+   white pages, black space stages, Inter headings over Public Sans text, DM Mono for tracked labels and readouts,
+   red primary actions and square-cornered image frames. No NASA logo or name as branding: this is a Space Apps
+   entry, not an agency site. Mars rust, Moon slate and Earth green still mark which body a thing belongs to. */
 
 :root {
-  --paper: #EDEFEA;
-  --paper-raised: #F7F8F4;
-  --ink: #1C2733;
-  --ink-soft: #4A5562;
-  --rule: #B9C0B6;
+  --paper: #FFFFFF;
+  --paper-raised: #F6F6F6;
+  --ink: #1B1B1B;
+  --ink-soft: #565C65;
+  --rule: #DFE1E2;
+  --space: #000000;
+  --space-raised: #17171B;
+  --on-space: #FFFFFF;
+  --on-space-soft: #B8B8BC;
+  /* Primary action red, its pressed/hover shade, and the deep blue used for highlighted bands */
+  --accent: #D83933;
+  --accent-strong: #AF1108;
+  --deep-blue: #0B3D91;
   --mars: #A4492A;
   --moon: #4E5C6B;
   --earth: #2F6B4F;
-  --focus: #1F5FBF;
+  --focus: #005EA2;
   --warning: #9A5B00;
 
   /* One swatch per factor, like geologic map units. Labels always sit beside them, so colour is never the only cue. */
@@ -29,12 +39,12 @@
   --environment-volcanic: #5B4A44;
   --environment-cave: #3D3A4F;
 
-  --font: "Archivo", "Helvetica Neue", Arial, sans-serif;
-  --width-expanded: 125%;
-  --width-condensed: 82%;
+  --font: "Public Sans", "Helvetica Neue", Arial, sans-serif;
+  --font-display: "Inter", "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "DM Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
   --gutter: 16px;
-  --radius-control: 8px;
-  --radius-frame: 12px;
+  --radius-control: 4px;
+  --radius-frame: 0;
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
   --rule-soft: color-mix(in srgb, var(--rule) 55%, transparent);
   color-scheme: light;
@@ -42,15 +52,17 @@
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --paper: #18212B; --paper-raised: #202B37; --ink: #E6E9E3; --ink-soft: #A9B2AB; --rule: #3E4B57;
-    --mars: #D9744F; --moon: #9FB0C2; --earth: #63B08A; --focus: #8DB8FF; --warning: #E0A345;
+    --paper: #17171B; --paper-raised: #2E2E32; --ink: #F6F6F6; --ink-soft: #B8B8BC; --rule: #4E4E52;
+    --space-raised: #2E2E32;
+    --mars: #D9744F; --moon: #9FB0C2; --earth: #63B08A; --focus: #73B3E7; --warning: #E0A345;
     --environment-volcanic: #8C7A72; --environment-cave: #8A86A8;
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
-  --paper: #18212B; --paper-raised: #202B37; --ink: #E6E9E3; --ink-soft: #A9B2AB; --rule: #3E4B57;
-  --mars: #D9744F; --moon: #9FB0C2; --earth: #63B08A; --focus: #8DB8FF; --warning: #E0A345;
+  --paper: #17171B; --paper-raised: #2E2E32; --ink: #F6F6F6; --ink-soft: #B8B8BC; --rule: #4E4E52;
+  --space-raised: #2E2E32;
+  --mars: #D9744F; --moon: #9FB0C2; --earth: #63B08A; --focus: #73B3E7; --warning: #E0A345;
   --environment-volcanic: #8C7A72; --environment-cave: #8A86A8;
   color-scheme: dark;
 }
@@ -62,7 +74,7 @@ body {
   font-family: var(--font); font-size: 1rem; line-height: 1.5; font-variant-numeric: tabular-nums;
   overflow-x: hidden;
 }
-h1, h2, h3, h4 { margin: 0; line-height: 1.15; font-weight: 750; }
+h1, h2, h3, h4 { margin: 0; line-height: 1.15; font-weight: 700; font-family: var(--font-display); letter-spacing: -0.01em; }
 p, ul, ol, dl, dd, figure { margin: 0; }
 ul, ol { padding: 0; }
 a { color: inherit; }
@@ -75,28 +87,49 @@ img { max-width: 100%; display: block; }
 .button {
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
   min-height: 44px; padding: 10px 18px; border-radius: var(--radius-control);
-  font: inherit; font-weight: 700; text-decoration: none; cursor: pointer;
+  font: inherit; font-family: var(--font-display); font-weight: 700; text-decoration: none; cursor: pointer;
   border: 1px solid var(--ink); background: transparent; color: var(--ink);
   transition: transform 140ms var(--ease-out), background-color 160ms ease, color 160ms ease, border-color 160ms ease;
 }
 .button:active:not(:disabled) { transform: scale(0.97); }
 .button:disabled { opacity: 0.45; cursor: not-allowed; }
-.button-primary { background: var(--ink); color: var(--paper); }
+.button-primary { background: var(--accent); border-color: var(--accent); color: #FFFFFF; }
 .button-quiet { min-height: 36px; padding: 6px 12px; font-weight: 600; border-color: var(--rule); }
 @media (hover: hover) and (pointer: fine) {
-  .button-primary:hover:not(:disabled) { background: var(--earth); border-color: var(--earth); }
+  .button-primary:hover:not(:disabled) { background: var(--accent-strong); border-color: var(--accent-strong); }
   .button-quiet:hover:not(:disabled) { border-color: var(--ink); }
 }
 
+/* Text link that ends in a small red arrow disc, the way NASA pages mark "go somewhere" links */
+.arrow-link {
+  display: inline-flex; align-items: center; gap: 8px; font-family: var(--font-display); font-weight: 700;
+  text-decoration: none; color: inherit;
+}
+.arrow-link::after {
+  content: "\2192"; display: inline-grid; place-items: center; width: 1.25em; height: 1.25em; border-radius: 50%;
+  background: var(--accent); color: #FFFFFF; font-size: 0.8em; line-height: 1;
+  transition: transform 160ms var(--ease-out);
+}
+@media (hover: hover) and (pointer: fine) {
+  .arrow-link:hover { text-decoration: underline; text-underline-offset: 4px; }
+  .arrow-link:hover::after { transform: translateX(3px); }
+}
+
+/* Small tracked monospace label, NASA's "eyebrow" over a heading or a value */
+.eyebrow { font-family: var(--font-mono); font-size: 0.75rem; font-weight: 400; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink-soft); }
+
 /* Small label above a control group. Sentence case on purpose, not tracked capitals. */
-.control-label { display: block; font-size: 0.875rem; font-weight: 700; color: var(--ink-soft); margin-bottom: 6px; padding: 0; }
+.control-label {
+  display: block; margin-bottom: 8px; padding: 0;
+  font-family: var(--font-mono); font-size: 0.75rem; font-weight: 400; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-soft);
+}
 fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
 
 /* Segmented control on real radio inputs, so arrow keys work natively */
 .segmented { display: inline-flex; flex-wrap: wrap; border: 1px solid var(--rule); border-radius: var(--radius-control); padding: 2px; gap: 2px; }
 .segmented-option { position: relative; }
 .segmented-option input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; }
-.segmented-option span { display: block; padding: 6px 12px; border-radius: 6px; font-weight: 600; font-size: 0.9375rem; }
+.segmented-option span { display: block; padding: 6px 12px; border-radius: 2px; font-family: var(--font-display); font-weight: 600; font-size: 0.9375rem; }
 .segmented-option input:checked + span { background: var(--ink); color: var(--paper); }
 .segmented-option input:focus-visible + span { outline: 3px solid var(--focus); outline-offset: 1px; }
 
@@ -135,8 +168,8 @@ fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
 .score-ring { position: relative; flex: none; display: grid; place-items: center; }
 .score-ring svg { position: absolute; inset: 0; }
 .score-ring-track { fill: none; stroke: var(--rule-soft); }
-.score-ring-fill { fill: none; stroke: var(--earth); stroke-linecap: round; }
-.score-ring-number { position: relative; font-stretch: var(--width-expanded); font-weight: 800; font-size: 1.25rem; }
+.score-ring-fill { fill: none; stroke: var(--focus); stroke-linecap: round; }
+.score-ring-number { position: relative; font-family: var(--font-mono); font-weight: 500; font-size: 1.25rem; letter-spacing: -0.02em; }
 
 /* Factor bars: map-legend rows; numbers and meanings appear in the Details view */
 .factor-bars { display: grid; gap: 4px; }
@@ -151,7 +184,7 @@ fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
 .factor-bar.is-estimated .factor-bar-fill {
   background: repeating-linear-gradient(135deg, var(--factor-color) 0 4px, color-mix(in srgb, var(--factor-color) 45%, transparent) 4px 8px);
 }
-.factor-number { width: 2.5rem; text-align: right; font-weight: 650; }
+.factor-number { width: 2.5rem; text-align: right; font-family: var(--font-mono); font-weight: 500; }
 .factor-not-scored { color: var(--ink-soft); font-size: 0.8125rem; font-style: italic; }
 
 /* Loading, empty and error messages inside a page */
@@ -159,12 +192,13 @@ fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
 .page-message[role="alert"] { color: var(--ink); }
 
 /* Leaflet: our font, a dark backdrop behind tiles, and pins styled from tokens */
-.leaflet-container { font-family: var(--font); background: #0E141A; }
+.leaflet-container { font-family: var(--font); background: var(--space); }
 .leaflet-container .leaflet-control-attribution { font-size: 0.6875rem; }
 
 @media (prefers-reduced-motion: reduce) {
   .button { transition: background-color 160ms ease, color 160ms ease, border-color 160ms ease; }
   .button:active:not(:disabled) { transform: none; }
+  .arrow-link::after, .arrow-link:hover::after { transition: none; transform: none; }
 }
 
 /* "Weight the criteria": the seven sliders, always on show under the mission type (Explore and Discover).
@@ -179,4 +213,10 @@ fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
 .weight-panel .weight-row output { text-align: right; font-variant-numeric: tabular-nums; }
 @media (max-width: 480px) {
   .weight-panel .weight-row { grid-template-columns: 7rem minmax(0, 1fr) 2.75rem; }
+}
+
+/* Outline button for black backgrounds (the landing hero) */
+.button-on-space { border-color: var(--on-space); color: var(--on-space); }
+@media (hover: hover) and (pointer: fine) {
+  .button-on-space:hover:not(:disabled) { background: var(--on-space); color: var(--space); }
 }

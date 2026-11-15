@@ -16,7 +16,7 @@
 .findings-item-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
 .findings-item-title { display: grid; gap: 6px; min-width: 0; }
 .findings-item-name {
-  font-stretch: var(--width-expanded); font-weight: 850; line-height: 1.1;
+  font-family: var(--font-display); font-weight: 700; line-height: 1.1;
   font-size: clamp(1.25rem, 1.05rem + 0.8vw, 1.625rem); overflow-wrap: anywhere;
 }
 .findings-item-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; font-size: 0.875rem; color: var(--ink-soft); }

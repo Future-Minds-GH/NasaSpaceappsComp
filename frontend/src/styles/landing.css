@@ -1,11 +1,15 @@
-/* Landing: a short promise and the headline action, then the Moon and Mars as two spinning globes on a dark band. */
+/* Landing: one black hero, NASA-style. A big white headline, the red headline action, then the Moon and Mars as two
+   spinning globes standing in for the hero photograph. */
 
-.landing { display: grid; gap: 28px; }
-.landing-intro { max-width: 1240px; width: 100%; margin: 0 auto; padding: 32px var(--gutter) 0; display: grid; gap: 12px; }
-.landing-intro .page-title { max-width: 20ch; text-wrap: balance; }
-.landing-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 6px; }
+.landing { display: grid; }
+.landing-hero { background: radial-gradient(ellipse at 50% 70%, var(--space-raised) 0%, var(--space) 70%); color: var(--on-space); }
+.landing-intro { max-width: 1240px; width: 100%; margin: 0 auto; padding: 56px var(--gutter) 0; display: grid; gap: 16px; }
+.landing-intro .page-title { max-width: 18ch; text-wrap: balance; font-size: clamp(2.25rem, 1.4rem + 3.6vw, 4.25rem); }
+.landing-intro .page-lede { color: var(--on-space-soft); }
+.landing-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 8px; }
+.landing :focus-visible { outline-color: #FFFFFF; }
 
-.landing-planets { background: radial-gradient(ellipse at 50% 40%, #1d2833 0%, #0b1016 75%); color: #e6e9e3; padding: 28px var(--gutter) 36px; }
+.landing-planets { padding: 40px var(--gutter) 56px; }
 .landing-planet-list { list-style: none; max-width: 1080px; margin: 0 auto; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
 
 .landing-planet { display: grid; justify-items: center; gap: 6px; text-decoration: none; color: inherit; border-radius: var(--radius-frame); padding-bottom: 8px; }
@@ -21,11 +25,10 @@
 }
 .landing-planet:focus-visible .landing-planet-globe { transform: scale(1.06); }
 
-.landing-planet-name { font-stretch: var(--width-expanded); font-weight: 850; font-size: clamp(1.6rem, 1.2rem + 1.6vw, 2.25rem); line-height: 1; }
-.landing-planet-moon .landing-planet-name { color: #c4cfda; }
-.landing-planet-mars .landing-planet-name { color: #e8906d; }
-.landing-planet-sentence { max-width: 34ch; text-align: center; color: #b7c0c7; }
-.landing-planet-action { margin-top: 4px; font-weight: 700; text-decoration: underline; text-underline-offset: 4px; }
+.landing-planet-eyebrow { margin-top: 8px; color: var(--on-space-soft); }
+.landing-planet-name { font-family: var(--font-display); font-weight: 700; font-size: clamp(1.6rem, 1.2rem + 1.6vw, 2.25rem); line-height: 1; }
+.landing-planet-sentence { max-width: 34ch; text-align: center; color: #B8B8BC; }
+.landing-planet-action { margin-top: 6px; }
 
 @media (max-width: 640px) {
   .landing-planet-list { grid-template-columns: 1fr; }

@@ -85,7 +85,7 @@
 /* Rank in a box, like a numbered locality on a geologic map; filled in when selected */
 .discover-rank {
   display: inline-grid; place-items: center; min-width: 2rem; height: 2rem; padding: 0 6px;
-  border: 1px solid var(--ink); border-radius: 4px; font-weight: 750; font-stretch: var(--width-expanded);
+  border: 1px solid var(--ink); border-radius: 4px; font-weight: 750; font-family: var(--font-display);
 }
 .discover-row.is-selected .discover-rank { background: var(--ink); color: var(--paper); }
 /* How far the sliders moved a place from its published rank */
