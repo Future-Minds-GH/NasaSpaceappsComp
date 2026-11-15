@@ -386,7 +386,8 @@ def at(lat, lon, col):
 assert at(18.65, -133.8, "elev_m") > at(-42.7, 70.0, "elev_m") + 15000, "Olympus Mons should be far above Hellas"
 assert at(0, 0, "t_day_k") > at(85, 0, "t_day_k"), "equator should be warmer than the pole by day"
 assert (df["t_day_k"] > df["t_night_k"]).mean() > 0.99, "day should be warmer than night"
-assert at(18.65, -133.8, "slope_deg") > at(25, -60, "slope_deg"), "Olympus Mons flank should be steeper than Acidalia plain"
+# Acidalia Planitia centre is 46.7 N, 22.0 W (25 N, 60 W is the Chryse/Kasei area, slope about 4 deg).
+assert at(18.65, -133.8, "slope_deg") > at(46.7, -22.0, "slope_deg"), "Olympus Mons should be steeper than Acidalia plain"
 
 fig, axes = plt.subplots(3, 2, figsize=(14, 12))
 for ax, col in zip(axes.ravel(), ("t_day_k", "t_night_k", "t_swing_k", "slope_deg", "rough_m", "elev_m")):
