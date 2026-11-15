@@ -7,6 +7,7 @@ import { FACTORS, combineScore, isFalseFriend, scoreBand } from "../src/data/sco
 import { NULL_CODE, assertWholeTiles, combineAll, readLayout, scoreAllEarthTiles } from "../src/data/similarity.js";
 import { SAME_BODY_MIN_KM, rankTopRows } from "../src/data/ranking.js";
 import { FACTOR_LABELS } from "../src/content/labels.js";
+import { halfTempNote } from "../src/data/fieldValues.js";
 
 const schema = JSON.parse(readFileSync(new URL("../../data/schema.json", import.meta.url), "utf8"));
 const layout = readLayout(schema);
@@ -172,4 +173,31 @@ test("missing data: a tile without a factor gets that factor's median score and 
   for (const offset of mineralBytes) noMinerals[offset] = NULL_CODE;
   const none = scoreAllEarthTiles(noMinerals, tiles, layout);
   for (let tile = 0; tile < 4; tile++) assert.ok(Number.isNaN(none[tile * FACTORS.length + m]));
+});
+
+test("a spot with no data for a factor says so, for any planet", async () => {
+  const { missingFactorsOf, noDataSentence } = await import("../src/data/fieldValues.js");
+  const schema = JSON.parse(readFileSync(new URL("../../data/schema.json", import.meta.url), "utf8"));
+  const layout = readLayout(schema);
+  const vector = new Uint8Array(layout.bytesPerTile).fill(100);
+  for (const field of schema.factors.find((factor) => factor.id === "minerals").fields) vector[layout.fields[field.id].offset] = NULL_CODE;
+  assert.deepEqual(missingFactorsOf(layout, vector), ["minerals"]);
+  assert.equal(noDataSentence("Mars", ["Minerals"]), "This spot on Mars has no data for minerals, so it is left out of the score.");
+  assert.equal(noDataSentence("the Moon", ["Day-night swing", "Surface type"]), "This spot on the Moon has no data for day-night swing and surface type, so they are left out of the score.");
+  assert.equal(noDataSentence("Earth", []), null);
+});
+
+test("half temperature: the note names the part that is present, from the schema field names", () => {
+  const both = tile({ t_day_k: encode("t_day_k", 300), t_night_k: encode("t_night_k", 200) });
+  const nightOnly = tile({ t_night_k: encode("t_night_k", 200) });
+  const dayOnly = tile({ t_day_k: encode("t_day_k", 300) });
+  assert.equal(halfTempNote(layout, both), null);
+  assert.equal(halfTempNote(layout, tile()), null, "no temperature at all is not 'half'");
+  assert.equal(halfTempNote(layout, nightOnly), "Temperature: night only (no day value here).");
+  assert.equal(halfTempNote(layout, dayOnly), "Temperature: day only (no night value here).");
+  // A pair: only a part present on both tiles is compared.
+  assert.equal(halfTempNote(layout, both, nightOnly), "Temperature: night only (no day value on one of the two places).");
+  assert.equal(halfTempNote(layout, both, both), null);
+  assert.equal(halfTempNote(layout, nightOnly, dayOnly), null, "no shared part: temperature is not scored");
+  assert.equal(halfTempNote(null, both), null);
 });

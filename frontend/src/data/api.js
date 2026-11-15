@@ -65,14 +65,6 @@ export function loadFamousSites() {
   return fetchJson("characterize/sites.json").then((file) => file.sites);
 }
 
-/**
- * One 10° tile of the 0.5° Earth grid, named by its south-west corner (e.g. "30_-120").
- * Returns an empty object for tiles that do not exist: those are all ocean or ice sheet, which are not scored.
- */
-export function loadGridTile(tileName) {
-  return fetchJson(`characterize/grid/${tileName}.json`, { isOptional: true }).then((file) => file?.cells ?? {});
-}
-
 export function loadDiscoveries() {
   return fetchJson("discoveries.json").then((file) => file.discoveries);
 }

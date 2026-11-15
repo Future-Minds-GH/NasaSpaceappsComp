@@ -423,3 +423,4 @@
 .globe-readout.is-site { display: grid; gap: 1px; border-color: rgb(255 200 90 / 0.6); }
 .globe-readout-site { color: #FFC85A; font-size: 0.8125rem; }
 .planet-globe.is-pickable { cursor: crosshair; }
+.similarity-no-data { margin: 8px 0 0; padding: 6px 10px; border-left: 3px solid var(--band-yellow, currentColor); font-size: 0.875rem; }

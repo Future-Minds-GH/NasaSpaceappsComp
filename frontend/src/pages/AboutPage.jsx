@@ -4,7 +4,7 @@ import { loadValidation } from "../data/api.js";
 import { useLoaded } from "../data/useLoaded.js";
 import { ValidationSummary } from "../components/ValidationGrid.jsx";
 import ModelCheck from "../components/ModelCheck.jsx";
-import { DATA_CREDITS, FIGURES, FULL_CREDITS_NOTE, METHOD_STAGES, TEAM_ROLES } from "../content/about.js";
+import { DATA_CREDITS, FIGURES, LOW_SCORE_NOTE, FULL_CREDITS_NOTE, METHOD_STAGES, TEAM_ROLES } from "../content/about.js";
 import "../styles/about.css";
 
 export default function AboutPage() {
@@ -42,12 +42,11 @@ export default function AboutPage() {
           Jezero and Gale. Preset weights were set by judgement before this check was run, not tuned on it.
         </p>
         <ValidationResult />
+        <h3 className="about-stage-title">Why Moon and Mars scores look low</h3>
+        <p className="about-text">{LOW_SCORE_NOTE.join(" ")}</p>
       </section>
 
-      <section className="about-section" aria-labelledby="about-model-check-heading">
-        <h2 id="about-model-check-heading" className="section-heading">Model check</h2>
-        <ModelCheck />
-      </section>
+      <ModelCheck />
 
       <section className="about-section" aria-labelledby="about-figures-heading">
         <h2 id="about-figures-heading" className="section-heading">Comparison figures</h2>

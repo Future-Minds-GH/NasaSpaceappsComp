@@ -29,6 +29,7 @@ export default function ReportCard({ entry, targetsById = {}, presets = {} }) {
             {describeTags(site.tags)}
           </p>
         )}
+        {site.nearest_km > 0 && <p className="characterize-report-note">Scored from the nearest land tile, {site.nearest_km} km away.</p>}
         <p className="characterize-report-place">
           <span>{formatCoordinates(site.lat, site.lon)}</span>
           <EnvironmentTag envType={site.env_type} />
@@ -54,6 +55,7 @@ export default function ReportCard({ entry, targetsById = {}, presets = {} }) {
               key={match.target_id}
               match={match}
               targetName={targetsById[match.target_id]?.name ?? match.target_id}
+              realityGap={targetsById[match.target_id]?.reality_gap}
               presetLabel={presets[match.best_preset]?.label ?? match.best_preset}
               isShowingDetails={isShowingDetails}
             />
@@ -82,7 +84,7 @@ export default function ReportCard({ entry, targetsById = {}, presets = {} }) {
 }
 
 /** One Moon or Mars site in the ranking: name, body, score, best mission type, what it suits and what it can't do. */
-function TargetMatch({ match, targetName, presetLabel, isShowingDetails }) {
+function TargetMatch({ match, targetName, realityGap, presetLabel, isShowingDetails }) {
   return (
     <li className={`characterize-match characterize-match-${match.body}`}>
       <div className="characterize-match-header">
@@ -98,13 +100,13 @@ function TargetMatch({ match, targetName, presetLabel, isShowingDetails }) {
 
       <div className="characterize-match-lists">
         <ReasonList title="Mission tests it suits" items={match.good_for} />
-        <ReasonList title="What it can't reproduce" items={match.cant_reproduce} />
+        <ReasonList title="What it can't reproduce" items={match.cant_reproduce ?? realityGap} />
       </div>
 
       {isShowingDetails && match.breakdown && (
         <div className="characterize-match-details">
           <p className="characterize-report-note">How alike the two places are on each factor, from 0 (not at all) to 1 (the same).</p>
-          <FactorBars breakdown={match.breakdown} isShowingNumbers />
+          <FactorBars breakdown={match.breakdown} isShowingNumbers typicalFactors={match.typical_factors ?? []} />
         </div>
       )}
     </li>

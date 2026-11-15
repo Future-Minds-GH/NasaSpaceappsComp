@@ -259,6 +259,8 @@ export default function LandingPage() {
               inputBody={request.inputBody}
               weights={request.weights}
               mode={request.mode}
+              clickedVector={results[body].search.clickedVector}
+              layout={results[body].search.layout}
               exploreLink={body === request.inputBody ? null : `/explore/${request.inputBody}?to=${body}&at=${request.point.lat.toFixed(2)},${request.point.lon.toFixed(2)}&preset=${presetId}&mode=${request.mode}`}
             />
           ))}

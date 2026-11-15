@@ -40,7 +40,7 @@ export default function MatchCard({ match, isShowingDetails, onCompare }) {
         {/* One decimal, capped below 100: the best tile beats everything except itself. */}
         {typeof match.earth_rank_pct === "number" && <p className="match-rank-pct">Better than {Math.min(99.9, match.earth_rank_pct).toFixed(1)}% of {SURFACE_NAMES[match.body ?? "earth"]}</p>}
         <SiteBadges site={match} />
-        {isShowingDetails && <FactorBars breakdown={match.breakdown} isShowingNumbers isMineralogyEstimated={match.mineralogy_estimated} values={match.values} typicalFactors={match.typical_factors} />}
+        {isShowingDetails && <FactorBars breakdown={match.breakdown} isShowingNumbers isMineralogyEstimated={match.mineralogy_estimated} values={match.values} typicalFactors={match.typical_factors} tempNote={match.temp_note} />}
         <button className="button button-quiet match-compare" type="button" onClick={() => onCompare(match)}>
           Compare side by side
         </button>

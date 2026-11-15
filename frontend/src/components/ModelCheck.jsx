@@ -3,27 +3,37 @@
 import { loadModelCheck } from "../data/api.js";
 import { useLoaded } from "../data/useLoaded.js";
 
-/** Role 3's model_check.md as headings, paragraphs and bullet lists (rendered by React, never as HTML). */
+/**
+ * Role 3's model_check.md as a titled section. While the file is still the placeholder (its title says "(sample)", and its numbers
+ * are not from a real run) the whole section is hidden: it comes back by itself when Role 3 publishes the real file.
+ */
 export default function ModelCheck() {
   const { data: text, isLoading } = useLoaded(() => loadModelCheck(), []);
 
-  if (isLoading) return <p className="about-text" role="status">Loading the model check…</p>;
+  if (isLoading) return null;
   // A dev server answers a missing file with its index.html page, which is not the model check either.
   const isPublished = typeof text === "string" && !/^\s*<(!doctype|html)/i.test(text);
   const blocks = isPublished ? toTextBlocks(text) : [];
-  if (blocks.length === 0) {
-    return <p className="about-text">The model check will appear here once Role 3 publishes it.</p>;
-  }
+  if (blocks.length === 0 || isSamplePlaceholder(blocks)) return null;
 
   return (
-    <div className="about-model-check">
-      {blocks.map((block, index) => {
-        if (block.type === "heading") return <h3 key={index} className="about-model-check-heading">{block.text}</h3>;
-        if (block.type === "list") return <ul key={index}>{block.items.map((item, itemIndex) => <li key={itemIndex}>{item}</li>)}</ul>;
-        return <p key={index}>{block.text}</p>;
-      })}
-    </div>
+    <section className="about-section" aria-labelledby="about-model-check-heading">
+      <h2 id="about-model-check-heading" className="section-heading">Model check</h2>
+      <div className="about-model-check">
+        {blocks.map((block, index) => {
+          if (block.type === "heading") return <h3 key={index} className="about-model-check-heading">{block.text}</h3>;
+          if (block.type === "list") return <ul key={index}>{block.items.map((item, itemIndex) => <li key={itemIndex}>{item}</li>)}</ul>;
+          return <p key={index}>{block.text}</p>;
+        })}
+      </div>
+    </section>
   );
+}
+
+/** True when the first heading is marked "(sample)": the placeholder file, not a real run. */
+function isSamplePlaceholder(blocks) {
+  const firstHeading = blocks.find((block) => block.type === "heading");
+  return Boolean(firstHeading && /\(sample\)/i.test(firstHeading.text));
 }
 
 /** Plain Markdown to blocks: "# " lines are headings, "- " lines list items, other lines join into paragraphs; blank lines split them. */

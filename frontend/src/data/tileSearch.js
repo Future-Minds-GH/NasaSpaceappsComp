@@ -4,7 +4,7 @@ import { FACTORS, combineScore, heaviestFactor, isFalseFriend, scoreBand } from 
 import { rankTopRows } from "./ranking.js";
 import { baseCellOf, tileCenter, tileCount } from "./healpix.js";
 import { NULL_CODE } from "./similarity.js";
-import { describeFactorValue } from "./fieldValues.js";
+import { describeFactorValue, halfTempNote } from "./fieldValues.js";
 import { earthImageUrl } from "../content/earthImagery.js";
 import { FACTOR_REASONS } from "../content/labels.js";
 
@@ -92,6 +92,7 @@ export function buildMatches(picks, { tiles, body = "earth", nside, weights, why
       false_friend: isFalseFriend(breakdown, weights),
       false_friend_factor: heaviestFactor(breakdown, weights),
       why: plainReasons(breakdown, whyRules, pick.typicalFactors ?? []),
+      temp_note: clicked && vectors && layout ? halfTempNote(layout, clicked, vectors.subarray(pick.row * layout.bytesPerTile, (pick.row + 1) * layout.bytesPerTile)) : null,
       values: clicked && vectors && layout ? realValues(layout, clicked, vectors.subarray(pick.row * layout.bytesPerTile, (pick.row + 1) * layout.bytesPerTile)) : null,
     };
   });

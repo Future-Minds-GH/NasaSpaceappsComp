@@ -123,3 +123,4 @@
 .find-weights-used { font-size: 0.8125rem; color: var(--ink-soft); }
 .find-weights-used-label { font-weight: 700; color: var(--ink); }
 .find-approximate { padding: 10px 14px; border-left: 4px solid var(--warning); background: var(--paper-raised); border-radius: var(--radius-control); font-size: 0.9375rem; }
+.tile-profile-missing { margin-top: 8px; font-size: 0.9rem; color: var(--ink-soft, inherit); }

@@ -1,6 +1,7 @@
+import { FACTORS } from "./scoring.js";
 // Real values of a tile in plain words, decoded from its bytes with the layout of data/schema.json:
 // "Night 170 K", or next to a match "Night 170 K vs 215 K". Used by the tile profile and the result cards.
-import { decodeByte } from "./similarity.js";
+import { NULL_CODE, decodeByte } from "./similarity.js";
 
 // The scalar measurements to show per factor: [schema field id, label].
 const PARTS = {
@@ -65,4 +66,35 @@ export function ordinal(n) {
   const tens = n % 100;
   const suffix = tens >= 11 && tens <= 13 ? "th" : ({ 1: "st", 2: "nd", 3: "rd" })[n % 10] ?? "th";
   return `${n}${suffix}`;
+}
+
+/**
+ * A short note when the temperature factor rests on only one of day or night, or null. The day and night fields come from the
+ * schema's field names (PARTS.temp), never from byte offsets. With `other`, only a part present on both tiles is compared.
+ * "Temperature: night only (no day value here)."
+ */
+export function halfTempNote(layout, vector, other = null) {
+  if (!layout || !vector) return null;
+  const parts = PARTS.temp.map(([id, label]) => ({
+    label: label.toLowerCase(),
+    isPresent: [vector, other].every((tile) => !tile || tile[layout.fields[id].offset] !== NULL_CODE),
+  }));
+  const present = parts.filter((part) => part.isPresent);
+  if (present.length !== 1) return null;   // both present: whole score; none: temperature is not scored at all
+  const where = other ? "on one of the two places" : "here";
+  return `Temperature: ${present[0].label} only (no ${parts.find((part) => !part.isPresent).label} value ${where}).`;
+}
+
+/** The factors (FACTORS order) a tile has no data for: they cannot be compared from this spot on any match. */
+export function missingFactorsOf(layout, vector) {
+  if (!layout || !vector) return [];
+  return FACTORS.filter((factor) => describeFactorValue(layout, factor, vector) === null);
+}
+
+/** "This spot on Mars has no data for minerals, so it is left out of the score." (any body, any factors), or null. */
+export function noDataSentence(bodyName, factorLabels) {
+  if (factorLabels.length === 0) return null;
+  const names = factorLabels.map((label) => label.toLowerCase());
+  const list = names.length === 1 ? names[0] : `${names.slice(0, -1).join(", ")} and ${names.at(-1)}`;
+  return `This spot on ${bodyName} has no data for ${list}, so ${names.length === 1 ? "it is" : "they are"} left out of the score.`;
 }
