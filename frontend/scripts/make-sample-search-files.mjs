@@ -79,6 +79,7 @@ for (const body of ['moon', 'mars']) {
       tiles[index] = [...rows].sort((first, second) => balancedTotals[second] - balancedTotals[first]).slice(0, POOL_SIZE).map((row) => [
         earthTiles[row].index,
         ...Array.from(scores.subarray(row * FACTORS.length, (row + 1) * FACTORS.length), (value) => (Number.isNaN(value) ? null : Math.round(value * 1000) / 1000)),
+        scores.typical?.[row] ?? 0,   // bit flags: factors with a typical score (see similarity.js)
       ]);
     }
     writeFileSync(join(DATA_DIR, 'pools', `${body}_${parent}.json`), JSON.stringify({ sample: true, mode: MODE, body, nside, parent_nside: PARENT_NSIDE, tiles }));

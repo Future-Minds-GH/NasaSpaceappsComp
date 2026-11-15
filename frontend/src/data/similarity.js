@@ -73,7 +73,10 @@ function planFor(layout, mode) {
  * Scalar: max(0, 1 - |a - b| / tol) on decoded values. Temperature: mean of the day and night scores that are present.
  * Vector (surface, minerals): max(0, 1 - 0.5 x sum |p - q|), missing if any component is null on either tile.
  * @param {"absolute" | "relative"} mode  which fields the scalar factors read (elev and the vectors read the same in both)
- * @returns {Float32Array} N x 9 scores in FACTORS order; NaN where a factor is missing on either tile.
+ * Missing data: when the clicked tile has a factor but a candidate does not, the candidate gets that factor's median
+ * score over the candidates that have it (a typical value: no advantage for unmapped tiles, no penalty either).
+ * Those cells are flagged in `scores.typical` (one bit per factor per tile). A factor the clicked tile lacks stays NaN.
+ * @returns {Float32Array & { typical: Uint16Array }} N x 9 scores in FACTORS order.
  */
 export function scoreAllEarthTiles(clicked, vectors, layout, mode = "absolute") {
   assertWholeTiles(vectors, layout, "candidate vectors");
@@ -114,7 +117,38 @@ export function scoreAllEarthTiles(clicked, vectors, layout, mode = "absolute") 
       }
     }
   }
+  scores.typical = fillWithTypical(scores, tileCount, factorCount);
   return scores;
+}
+
+/** Replaces each factor's missing scores with the median of the present ones; returns the bit flags of the filled cells. */
+function fillWithTypical(scores, tileCount, factorCount) {
+  const typical = new Uint16Array(tileCount);
+  const present = new Float32Array(tileCount);
+  // A tile with no real factor score at all stays empty: it is not a candidate (combineAll gives it -1).
+  const hasData = new Uint8Array(tileCount);
+  for (let cell = 0; cell < scores.length; cell++) if (scores[cell] === scores[cell]) hasData[(cell / factorCount) | 0] = 1;
+  for (let factor = 0; factor < factorCount; factor++) {
+    let count = 0;
+    for (let tile = 0; tile < tileCount; tile++) {
+      const value = scores[tile * factorCount + factor];
+      if (value === value) present[count++] = value;   // value === value: not NaN
+    }
+    if (count === 0 || count === tileCount) continue;   // the clicked tile lacks it, or nothing is missing
+    const sorted = present.subarray(0, count).sort();
+    const median = count % 2 ? sorted[count >> 1] : (sorted[count / 2 - 1] + sorted[count / 2]) / 2;
+    for (let tile = 0; tile < tileCount; tile++) {
+      const cell = tile * factorCount + factor;
+      if (hasData[tile] && scores[cell] !== scores[cell]) { scores[cell] = median; typical[tile] |= 1 << factor; }
+    }
+  }
+  return typical;
+}
+
+/** The factor ids filled with a typical value for one tile (see scoreAllEarthTiles). */
+export function typicalFactorsOf(scores, row) {
+  const bits = scores.typical?.[row] ?? 0;
+  return FACTORS.filter((_, factor) => (bits >> factor) & 1);
 }
 
 /**

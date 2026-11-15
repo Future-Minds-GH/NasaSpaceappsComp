@@ -88,9 +88,10 @@ export function buildMatches(picks, { tiles, body = "earth", nside, weights, why
       breakdown,
       km_to_nearest_known_analog: tile.noveltyKm,
       mineralogy_estimated: tile.minEstimated,
+      typical_factors: pick.typicalFactors ?? [],   // no data on this tile: the factor uses a typical score
       false_friend: isFalseFriend(breakdown, weights),
       false_friend_factor: heaviestFactor(breakdown, weights),
-      why: plainReasons(breakdown, whyRules),
+      why: plainReasons(breakdown, whyRules, pick.typicalFactors ?? []),
       values: clicked && vectors && layout ? realValues(layout, clicked, vectors.subarray(pick.row * layout.bytesPerTile, (pick.row + 1) * layout.bytesPerTile)) : null,
     };
   });
@@ -113,7 +114,9 @@ export function buildPoolMatches(pool, tileIndex, { earthTiles, rowByIndex, weig
     row: rows[pick.row],
     total: pick.total,
     earthRankPct: null,
-    factorScores: entries[pick.row].slice(1).map((value) => value ?? NaN),
+    factorScores: entries[pick.row].slice(1, 1 + FACTORS.length).map((value) => value ?? NaN),
+    // Optional last item of a pool row: bit flags of the factors that hold a typical score (no data on that tile).
+    typicalFactors: FACTORS.filter((_, factor) => ((entries[pick.row][1 + FACTORS.length] ?? 0) >> factor) & 1),
   }));
   return buildMatches(picks, { tiles: earthTiles, body: "earth", nside: earthNside, weights, whyRules, mode: "absolute" });
 }
@@ -127,8 +130,10 @@ function realValues(layout, clicked, matchVector) {
  * Two or three plain reasons, strongest factor first. Role 2's why_rules.json, when present, sets the wording and
  * the score each factor needs: { "slope": { "min": 0.7, "text": "Similar slopes" }, … }.
  */
-function plainReasons(breakdown, whyRules) {
+function plainReasons(breakdown, whyRules, typicalFactors = []) {
   return FACTORS
+    // A factor with only a typical score (no data on the match) is never a reason.
+    .filter((factor) => !typicalFactors.includes(factor))
     .filter((factor) => typeof breakdown[factor] === "number" && breakdown[factor] >= (whyRules?.[factor]?.min ?? DEFAULT_REASON_MIN))
     .sort((first, second) => breakdown[second] - breakdown[first])
     .slice(0, REASON_COUNT)
