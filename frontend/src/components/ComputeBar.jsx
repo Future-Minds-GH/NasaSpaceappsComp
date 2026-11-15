@@ -2,7 +2,7 @@
 // runs a loading bar with the step it is on. The bar creeps toward 90% while waiting and jumps to 100% when the search
 // has answered, so it never sits "full" before the result exists.
 import { useEffect, useRef, useState } from "react";
-import { formatCoordinates } from "../data/format.js";
+import Coordinates from "./Coordinates.jsx";
 import { BODY_NAMES } from "../content/labels.js";
 
 const STEPS = [
@@ -26,7 +26,7 @@ export default function ComputeBar({ inputBody, targetNames, point, status, star
       <p className="compute-summary">
         <span className="compute-from">
           <span className="eyebrow">From</span>
-          <strong>{BODY_NAMES[inputBody]}</strong> {point ? formatCoordinates(point.lat, point.lon) : "· pick a spot"}
+          <strong>{BODY_NAMES[inputBody]}</strong> {point ? <Coordinates lat={point.lat} lon={point.lon} /> : "· pick a spot"}
         </span>
         <span className="compute-to" aria-hidden="true">→</span>
         <span className="compute-from">

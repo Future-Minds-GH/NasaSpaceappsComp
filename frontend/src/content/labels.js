@@ -42,3 +42,37 @@ export const FACTOR_REASONS = {
   atmosphere: "Similar wind and dust",
   water_ice: "Ice or frozen ground like the target",
 };
+
+/**
+ * The single measurements inside each factor (fields of vectors/schema.json), keyed "factor.field" as the scoring
+ * engine's fieldWeights expects. "terrain.shape" is the picture-similarity embedding.
+ */
+export const MEASUREMENTS = [
+  { key: "terrain.shape", factor: "terrain", label: "Surface look" },
+  { key: "terrain.slope", factor: "terrain", label: "Slope" },
+  { key: "terrain.roughness", factor: "terrain", label: "Roughness" },
+  { key: "elevation.relief", factor: "elevation", label: "Relief" },
+  { key: "elevation.topo_position", factor: "elevation", label: "Landform" },
+  { key: "geology.rock_class", factor: "geology", label: "Rock type" },
+  { key: "geology.volcanic", factor: "geology", label: "Volcanic" },
+  { key: "geology.impact", factor: "geology", label: "Impact craters" },
+  { key: "mineralogy.mafic", factor: "mineralogy", label: "Basaltic minerals" },
+  { key: "mineralogy.clays", factor: "mineralogy", label: "Clays" },
+  { key: "mineralogy.sulfates", factor: "mineralogy", label: "Sulfates" },
+  { key: "mineralogy.carbonates", factor: "mineralogy", label: "Carbonates" },
+  { key: "mineralogy.iron_oxides", factor: "mineralogy", label: "Iron oxides" },
+  { key: "mineralogy.salts", factor: "mineralogy", label: "Salts" },
+  { key: "climate.mean_temp", factor: "climate", label: "Temperature" },
+  { key: "climate.day_night_range", factor: "climate", label: "Day–night swing" },
+  { key: "climate.cold_extreme", factor: "climate", label: "Coldest temperature" },
+  { key: "climate.sunlit_fraction", factor: "climate", label: "Sunlight" },
+  { key: "climate.aridity", factor: "climate", label: "Dryness" },
+  { key: "atmosphere.pressure", factor: "atmosphere", label: "Air pressure" },
+  { key: "atmosphere.wind", factor: "atmosphere", label: "Wind" },
+  { key: "atmosphere.dust", factor: "atmosphere", label: "Dust" },
+  { key: "atmosphere.dust_storms", factor: "atmosphere", label: "Dust storms" },
+  { key: "water_ice.ice_fraction", factor: "water_ice", label: "Ice amount" },
+  { key: "water_ice.ice_depth", factor: "water_ice", label: "Ice depth" },
+  { key: "water_ice.ice_form", factor: "water_ice", label: "Ice type" },
+  { key: "water_ice.liquid_water", factor: "water_ice", label: "Liquid water" },
+];

@@ -8,11 +8,11 @@ import { loadWeights } from "../data/api.js";
 import { useLoaded } from "../data/useLoaded.js";
 import { useTileSearch } from "../data/useTileSearch.js";
 import { FACTORS } from "../data/scoring.js";
-import { formatCoordinates } from "../data/format.js";
 import { BODY_RADIUS_KM } from "../data/ranking.js";
-import { BODY_NAMES } from "../content/labels.js";
+import { BODY_NAMES, MEASUREMENTS } from "../content/labels.js";
 import PlanetGlobe, { GLOBE_TEXTURES } from "../components/PlanetGlobe.jsx";
-import FactorSidebar, { MAIN_FACTORS } from "../components/FactorSidebar.jsx";
+import FactorSidebar, { MAIN_FACTORS, MEASUREMENT_DEFAULT } from "../components/FactorSidebar.jsx";
+import Coordinates from "../components/Coordinates.jsx";
 import ComputeBar from "../components/ComputeBar.jsx";
 import SimilarityVector from "../components/SimilarityVector.jsx";
 import "../styles/landing.css";
@@ -33,7 +33,7 @@ export default function LandingPage() {
   const presetId = presetsState.data?.default_preset ?? "balanced";
   const [weights, setWeights] = useState(null); // 0–100 per factor; null until presets load
   const [shownFactors, setShownFactors] = useState(MAIN_FACTORS);
-  const [customMeasurements, setCustomMeasurements] = useState([]);
+  const [measurements, setMeasurements] = useState({}); // added single measurements: "factor.field" → 0–300 (100 = 1×)
   // The searches run only on Compute: this holds the request that was computed.
   const [request, setRequest] = useState(null);
   const [startedAt, setStartedAt] = useState(0);
@@ -48,9 +48,9 @@ export default function LandingPage() {
   // their search never runs.
   const selectionFor = (body) => (request?.targets.includes(body) ? request.selection : null);
   const searches = {
-    earth: useTileSearch(selectionFor("earth"), "earth", request?.weights),
-    moon: useTileSearch(selectionFor("moon"), "moon", request?.weights),
-    mars: useTileSearch(selectionFor("mars"), "mars", request?.weights),
+    earth: useTileSearch(selectionFor("earth"), "earth", request?.weights, request?.fieldWeights),
+    moon: useTileSearch(selectionFor("moon"), "moon", request?.weights, request?.fieldWeights),
+    mars: useTileSearch(selectionFor("mars"), "mars", request?.weights, request?.fieldWeights),
   };
   const results = Object.fromEntries(BODIES.map((body) => {
     const search = searches[body];
@@ -61,7 +61,7 @@ export default function LandingPage() {
   const isSettled = Boolean(request) && BODIES.every((body) => !searches[body].isLoading);
   const handleFinished = useCallback(() => setFinishedRequest(request), [request]);
   const status = !request ? "idle" : finishedRequest === request ? "done" : "computing";
-  const settingsKey = JSON.stringify([weights, shownFactors, targets]);
+  const settingsKey = JSON.stringify([weights, shownFactors, targets, measurements]);
   const isStale = Boolean(request) && (request.point !== point || request.inputBody !== inputBody || request.settingsKey !== settingsKey);
   const isShowingResult = status === "done" && !isStale;
 
@@ -81,6 +81,27 @@ export default function LandingPage() {
     setPoint(null);
   }
 
+  // Re-added factors go back to their usual place in the list.
+  function showFactor(factor) {
+    setShownFactors((current) => FACTORS.filter((other) => current.includes(other) || other === factor));
+  }
+
+  // Removing a factor also drops its single measurements; at least one factor always stays.
+  function hideFactor(factor) {
+    if (shownFactors.length <= 1) return;
+    setShownFactors((current) => current.filter((shown) => shown !== factor));
+    setMeasurements((current) => Object.fromEntries(Object.entries(current).filter(([key]) => !key.startsWith(`${factor}.`))));
+  }
+
+  // Adding a measurement also shows its factor, and gives a hidden factor a starting weight so it counts.
+  function addMeasurement(item) {
+    setMeasurements((current) => ({ ...current, [item.key]: MEASUREMENT_DEFAULT }));
+    if (!shownFactors.includes(item.factor)) {
+      showFactor(item.factor);
+      setWeights((current) => (current[item.factor] ? current : { ...current, [item.factor]: 20 }));
+    }
+  }
+
   function addTarget(body) {
     setTargets((current) => (current.includes(body) ? current : BODIES.filter((other) => current.includes(other) || other === body)));
   }
@@ -93,7 +114,9 @@ export default function LandingPage() {
     if (!point || !weights) return;
     const scoredWeights = Object.fromEntries(FACTORS.map((factor) => [factor, shownFactors.includes(factor) ? weights[factor] / 100 : 0]));
     setStartedAt(performance.now());
-    setRequest({ point, inputBody, targets, selection: { body: inputBody, ...point }, weights: scoredWeights, settingsKey });
+    const entries = Object.entries(measurements);
+    const fieldWeights = entries.length ? Object.fromEntries(entries.map(([key, value]) => [key, value / 100])) : null;
+    setRequest({ point, inputBody, targets, selection: { body: inputBody, ...point }, weights: scoredWeights, fieldWeights, settingsKey });
   }
 
   const inputTile = request?.inputBody === inputBody && request?.point === point ? searches[inputBody].tile : null;
@@ -104,12 +127,12 @@ export default function LandingPage() {
         weights={weights}
         onChangeWeight={(factor, value) => setWeights((current) => ({ ...current, [factor]: value }))}
         shownFactors={shownFactors}
-        onShowFactor={(factor) => setShownFactors((current) => [...current, factor])}
-        onHideFactor={(factor) => setShownFactors((current) => current.filter((shown) => shown !== factor))}
-        customMeasurements={customMeasurements}
-        onAddCustom={(name) => setCustomMeasurements((current) => [...current, { id: `${Date.now()}`, name, weight: 50 }])}
-        onChangeCustom={(id, weight) => setCustomMeasurements((current) => current.map((item) => (item.id === id ? { ...item, weight } : item)))}
-        onRemoveCustom={(id) => setCustomMeasurements((current) => current.filter((item) => item.id !== id))}
+        onShowFactor={showFactor}
+        onHideFactor={hideFactor}
+        measurements={measurements}
+        onAddMeasurement={addMeasurement}
+        onChangeMeasurement={(key, value) => setMeasurements((current) => ({ ...current, [key]: value }))}
+        onRemoveMeasurement={(key) => setMeasurements(({ [key]: _removed, ...rest }) => rest)}
       />
 
       <section className="workspace-stage" aria-label="Pick a spot, then compare">
@@ -118,7 +141,7 @@ export default function LandingPage() {
           body={inputBody}
           choices={BODIES.filter((other) => other !== inputBody)}
           onPickBody={pickInputBody}
-          caption={point ? formatCoordinates(point.lat, point.lon) : `Click anywhere on ${BODY_NAMES[inputBody]}`}
+          caption={point ? <Coordinates lat={point.lat} lon={point.lon} /> : `Click anywhere on ${BODY_NAMES[inputBody]}`}
         >
           <PlanetGlobe
             body={inputBody}
@@ -195,7 +218,7 @@ export default function LandingPage() {
               isApproximate={results[body].search.isApproximate}
               inputBody={request.inputBody}
               weights={request.weights}
-              customMeasurements={customMeasurements}
+              measurementNote={describeMeasurements(measurements)}
               exploreLink={body === request.inputBody ? null : `/explore/${request.inputBody}?to=${body}&at=${request.point.lat.toFixed(2)},${request.point.lon.toFixed(2)}&preset=${presetId}`}
             />
           ))}
@@ -245,10 +268,16 @@ function TargetGlobe({ body, best, isSelected, isSamePlanet, onRemove }) {
       </div>
       <div className="planet-caption">
         <span className="planet-caption-name">{BODY_NAMES[body]}</span>
-        <span className="planet-caption-detail">{best ? `${Math.round(best.score)}% · ${formatCoordinates(best.lat, best.lon)}` : isSamePlanet ? "Same planet" : "Every tile"}</span>
+        <span className="planet-caption-detail">{best ? <><strong className="caption-score">{Math.round(best.score)}%</strong> <Coordinates lat={best.lat} lon={best.lon} /></> : isSamePlanet ? "Same planet" : "Every tile"}</span>
       </div>
     </div>
   );
+}
+
+function describeMeasurements(measurements) {
+  const entries = Object.entries(measurements);
+  if (!entries.length) return null;
+  return entries.map(([key, value]) => `${MEASUREMENTS.find((item) => item.key === key)?.label ?? key} ${(value / 100).toFixed(1)}×`).join(" · ");
 }
 
 function formatList(names) {

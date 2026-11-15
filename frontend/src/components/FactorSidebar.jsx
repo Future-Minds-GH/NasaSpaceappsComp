@@ -1,43 +1,27 @@
-// Left column of the sketch: "Factor sliders — main five — + add their own measurement". Each slider is a 0–100
-// weight; the share each one ends up with is shown beside it. The two other data factors (geology, atmosphere) can be
-// added back, and people can add a measurement of their own: it is listed but not scored until the data has it.
+// Left column of the sketch: "Factor sliders — main five — + add their own measurement". Each factor slider is its own
+// 0–100 weight (moving one never moves another). "+ Add a measurement" lists the single measurements each factor is
+// built from (temperature, slope, clays…); an added one gets its own slider under its factor that sets how much it
+// counts inside that factor (1× is the default). Any factor can be removed (one always stays) and added back.
 import { useState } from "react";
 import { FACTORS } from "../data/scoring.js";
-import { FACTOR_LABELS, FACTOR_MEANINGS } from "../content/labels.js";
+import { FACTOR_LABELS, FACTOR_MEANINGS, MEASUREMENTS } from "../content/labels.js";
 
 export const MAIN_FACTORS = ["terrain", "elevation", "mineralogy", "climate", "water_ice"];
+export const MEASUREMENT_DEFAULT = 100; // 100 = 1×
 
-export default function FactorSidebar({
-  weights, onChangeWeight, shownFactors, onShowFactor, onHideFactor,
-  customMeasurements, onAddCustom, onChangeCustom, onRemoveCustom,
-}) {
+export default function FactorSidebar({ weights, onChangeWeight, shownFactors, onShowFactor, onHideFactor, measurements, onAddMeasurement, onChangeMeasurement, onRemoveMeasurement }) {
   const [isAdding, setIsAdding] = useState(false);
-  const [customName, setCustomName] = useState("");
   const hiddenFactors = FACTORS.filter((factor) => !shownFactors.includes(factor));
-  const total = shownFactors.reduce((sum, factor) => sum + (weights?.[factor] ?? 0), 0);
-
-  function submitCustom(event) {
-    event.preventDefault();
-    const name = customName.trim();
-    if (!name) return;
-    onAddCustom(name);
-    setCustomName("");
-    setIsAdding(false);
-  }
 
   return (
     <aside className="factor-sidebar" aria-labelledby="factor-sidebar-title">
       <h2 id="factor-sidebar-title" className="factor-sidebar-title">Factor sliders</h2>
-      <p className="factor-sidebar-intro">
-        <strong>Weights of the measurements.</strong> Slide one up to make that factor count more in the similarity
-        score; at 0 it is left out.
-      </p>
-
+      <p className="factor-sidebar-intro">Weights of the measurements</p>
 
       <ul className="factor-slider-list">
         {shownFactors.map((factor) => {
           const value = weights?.[factor] ?? 0;
-          const share = total > 0 ? Math.round((value / total) * 100) : 0;
+          const added = MEASUREMENTS.filter((item) => item.factor === factor && item.key in measurements);
           return (
             <li key={factor} className="factor-slider" style={{ "--factor-color": `var(--factor-${factor})` }}>
               <div className="factor-slider-head">
@@ -45,60 +29,79 @@ export default function FactorSidebar({
                   <span className="factor-swatch" aria-hidden="true" />
                   {FACTOR_LABELS[factor]}
                 </label>
-                <output htmlFor={`slider-${factor}`}>{share}%</output>
-                {!MAIN_FACTORS.includes(factor) && (
+                <output htmlFor={`slider-${factor}`}>{value}</output>
+                {shownFactors.length > 1 && (
                   <button type="button" className="factor-remove" onClick={() => onHideFactor(factor)} aria-label={`Remove ${FACTOR_LABELS[factor]}`}>×</button>
                 )}
               </div>
               <input
                 id={`slider-${factor}`}
                 type="range" min="0" max="100" step="1" value={value} disabled={!weights}
-                aria-valuetext={`${share}% of the score`}
+                aria-valuetext={`weight ${value} of 100`}
                 onChange={(event) => onChangeWeight(factor, Number(event.target.value))}
               />
+              {added.length > 0 && (
+                <ul className="measurement-list" aria-label={`Measurements inside ${FACTOR_LABELS[factor]}`}>
+                  {added.map((item) => {
+                    const measurementValue = measurements[item.key];
+                    return (
+                      <li key={item.key} className="measurement-slider">
+                        <div className="factor-slider-head">
+                          <label htmlFor={`slider-${item.key}`}>{item.label}</label>
+                          <output htmlFor={`slider-${item.key}`}>{(measurementValue / 100).toFixed(1)}×</output>
+                          <button type="button" className="factor-remove" onClick={() => onRemoveMeasurement(item.key)} aria-label={`Remove ${item.label}`}>×</button>
+                        </div>
+                        <input
+                          id={`slider-${item.key}`}
+                          type="range" min="0" max="300" step="10" value={measurementValue}
+                          aria-valuetext={`${(measurementValue / 100).toFixed(1)} times its usual weight inside ${FACTOR_LABELS[factor]}`}
+                          onChange={(event) => onChangeMeasurement(item.key, Number(event.target.value))}
+                        />
+                      </li>
+                    );
+                  })}
+                  {value === 0 && <li className="measurement-note">{FACTOR_LABELS[factor]} is at 0, so these don't count yet.</li>}
+                </ul>
+              )}
             </li>
           );
         })}
-        {customMeasurements.map((item) => (
-          <li key={item.id} className="factor-slider is-custom">
-            <div className="factor-slider-head">
-              <label htmlFor={`slider-${item.id}`}>
-                <span className="factor-swatch" aria-hidden="true" />
-                {item.name}
-              </label>
-              <output htmlFor={`slider-${item.id}`}>{item.weight}</output>
-              <button type="button" className="factor-remove" onClick={() => onRemoveCustom(item.id)} aria-label={`Remove ${item.name}`}>×</button>
-            </div>
-            <input id={`slider-${item.id}`} type="range" min="0" max="100" step="1" value={item.weight} onChange={(event) => onChangeCustom(item.id, Number(event.target.value))} />
-            <p className="factor-custom-note">No data yet: listed, not scored.</p>
-          </li>
-        ))}
       </ul>
 
       {isAdding ? (
-        <form className="factor-add-form" onSubmit={submitCustom}>
+        <div className="factor-add-panel">
+          <div className="factor-add-panel-head">
+            <span className="eyebrow">Add a measurement</span>
+            <button type="button" className="factor-remove" onClick={() => setIsAdding(false)} aria-label="Close">×</button>
+          </div>
+          {FACTORS.map((factor) => {
+            const available = MEASUREMENTS.filter((item) => item.factor === factor && !(item.key in measurements));
+            if (available.length === 0) return null;
+            return (
+              <div key={factor} className="factor-add-group" style={{ "--factor-color": `var(--factor-${factor})` }}>
+                <span className="factor-add-group-name"><span className="factor-swatch" aria-hidden="true" />{FACTOR_LABELS[factor]}</span>
+                <div className="factor-add-chips">
+                  {available.map((item) => (
+                    <button key={item.key} type="button" className="factor-add-chip" onClick={() => onAddMeasurement(item)}>+ {item.label}</button>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
           {hiddenFactors.length > 0 && (
-            <div className="factor-add-known">
-              <span className="eyebrow">From our data</span>
-              {hiddenFactors.map((factor) => (
-                <button key={factor} type="button" className="factor-add-chip" onClick={() => { onShowFactor(factor); setIsAdding(false); }}>
-                  + {FACTOR_LABELS[factor]}
-                </button>
-              ))}
+            <div className="factor-add-group">
+              <span className="factor-add-group-name">Whole factors</span>
+              <div className="factor-add-chips">
+                {hiddenFactors.map((factor) => (
+                  <button key={factor} type="button" className="factor-add-chip" onClick={() => onShowFactor(factor)}>+ {FACTOR_LABELS[factor]}</button>
+                ))}
+              </div>
             </div>
           )}
-          <label className="factor-add-custom">
-            <span className="eyebrow">Or name your own</span>
-            <input type="text" value={customName} onChange={(event) => setCustomName(event.target.value)} placeholder="e.g. Radiation dose" autoFocus />
-          </label>
-          <div className="factor-add-actions">
-            <button type="submit" className="button button-quiet" disabled={!customName.trim()}>Add</button>
-            <button type="button" className="button button-quiet" onClick={() => setIsAdding(false)}>Cancel</button>
-          </div>
-        </form>
+        </div>
       ) : (
         <button type="button" className="factor-add" onClick={() => setIsAdding(true)}>
-          <span aria-hidden="true">+</span> Add your own measurement
+          <span aria-hidden="true">+</span> Add a measurement
         </button>
       )}
     </aside>

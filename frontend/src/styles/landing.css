@@ -21,19 +21,12 @@
 }
 .factor-sidebar .eyebrow { color: var(--on-space-soft); }
 .factor-sidebar-title { font-size: 1.25rem; }
-.factor-add-custom input {
-  font: inherit; font-size: 0.9375rem; color: var(--on-space); background: rgb(255 255 255 / 0.06);
-  border: 1px solid rgb(255 255 255 / 0.25); border-radius: var(--radius-control); padding: 8px 10px; min-height: 40px;
-}
 .factor-slider-list { list-style: none; display: grid; gap: 14px; }
 .factor-slider { display: grid; gap: 4px; }
 .factor-slider-head { display: flex; align-items: center; gap: 8px; font-size: 0.9375rem; font-weight: 600; }
 .factor-slider-head label { flex: 1; display: flex; align-items: center; }
 .factor-slider-head output { font-family: var(--font-mono); font-size: 0.875rem; color: var(--on-space-soft); min-width: 3ch; text-align: right; }
 .factor-slider input[type="range"] { width: 100%; accent-color: var(--factor-color, #FFFFFF); }
-.factor-slider.is-custom { --factor-color: #FFFFFF; }
-.factor-slider.is-custom .factor-swatch { background: transparent; border: 1px dashed #FFFFFF; }
-.factor-custom-note { font-size: 0.75rem; color: var(--on-space-soft); font-style: italic; }
 .factor-remove {
   border: 0; background: none; color: var(--on-space-soft); font-size: 1.125rem; line-height: 1; cursor: pointer;
   width: 24px; height: 24px; border-radius: 50%;
@@ -47,17 +40,11 @@
 }
 .factor-add span { font-size: 1.25rem; line-height: 1; }
 .factor-add:hover { border-color: #FFFFFF; background: rgb(255 255 255 / 0.05); }
-.factor-add-form { display: grid; gap: 12px; padding: 12px; border: 1px solid rgb(255 255 255 / 0.2); border-radius: var(--radius-control); }
-.factor-add-known { display: flex; flex-wrap: wrap; gap: 6px; }
-.factor-add-known .eyebrow { flex-basis: 100%; }
 .factor-add-chip {
   font: inherit; font-size: 0.8125rem; font-weight: 600; color: var(--on-space); background: rgb(255 255 255 / 0.08);
   border: 1px solid rgb(255 255 255 / 0.25); border-radius: 999px; padding: 4px 10px; cursor: pointer;
 }
 .factor-add-chip:hover { border-color: #FFFFFF; }
-.factor-add-custom { display: grid; gap: 6px; }
-.factor-add-actions { display: flex; gap: 8px; }
-.factor-add-actions .button-quiet { color: var(--on-space); border-color: rgb(255 255 255 / 0.3); }
 
 /* ---- Stage: two hovering planets and the arrow ---- */
 .workspace-stage {
@@ -218,8 +205,7 @@
 }
 
 /* ---- Sidebar caption ---- */
-.factor-sidebar-intro { margin-top: -8px; font-size: 0.8125rem; line-height: 1.45; color: var(--on-space-soft); }
-.factor-sidebar-intro strong { color: var(--on-space); font-weight: 600; }
+.factor-sidebar-intro { margin-top: -12px; font-size: 0.75rem; color: var(--on-space-soft); }
 
 /* ---- Output planets: each one clicked on the right becomes another globe in a row ---- */
 .workspace-stage:has(.targets-2) { grid-template-columns: minmax(0, 1fr) auto minmax(0, 1.5fr); }
@@ -254,3 +240,25 @@
   .workspace-stage:has(.targets-2), .workspace-stage:has(.targets-3) { grid-template-columns: 1fr; }
 }
 @media (prefers-reduced-motion: reduce) { .target-globe { animation: none; } }
+
+/* ---- Single measurements under a factor ---- */
+.measurement-list { list-style: none; display: grid; gap: 8px; margin: 6px 0 2px 6px; padding-left: 12px; border-left: 2px solid var(--factor-color); }
+.measurement-slider { display: grid; gap: 2px; }
+.measurement-slider .factor-slider-head { font-size: 0.8125rem; font-weight: 500; color: var(--on-space-soft); }
+.measurement-slider input[type="range"] { width: 100%; accent-color: var(--factor-color); }
+.measurement-note { font-size: 0.75rem; color: #FFBE2E; }
+.factor-add-panel { display: grid; gap: 12px; padding: 12px; border: 1px solid rgb(255 255 255 / 0.2); border-radius: var(--radius-control); }
+.factor-add-panel-head { display: flex; align-items: center; justify-content: space-between; }
+.factor-add-group { display: grid; gap: 6px; }
+.factor-add-group-name { display: flex; align-items: center; font-size: 0.8125rem; font-weight: 600; }
+.factor-add-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.similarity-measurements { font-size: 0.75rem; color: var(--ink-soft); }
+
+/* ---- Coordinates: two compact readouts instead of one long mono string ---- */
+.coords { display: inline-flex; gap: 8px; font-family: var(--font-display); font-weight: 600; font-size: 0.875rem; letter-spacing: 0; color: inherit; white-space: nowrap; }
+.coord { display: inline-flex; align-items: baseline; gap: 2px; padding: 1px 7px; border-radius: 999px; background: rgb(255 255 255 / 0.08); font-variant-numeric: tabular-nums; }
+.coord-hemi { font-size: 0.6875rem; font-weight: 700; opacity: 0.6; }
+.planet-caption-detail { display: inline-flex; align-items: center; gap: 8px; }
+.caption-score { font-family: var(--font-display); color: #FFFFFF; }
+.compute-from .coords { margin-top: 2px; }
+.similarity .coord { background: var(--paper-raised); }

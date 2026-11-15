@@ -4,7 +4,7 @@
 import { Link } from "react-router-dom";
 import ScoreRing from "./ScoreRing.jsx";
 import { FACTORS } from "../data/scoring.js";
-import { formatCoordinates } from "../data/format.js";
+import Coordinates from "./Coordinates.jsx";
 import { BODY_NAMES, FACTOR_LABELS } from "../content/labels.js";
 
 function band(score) {
@@ -14,7 +14,7 @@ function band(score) {
 }
 
 export default function SimilarityVector({
-  body, isSameBody, isSelected, onSelect, match, matchCount, error, hasNoData, isApproximate, inputBody, weights, customMeasurements, exploreLink,
+  body, isSameBody, isSelected, onSelect, match, matchCount, error, hasNoData, isApproximate, inputBody, weights, measurementNote, exploreLink,
 }) {
   const heading = (
     <p className="similarity-body">
@@ -40,7 +40,7 @@ export default function SimilarityVector({
         <span className="similarity-head-text">
           {heading}
           <span className="eyebrow">{scoreBand.label}</span>
-          <span className="similarity-place">{match.name ?? formatCoordinates(match.lat, match.lon)}</span>
+          <span className="similarity-place">{match.name ?? <Coordinates lat={match.lat} lon={match.lon} />}</span>
         </span>
       </button>
       <p className="similarity-vector-text"><code>s = [{vectorText}]</code></p>
@@ -58,15 +58,9 @@ export default function SimilarityVector({
             </li>
           );
         })}
-        {customMeasurements.map((item) => (
-          <li key={item.id} className="similarity-bar is-missing">
-            <span className="similarity-bar-name"><span className="factor-swatch" aria-hidden="true" />{item.name}</span>
-            <span className="similarity-bar-track" />
-            <span className="similarity-bar-value">no data</span>
-          </li>
-        ))}
       </ul>
 
+      {measurementNote && <p className="similarity-measurements">Measurement weights: {measurementNote}</p>}
       <p className="similarity-footer">
         Best of {matchCount} ranked sites.{" "}
         {exploreLink && <Link className="arrow-link" to={exploreLink}>All matches</Link>}
