@@ -22,10 +22,11 @@ const POOL_PARENT_NSIDE = 8;
  * @param {"earth"|"moon"|"mars"} targetBody  the body whose tiles are ranked against it
  * @param {Record<string, number> | undefined} weights
  * @param {Record<string, number> | null} [fieldWeights]  multipliers for single measurements (see scoreAllEarthTiles)
+ * @param {number} [attempt]  bump to retry after a failure: reloads the files and starts a fresh search worker
  */
-export function useTileSearch(selection, targetBody, weights, fieldWeights = null) {
-  const base = useLoaded(loadSearchBase, []);
-  const candidates = useLoaded(() => (selection ? loadCandidates(targetBody) : null), [targetBody, Boolean(selection)]);
+export function useTileSearch(selection, targetBody, weights, fieldWeights = null, attempt = 0) {
+  const base = useLoaded(loadSearchBase, [attempt]);
+  const candidates = useLoaded(() => (selection ? loadCandidates(targetBody) : null), [targetBody, Boolean(selection), attempt]);
   // useLoaded keeps the previous body's tiles on screen while the next body loads. Using them would send one body's
   // tiles to the worker under another body's name, so only tiles of the body being compared count.
   const targetCandidates = candidates.data?.body === targetBody ? candidates.data : null;
@@ -42,7 +43,7 @@ export function useTileSearch(selection, targetBody, weights, fieldWeights = nul
   const sourceKey = tile && tile.body !== "earth" ? `${tile.body}/${shard}` : null;
   const sourceVectors = useLoaded(
     () => (sourceKey ? loadBodyVectors(tile.body, shard).then((bytes) => ({ key: sourceKey, bytes })) : null),
-    [sourceKey],
+    [sourceKey, attempt],
   );
   // As above: while another body or Mars shard loads, the previous one's bytes must not be read as this tile's.
   const sourceBytes = sourceVectors.data?.key === sourceKey ? sourceVectors.data.bytes : null;

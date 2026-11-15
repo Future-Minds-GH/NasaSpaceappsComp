@@ -13,6 +13,10 @@ export function useSearchWorker(baseData) {
 
   useEffect(() => {
     if (!baseData) return undefined;
+    // A fresh worker starts with a clean slate: an error from an earlier worker must not stick to every later search.
+    setWorkerError(null);
+    setIsWorkerReady(false);
+    setLatestPicks(null);
     let searchWorker;
     try {
       searchWorker = startSearchWorker();

@@ -1,7 +1,6 @@
 // Page shell and routes: landing (two globes), Explore (search from any tile), Discover, Findings, Characterize and About.
 import { Navigate, Route, Routes } from "react-router-dom";
 import SiteHeader from "./components/SiteHeader.jsx";
-import SiteFooter from "./components/SiteFooter.jsx";
 import LandingPage from "./pages/LandingPage.jsx";
 import ExplorePage from "./pages/ExplorePage.jsx";
 import CharacterizePage from "./pages/CharacterizePage.jsx";
@@ -28,7 +27,6 @@ export default function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
-      <SiteFooter />
     </>
   );
 }

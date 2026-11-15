@@ -4,7 +4,8 @@
 // one Compute searches every output planet from the picked spot (its own planet too), shows a short loading bar, then
 // one similarity vector per output planet.
 import { useCallback, useMemo, useState, useEffect } from "react";
-import { loadWeights } from "../data/api.js";
+import { loadTargets, loadWeights } from "../data/api.js";
+import { EXTRA_SITES, isPickableSite, shortSiteName } from "../content/notableSites.js";
 import { useLoaded } from "../data/useLoaded.js";
 import { useTileSearch } from "../data/useTileSearch.js";
 import { FACTORS } from "../data/scoring.js";
@@ -13,6 +14,7 @@ import { BODY_NAMES, MEASUREMENTS } from "../content/labels.js";
 import PlanetGlobe, { GLOBE_TEXTURES } from "../components/PlanetGlobe.jsx";
 import FactorSidebar, { MAIN_FACTORS, MEASUREMENT_DEFAULT } from "../components/FactorSidebar.jsx";
 import Coordinates from "../components/Coordinates.jsx";
+import CoordinateInput from "../components/CoordinateInput.jsx";
 import ComputeBar from "../components/ComputeBar.jsx";
 import SimilarityVector from "../components/SimilarityVector.jsx";
 import "../styles/landing.css";
@@ -20,14 +22,16 @@ import "../styles/landing.css";
 const BODIES = ["earth", "moon", "mars"];
 // Same-body searches skip tiles this close to the picked spot, or the best match is the spot itself (plan rule 2).
 const SAME_BODY_EXCLUSION_KM = 300;
+const PICK_COLOR = "#FF5A36"; // the picked spot
+const MATCH_COLOR = "#7CC8FF"; // each output planet's best match (blue: green is kept for good scores)
 
 export default function LandingPage() {
   const presetsState = useLoaded(loadWeights, []);
+  const targetsState = useLoaded(loadTargets, []);
   const presets = presetsState.data?.presets ?? {};
   const [inputBody, setInputBody] = useState("mars");
   // Output planets: clicking a small planet on the right adds it as another globe; Compute searches each one.
   const [targets, setTargets] = useState(["earth"]);
-  const [selectedBody, setSelectedBody] = useState(null); // result card highlighted after Compute
   const [point, setPoint] = useState(null);
   // Sliders start from the Balanced preset; the preset picker was removed, so people only move the sliders.
   const presetId = presetsState.data?.default_preset ?? "balanced";
@@ -48,9 +52,9 @@ export default function LandingPage() {
   // their search never runs.
   const selectionFor = (body) => (request?.targets.includes(body) ? request.selection : null);
   const searches = {
-    earth: useTileSearch(selectionFor("earth"), "earth", request?.weights, request?.fieldWeights),
-    moon: useTileSearch(selectionFor("moon"), "moon", request?.weights, request?.fieldWeights),
-    mars: useTileSearch(selectionFor("mars"), "mars", request?.weights, request?.fieldWeights),
+    earth: useTileSearch(selectionFor("earth"), "earth", request?.weights, request?.fieldWeights, request?.attempt ?? 0),
+    moon: useTileSearch(selectionFor("moon"), "moon", request?.weights, request?.fieldWeights, request?.attempt ?? 0),
+    mars: useTileSearch(selectionFor("mars"), "mars", request?.weights, request?.fieldWeights, request?.attempt ?? 0),
   };
   const results = Object.fromEntries(BODIES.map((body) => {
     const search = searches[body];
@@ -58,12 +62,30 @@ export default function LandingPage() {
     return [body, { search, matches, best: matches[0] ?? null }];
   }));
 
-  const isSettled = Boolean(request) && BODIES.every((body) => !searches[body].isLoading);
+  // Real progress: how many output planets have answered, and which failed.
+  const targetBodies = request?.targets ?? [];
+  const failedBodies = targetBodies.filter((body) => searches[body].error);
+  const doneCount = targetBodies.filter((body) => !searches[body].isLoading && !searches[body].error).length;
+  const isSettled = Boolean(request) && targetBodies.every((body) => !searches[body].isLoading);
+  const canAutoRetry = Boolean(request) && request.attempt === request.firstAttempt;
+  const hasFailed = isSettled && failedBodies.length > 0 && !canAutoRetry;
   const handleFinished = useCallback(() => setFinishedRequest(request), [request]);
-  const status = !request ? "idle" : finishedRequest === request ? "done" : "computing";
+  const status = !request ? "idle" : hasFailed ? "failed" : finishedRequest === request ? "done" : "computing";
+
+  // A failed search is retried once on its own (fresh files, fresh worker) before the bar reports it.
+  useEffect(() => {
+    if (request && isSettled && failedBodies.length > 0 && canAutoRetry) setRequest((current) => ({ ...current, attempt: current.attempt + 1 }));
+  }, [request, isSettled, failedBodies.length, canAutoRetry]);
   const settingsKey = JSON.stringify([weights, shownFactors, targets, measurements]);
   const isStale = Boolean(request) && (request.point !== point || request.inputBody !== inputBody || request.settingsKey !== settingsKey);
-  const isShowingResult = status === "done" && !isStale;
+  const isShowingResult = (status === "done" || status === "failed") && !isStale;
+
+  // When a Compute finishes, scroll down to its results (they sit below the planets).
+  useEffect(() => {
+    if (!isShowingResult) return;
+    const isReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    document.querySelector(".similarity-results")?.scrollIntoView({ behavior: isReducedMotion ? "auto" : "smooth", block: "start" });
+  }, [isShowingResult, request]);
 
   const bestOn = (body) => (isShowingResult ? results[body].best : null);
 
@@ -73,12 +95,13 @@ export default function LandingPage() {
     setPoint(null);
   }
 
-  // Swap the input with the first output planet.
-  function swap() {
-    const [first, ...rest] = targets;
-    setInputBody(first);
-    setTargets([inputBody, ...rest.filter((body) => body !== inputBody)]);
-    setPoint(null);
+  // A new pick after a result goes back to the first screen: results cleared, globes full size, ready to compute.
+  function pickPoint(lat, lon, name = null) {
+    setPoint({ lat, lon, name });
+    if (request) {
+      setRequest(null);
+      setFinishedRequest(null);
+    }
   }
 
   // Re-added factors go back to their usual place in the list, with a starting weight if theirs was 0 so they count.
@@ -94,12 +117,10 @@ export default function LandingPage() {
     setMeasurements((current) => Object.fromEntries(Object.entries(current).filter(([key]) => !key.startsWith(`${factor}.`))));
   }
 
-  // Adding a measurement also shows its factor, and gives a hidden factor a starting weight so it counts.
+  // Adding a measurement also shows its factor (with a starting weight if it was hidden).
   function addMeasurement(item) {
     setMeasurements((current) => ({ ...current, [item.key]: MEASUREMENT_DEFAULT }));
-    if (!shownFactors.includes(item.factor)) {
-      showFactor(item.factor);
-    }
+    if (!shownFactors.includes(item.factor)) showFactor(item.factor);
   }
 
   function addTarget(body) {
@@ -110,14 +131,32 @@ export default function LandingPage() {
     setTargets((current) => (current.length > 1 ? current.filter((other) => other !== body) : current));
   }
 
-  function compute() {
-    if (!point || !weights) return;
+  // Compute can be given typed coordinates from the Compute bar: they become the picked spot first.
+  function compute(typedPoint = null) {
+    const spot = typedPoint ? { lat: typedPoint.lat, lon: typedPoint.lon, name: null } : point;
+    if (!spot || !weights) return;
+    if (typedPoint) setPoint(spot);
     const scoredWeights = Object.fromEntries(FACTORS.map((factor) => [factor, shownFactors.includes(factor) ? weights[factor] / 100 : 0]));
     setStartedAt(performance.now());
     const entries = Object.entries(measurements);
     const fieldWeights = entries.length ? Object.fromEntries(entries.map(([key, value]) => [key, value / 100])) : null;
-    setRequest({ point, inputBody, targets, selection: { body: inputBody, ...point }, weights: scoredWeights, fieldWeights, settingsKey });
+    // After a failure, Compute is a retry: a new attempt number reloads the files and restarts the search workers.
+    const attempt = (request?.attempt ?? 0) + (status === "failed" ? 1 : 0);
+    setRequest({ point: spot, inputBody, targets, selection: { body: inputBody, lat: spot.lat, lon: spot.lon }, weights: scoredWeights, fieldWeights, settingsKey, attempt, firstAttempt: attempt });
   }
+
+  // Notable sites on the input planet: the project's named sites plus well-known landmarks. Clicking one picks it.
+  const notableSites = useMemo(
+    () => [...(targetsState.data ?? []).filter(isPickableSite), ...EXTRA_SITES]
+      .filter((site) => site.body === inputBody)
+      .map((site) => ({ ...site, name: shortSiteName(site.name) }))
+      // Sites within 2° of one already shown (e.g. the three Dry Valleys sites) would stack into one blob: keep the first.
+      .filter((site, index, all) => !all.slice(0, index).some((other) => Math.abs(other.lat - site.lat) < 2 && Math.abs(other.lon - site.lon) < 2)),
+    [targetsState.data, inputBody],
+  );
+
+  // The picked spot: a bright marker with a pulsing ring.
+  const pickMarkers = useMemo(() => (point ? [{ lat: point.lat, lon: point.lon, color: PICK_COLOR }] : []), [point]);
 
   const inputTile = request?.inputBody === inputBody && request?.point === point ? searches[inputBody].tile : null;
 
@@ -141,26 +180,28 @@ export default function LandingPage() {
           body={inputBody}
           choices={BODIES.filter((other) => other !== inputBody)}
           onPickBody={pickInputBody}
-          caption={point ? <Coordinates lat={point.lat} lon={point.lon} /> : `Click anywhere on ${BODY_NAMES[inputBody]}`}
+          caption={point ? <>{point.name && <span className="picked-site-name">{point.name}</span>}<CoordinateInput point={point} onChange={(lat, lon) => pickPoint(lat, lon)} /></> : null}
         >
           <PlanetGlobe
             body={inputBody}
             isInteractive
             selectedTile={inputTile}
-            sites={point ? [{ target_id: "pick", name: "Your spot", lat: point.lat, lon: point.lon }] : []}
-            onPick={(lat, lon) => setPoint({ lat, lon })}
+            markers={pickMarkers}
+            sites={notableSites}
+            onSelectSite={(site) => pickPoint(site.lat, site.lon, site.name)}
+            onPick={pickPoint}
             label={`Globe of ${BODY_NAMES[inputBody]}. Drag to turn it, click a spot to pick it.`}
           />
+          {!point && <span className="pick-prompt" aria-hidden="true">Click a spot to start</span>}
         </PlanetColumn>
 
         <div className="workspace-arrow-wrap">
-          <button type="button" className={`workspace-arrow is-${status}`} onClick={swap} aria-label={`Swap: start from ${BODY_NAMES[targets[0]]} instead`}>
-            <svg viewBox="0 0 160 60" aria-hidden="true">
+          <div className={`workspace-arrow is-${status}`} aria-hidden="true">
+            <svg viewBox="0 0 160 60">
               <path className="workspace-arrow-line" d="M8 38 C 50 6, 110 6, 146 30" />
               <path className="workspace-arrow-head" d="M134 18 L148 31 L130 36" />
             </svg>
-          </button>
-          <span className="workspace-arrow-label">{status === "computing" ? "Comparing…" : "Click to swap"}</span>
+          </div>
         </div>
 
         <div className={`planet-column planet-column-target targets-${targets.length}`}>
@@ -181,7 +222,6 @@ export default function LandingPage() {
                 key={body}
                 body={body}
                 best={bestOn(body)}
-                isSelected={selectedBody === body}
                 isSamePlanet={body === inputBody}
                 onRemove={targets.length > 1 ? () => removeTarget(body) : null}
               />
@@ -196,9 +236,13 @@ export default function LandingPage() {
         point={point}
         status={isStale ? "stale" : status}
         startedAt={startedAt}
-        isReady={isSettled}
+        isReady={isSettled && failedBodies.length === 0}
+        doneCount={doneCount}
+        totalCount={targetBodies.length}
+        failedNames={failedBodies.map((body) => BODY_NAMES[body])}
         onFinished={handleFinished}
         onCompute={compute}
+        onSetPoint={(lat, lon) => pickPoint(lat, lon)}
         isDisabled={!point || !weights || (status === "computing" && !isStale)}
       />
 
@@ -209,8 +253,6 @@ export default function LandingPage() {
               key={body}
               body={body}
               isSameBody={body === request.inputBody}
-              isSelected={body === selectedBody}
-              onSelect={() => setSelectedBody(body)}
               match={results[body].best}
               matchCount={results[body].matches.length}
               error={results[body].search.error}
@@ -252,13 +294,14 @@ function PlanetColumn({ side, body, choices, onPickBody, caption, children }) {
 }
 
 // One output globe. The best-match label and focus are memoised so the globe only flies when the result changes.
-function TargetGlobe({ body, best, isSelected, isSamePlanet, onRemove }) {
+function TargetGlobe({ body, best, isSamePlanet, onRemove }) {
   const sites = useMemo(() => (best ? [{ target_id: "best", name: `${Math.round(best.score)}%`, lat: best.lat, lon: best.lon }] : []), [best]);
   const focus = useMemo(() => (best ? { lat: best.lat, lon: best.lon } : null), [best]);
+  const markers = useMemo(() => (best ? [{ lat: best.lat, lon: best.lon, color: MATCH_COLOR }] : []), [best]);
   return (
-    <div className={`target-globe body-${body}${isSelected ? " is-selected" : ""}`}>
+    <div className={`target-globe body-${body}${best ? " has-result" : ""}`}>
       <div className="hovering-planet">
-        <PlanetGlobe body={body} isSpinning={!best} sites={sites} focus={focus} label={`Globe of ${BODY_NAMES[body]}, an output planet.`} />
+        <PlanetGlobe body={body} isDraggable={Boolean(best)} isSpinning={!best} sites={sites} markers={markers} focus={focus} label={`Globe of ${BODY_NAMES[body]}, an output planet.`} />
         {/* Hovering the planet shows a big X over it; clicking the planet removes it (at least one always stays). */}
         {onRemove && (
           <button type="button" className="target-remove" onClick={onRemove} aria-label={`Remove ${BODY_NAMES[body]}`}>
