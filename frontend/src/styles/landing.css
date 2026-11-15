@@ -255,3 +255,6 @@
 }
 .factor-add-select select:hover { border-color: #FFFFFF; background-color: rgb(255 255 255 / 0.07); }
 .factor-add-select option, .factor-add-select optgroup { color: #000000; background: #FFFFFF; }
+
+.score-ring-percent { font-size: 0.6em; margin-left: 1px; opacity: 0.7; }
+.similarity .score-ring-number { font-size: 1.125rem; }

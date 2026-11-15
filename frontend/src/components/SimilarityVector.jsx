@@ -35,14 +35,14 @@ export default function SimilarityVector({
   return (
     <article className={`similarity body-${body} band-${scoreBand.id}${isSelected ? " is-selected" : ""}`} aria-label={`Best match on ${BODY_NAMES[body]}`}>
       <button type="button" className="similarity-select" onClick={onSelect} aria-pressed={isSelected}>
-        <ScoreRing score={match.score} size={64} />
+        <ScoreRing score={match.score} size={64} isPercent />
         <span className="similarity-head-text">
           {heading}
           <span className="eyebrow">{scoreBand.label}</span>
           <span className="similarity-place">{match.name ?? <Coordinates lat={match.lat} lon={match.lon} />}</span>
         </span>
       </button>
-      <p className="similarity-caption">How alike each factor is · 1.00 = identical</p>
+      <p className="similarity-caption">How alike each factor is · 100% = identical</p>
       {isApproximate && <p className="similarity-note">Approximate: from a precomputed shortlist.</p>}
 
       <ul className="similarity-bars">
@@ -53,7 +53,7 @@ export default function SimilarityVector({
             <li key={factor} className={`similarity-bar ${isMissing ? "is-missing" : `band-${band(value * 100).id}`}`} style={{ "--factor-color": `var(--factor-${factor})` }}>
               <span className="similarity-bar-name"><span className="factor-swatch" aria-hidden="true" />{FACTOR_LABELS[factor]}</span>
               <span className="similarity-bar-track"><span className="similarity-bar-fill" style={{ transform: `scaleX(${isMissing ? 0 : value})` }} /></span>
-              <span className="similarity-bar-value">{isMissing ? "no data" : value.toFixed(2)}</span>
+              <span className="similarity-bar-value">{isMissing ? "no data" : `${Math.round(value * 100)}%`}</span>
             </li>
           );
         })}

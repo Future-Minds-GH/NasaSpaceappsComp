@@ -3,7 +3,7 @@ import { formatScore } from "../data/format.js";
 
 const STROKE_WIDTH = 6;
 
-export default function ScoreRing({ score, size = 72 }) {
+export default function ScoreRing({ score, size = 72, isPercent = false }) {
   const radius = (size - STROKE_WIDTH) / 2;
   const circumference = 2 * Math.PI * radius;
   const filledLength = (Math.min(Math.max(score, 0), 100) / 100) * circumference;
@@ -23,7 +23,7 @@ export default function ScoreRing({ score, size = 72 }) {
           transform={`rotate(-90 ${size / 2} ${size / 2})`}
         />
       </svg>
-      <span className="score-ring-number" aria-hidden="true">{formatScore(score)}</span>
+      <span className="score-ring-number" aria-hidden="true">{formatScore(score)}{isPercent && <span className="score-ring-percent">%</span>}</span>
     </div>
   );
 }
