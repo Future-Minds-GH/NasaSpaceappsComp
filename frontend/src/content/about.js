@@ -25,6 +25,14 @@ export const METHOD_STAGES = [
   },
 ];
 
+/** Why Absolute-mode scores for the Moon and Mars are often yellow or red (about 50 to 65). Matches data/schema.json tolerances and similarity.js. */
+export const LOW_SCORE_NOTE = [
+  "Moon and Mars scores in Absolute mode are often yellow or red. The new Earth places in the Discover list score 44 to 71.",
+  "In our data, the warmest Mars night (197 K) is colder than the coldest Earth night (210 K). The median Moon night is 99 K. The median Mars day-night swing is 87 K; the largest on Earth is 45 K.",
+  "Absolute mode compares real values with fixed tolerances, such as 40 K for temperature and 30 K for the day-night swing. A gap larger than the tolerance scores 0 for that factor.",
+  "Relative mode compares ranks within each planet instead, so it usually scores higher.",
+];
+
 /**
  * Role 3's comparison figures. Put each image in frontend/public/figures/ and add it here:
  * { file: "atacama_vs_jezero.png", caption: "One sentence saying what the figure shows." }
@@ -47,6 +55,7 @@ export const DATA_CREDITS = [
     datasets: [
       { name: "Copernicus DEM GLO-90", about: "Earth elevation, slope and roughness (the public AWS Open Data copy of the ESA product)" },
       { name: "ESA Permafrost CCI v5.0 (CEDA)", about: "Permafrost extent, used for Earth ice" },
+      { name: "Natural Earth admin-0 and admin-1 boundaries (public domain)", about: "Place names for Earth tiles" },
     ],
   },
   {

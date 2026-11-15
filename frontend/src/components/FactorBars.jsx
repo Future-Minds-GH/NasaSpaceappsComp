@@ -3,7 +3,7 @@
 import { FACTORS } from "../data/scoring.js";
 import { FACTOR_LABELS, FACTOR_MEANINGS } from "../content/labels.js";
 
-export default function FactorBars({ breakdown, isShowingNumbers = false, isMineralogyEstimated = false, values = null, typicalFactors = [] }) {
+export default function FactorBars({ breakdown, isShowingNumbers = false, isMineralogyEstimated = false, values = null, typicalFactors = [], tempNote = null }) {
   return (
     <dl className={isShowingNumbers ? "factor-bars is-detailed" : "factor-bars"}>
       {FACTORS.map((factor) => {
@@ -26,6 +26,7 @@ export default function FactorBars({ breakdown, isShowingNumbers = false, isMine
               {typicalFactors.includes(factor) && <span className="factor-estimated">no data: typical score</span>}
               {isShowingNumbers && <span className="factor-meaning">{FACTOR_MEANINGS[factor]}</span>}
               {isShowingNumbers && values?.[factor] && <span className="factor-real-value">{values[factor]}</span>}
+              {factor === "temp" && tempNote && <span className="factor-real-value">{tempNote}</span>}
             </dt>
             <dd className="factor-value">
               <span className={isEstimated ? "factor-bar is-estimated" : "factor-bar"}>

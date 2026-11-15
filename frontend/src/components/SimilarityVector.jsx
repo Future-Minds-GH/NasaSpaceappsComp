@@ -8,7 +8,7 @@ import ScoreRing from "./ScoreRing.jsx";
 import BodyPhoto from "./BodyPhoto.jsx";
 import Coordinates from "./Coordinates.jsx";
 import { FACTORS, scoreBand } from "../data/scoring.js";
-import { missingFactorsOf, noDataSentence } from "../data/fieldValues.js";
+import { halfTempNote, missingFactorsOf, noDataSentence } from "../data/fieldValues.js";
 import { SAME_BODY_MIN_KM } from "../data/ranking.js";
 import { BAND_LABELS, BODY_NAMES, FACTOR_LABELS, MODE_INFO } from "../content/labels.js";
 
@@ -62,6 +62,7 @@ export default function SimilarityVector({ body, isSameBody, match, matchCount, 
   // Missing on the clicked spot itself: say so plainly. Anything else missing is listed as before.
   const spotMissing = new Set(missingFactorsOf(layout, clickedVector));
   const spotSentence = noDataSentence(inputBody === "moon" ? "the Moon" : BODY_NAMES[inputBody] ?? inputBody, notScored.filter((factor) => spotMissing.has(factor)).map((factor) => FACTOR_LABELS[factor]));
+  const tempNote = scored.some((item) => item.factor === "temp") ? match.temp_note ?? halfTempNote(layout, clickedVector) : null;
   const otherNotScored = notScored.filter((factor) => !spotMissing.has(factor));
   const limits = breakdown(inputBody, body);
   const placeLabel = `${BODY_NAMES[body]} match at ${Math.abs(match.lat).toFixed(2)}°, ${Math.abs(match.lon).toFixed(2)}°`;
@@ -100,6 +101,7 @@ export default function SimilarityVector({ body, isSameBody, match, matchCount, 
         ))}
       </ul>
 
+      {tempNote && <p className="similarity-no-data" role="note">{tempNote}</p>}
       {spotSentence && <p className="similarity-no-data" role="note">{spotSentence}</p>}
       <p className="similarity-footer">
         {otherNotScored.length > 0 && <span>Not scored here: {otherNotScored.map((factor) => FACTOR_LABELS[factor]).join(", ")}. </span>}
