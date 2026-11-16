@@ -85,36 +85,57 @@ export function scoreAllEarthTiles(clicked, vectors, layout, mode = "absolute") 
   const tileCount = vectors.length / stride;
   const factorCount = FACTORS.length;
   const scores = new Float32Array(tileCount * factorCount);
-  const plan = planFor(layout, mode);
   const vectorStep = 0.5 / BYTE_SCALE;
+  // Per click, each scalar term becomes a 256-entry table from the candidate's byte straight to its score (-1 for the
+  // null code: scores are never negative), and terms or vector factors the clicked tile lacks are dropped up front.
+  const parts = planFor(layout, mode).map((part) => {
+    if (part.isVector) {
+      const hasAll = part.offsets.every((offset) => clicked[offset] !== NULL_CODE);
+      return { isVector: true, offsets: hasAll ? part.offsets : null, wants: part.offsets.map((offset) => clicked[offset]) };
+    }
+    const terms = part.terms.filter((term) => clicked[term.offset] !== NULL_CODE).map((term) => {
+      const a = clicked[term.offset];
+      const byCandidate = new Float32Array(NULL_CODE + 1).fill(-1);
+      for (let b = 0; b < NULL_CODE; b++) byCandidate[b] = term.table[a > b ? a - b : b - a];
+      return { offset: term.offset, byCandidate };
+    });
+    return { isVector: false, terms };
+  });
 
-  for (let tile = 0; tile < tileCount; tile++) {
-    const base = tile * stride;
-    const row = tile * factorCount;
-    for (let factor = 0; factor < factorCount; factor++) {
-      const part = plan[factor];
-      if (part.isVector) {
+  for (let factor = 0; factor < factorCount; factor++) {
+    const part = parts[factor];
+    if (part.isVector) {
+      const { offsets, wants } = part;
+      for (let tile = 0, base = 0, cell = factor; tile < tileCount; tile++, base += stride, cell += factorCount) {
+        if (!offsets) { scores[cell] = NaN; continue; }   // the clicked tile lacks a component
         let gapSum = 0;
         let isMissing = false;
-        for (let index = 0; index < part.offsets.length; index++) {
-          const a = clicked[part.offsets[index]];
-          const b = vectors[base + part.offsets[index]];
-          if (a === NULL_CODE || b === NULL_CODE) { isMissing = true; break; }
+        for (let index = 0; index < offsets.length; index++) {
+          const a = wants[index];
+          const b = vectors[base + offsets[index]];
+          if (b === NULL_CODE) { isMissing = true; break; }
           gapSum += a > b ? a - b : b - a;
         }
-        scores[row + factor] = isMissing ? NaN : Math.max(0, 1 - gapSum * vectorStep);
-      } else {
+        scores[cell] = isMissing ? NaN : Math.max(0, 1 - gapSum * vectorStep);
+      }
+    } else if (part.terms.length === 1) {
+      const { offset, byCandidate } = part.terms[0];
+      for (let tile = 0, base = offset, cell = factor; tile < tileCount; tile++, base += stride, cell += factorCount) {
+        const score = byCandidate[vectors[base]];
+        scores[cell] = score < 0 ? NaN : score;
+      }
+    } else {
+      const terms = part.terms;
+      for (let tile = 0, base = 0, cell = factor; tile < tileCount; tile++, base += stride, cell += factorCount) {
         let sum = 0;
         let count = 0;
-        for (let index = 0; index < part.terms.length; index++) {
-          const term = part.terms[index];
-          const a = clicked[term.offset];
-          const b = vectors[base + term.offset];
-          if (a === NULL_CODE || b === NULL_CODE) continue;
-          sum += term.table[a > b ? a - b : b - a];
+        for (let index = 0; index < terms.length; index++) {
+          const score = terms[index].byCandidate[vectors[base + terms[index].offset]];
+          if (score < 0) continue;   // the candidate lacks this term
+          sum += score;
           count++;
         }
-        scores[row + factor] = count ? sum / count : NaN;
+        scores[cell] = count ? sum / count : NaN;
       }
     }
   }
