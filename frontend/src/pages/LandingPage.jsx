@@ -1,5 +1,5 @@
 // Landing workspace, laid out like the team's paper sketch: the mode toggle and the factor sliders down the left
-// (grouped weather / ground; three show at first, the other six come from "+ Add a factor"), two hovering planets
+// (grouped weather / ground; five show at first, the other four come from "+ Add a factor"), two hovering planets
 // joined by an animated arrow, small "other planets" buttons above side, and a Compute bar along the bottom. Clicking a small planet on the right adds it as another output globe;
 // one Compute searches every output planet from the picked spot (its own planet too), shows a short loading bar, then
 // one similarity vector per output planet.
@@ -35,7 +35,7 @@ export default function LandingPage() {
   // Sliders start from the Balanced preset; the preset picker was removed, so people only move the sliders.
   const presetId = presetsState.data?.default_preset ?? "balanced";
   const [weights, setWeights] = useState(null); // 0–100 per factor; null until presets load
-  // The site opens with three factor sliders (temperature, relative elevation, minerals); the other six are added from "+ Add a factor".
+  // The site opens with five factor sliders (temperature, slope, roughness, relative elevation, minerals); the other four are added from "+ Add a factor".
   const [shownFactors, setShownFactors] = useState(DEFAULT_SHOWN_FACTORS);
   // Absolute or relative scoring; until a person picks one, the weights file's default.
   const [pickedMode, setPickedMode] = useState(null);
