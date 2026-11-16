@@ -1,96 +1,107 @@
-/* About page: method stages, the validation number and tests, Role 3's model check and figures, data credits and the team roles. */
+/* About page: the method as numbered pipeline stages with the five scored factors, the validation number, tests and
+   grid, Role 3's model check and figures, data credits and the team. Hairlines and space separate things; no boxes. */
 
-.about { display: grid; gap: 44px; }
-.about-section { display: grid; gap: 14px; padding-top: 20px; border-top: 1px solid var(--rule); }
-.about-text { max-width: 66ch; color: var(--ink-soft); }
+.about-subheading { font: 700 var(--text-h3)/1.3 var(--font-display); letter-spacing: -0.01em; }
+.about-small-print { max-width: 70ch; font-size: var(--text-small); color: var(--ink-soft); }
 
-/* Method: like the explanation block of a map legend, stage name on the left and the sentences beside it */
-.about-stages { display: grid; gap: 16px; max-width: 960px; }
-.about-stage { display: grid; gap: 6px; }
-.about-stage + .about-stage { padding-top: 16px; border-top: 1px solid var(--rule-soft); }
-.about-stage-title { font-size: 1rem; font-weight: 750; }
-.about-stage-text { display: grid; gap: 8px; }
+/* Method: one row per stage, the stage's number and name on the left and its sentences beside them */
+.about-stages { list-style: none; display: grid; max-width: 1040px; }
+.about-stage { display: grid; gap: 8px; padding: 24px 0; border-top: 1px solid var(--rule); }
+.about-stage:first-child { padding-top: 8px; border-top: 0; }
+.about-stage-title { display: grid; align-content: start; gap: 6px; font: 700 var(--text-h3)/1.3 var(--font-display); letter-spacing: -0.01em; }
+.about-stage-number { font: 400 var(--text-small)/1 var(--font-mono); color: var(--stat); }
+.about-stage-text { display: grid; gap: 12px; }
 .about-stage-text p { max-width: 68ch; }
 @media (min-width: 760px) {
-  .about-stage { grid-template-columns: 15rem minmax(0, 1fr); column-gap: 28px; }
+  .about-stage { grid-template-columns: 16rem minmax(0, 1fr); column-gap: 48px; }
 }
 
-/* Validation: one big number, the way a map plate states its scale */
-.about-validation {
-  display: grid; gap: 6px; max-width: 640px; padding: 16px 18px;
-  border: 1px solid var(--rule); border-left: 4px solid var(--earth); border-radius: var(--radius-control);
-  background: var(--paper-raised);
+/* The scored factors: each one's colour dot, as on the sliders and bars, its name and what it measures */
+.about-factor-list { list-style: none; border-top: 1px solid var(--rule); }
+.about-factor {
+  display: grid; grid-template-columns: 18px minmax(0, 1fr); align-items: baseline; gap: 2px 4px;
+  padding: 10px 0; border-bottom: 1px solid var(--rule);
 }
-.about-validation-number {
-  font-family: var(--font-display); font-weight: 700; line-height: 1;
-  font-size: clamp(2.25rem, 1.6rem + 2.5vw, 3.25rem); color: var(--earth);
+.about-factor .factor-swatch { align-self: start; margin: 6px 0 0; }
+.about-factor-name { font: 600 0.9375rem/1.4 var(--font-display); }
+.about-factor-meaning { grid-column: 2; font-size: var(--text-small); color: var(--ink-soft); }
+@media (min-width: 640px) {
+  .about-factor { grid-template-columns: 18px minmax(0, 15rem) minmax(0, 1fr); column-gap: 4px 16px; }
+  .about-factor-meaning { grid-column: 3; }
 }
-.about-validation-out-of { font-size: 0.5em; font-weight: 700; color: var(--ink-soft); }
-.about-validation-summary { max-width: 60ch; }
 
-/* Figures */
-.about-figures { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 22rem), 1fr)); gap: 20px; }
-.about-figure { display: grid; align-content: start; gap: 8px; }
-.about-figure img {
-  width: 100%; height: auto; border: 1px solid var(--rule); border-radius: var(--radius-control);
-  background: var(--paper-raised);
-}
-.about-figure figcaption { font-size: 0.875rem; color: var(--ink-soft); }
+/* Validation: the headline result as a big mono readout beside the sentence that explains it */
+.validation-headline { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 40px; padding: 24px 0; border-block: 1px solid var(--rule); }
+.validation-number { font-size: clamp(3rem, 2.2rem + 3vw, 4.5rem); white-space: nowrap; }
+.validation-out-of { font-size: 0.45em; letter-spacing: 0; color: var(--ink-soft); }
+.validation-summary { flex: 1 1 22rem; max-width: 60ch; font-size: var(--text-lede); line-height: 1.5; }
 
-/* Credits: agency groups flow into balanced columns so NASA's long list doesn't leave gaps */
-.about-credits { columns: 3 16rem; column-gap: 32px; }
-.about-credit-group { break-inside: avoid; display: grid; gap: 8px; margin-bottom: 22px; }
-.about-credit-agency {
-  font-family: var(--font-display); font-size: 1.0625rem; font-weight: 700;
-  padding-bottom: 6px; border-bottom: 1px solid var(--rule);
-}
-.about-credit-list { list-style: none; display: grid; gap: 8px; }
-.about-credit-list li { display: grid; gap: 1px; }
-.about-credit-name { font-weight: 700; font-size: 0.9375rem; }
-.about-credit-about { font-size: 0.875rem; color: var(--ink-soft); }
-
-/* Team roles */
-.about-team { list-style: none; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr)); gap: 12px; }
-.about-team-role {
-  display: grid; align-content: start; gap: 4px; padding: 12px 14px;
-  border: 1px solid var(--rule); border-radius: var(--radius-control); background: var(--paper-raised);
-}
-.about-team-name { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; font-size: 1rem; font-weight: 750; }
-.about-team-number { font-size: 0.8125rem; font-weight: 600; color: var(--ink-soft); }
-.about-team-role p { font-size: 0.9375rem; color: var(--ink-soft); }
-
-/* Validation grid: cell shade follows the Earth rank; outlined cells are the analogs that should win. */
-.validation-grid-scroll { overflow-x: auto; margin-top: 16px; }
-.validation-grid { border-collapse: collapse; font-size: 0.875rem; font-variant-numeric: tabular-nums; }
-.validation-grid caption { text-align: left; color: var(--ink-soft); padding-bottom: 8px; }
-.validation-grid th, .validation-grid td { padding: 6px 10px; text-align: center; border-bottom: 1px solid var(--rule-soft); white-space: nowrap; }
-.validation-grid th[scope="row"] { text-align: left; font-weight: 650; }
-.validation-grid td { background: color-mix(in srgb, var(--earth) calc(var(--rank, 0) * 55%), transparent); }
-.validation-grid td.is-expected { outline: 2px solid var(--ink); outline-offset: -3px; font-weight: 750; }
-
-/* Validation tests: legend-style rows with the verdict written in a box, so it never relies on colour alone. */
-.validation-tests { display: grid; gap: 8px; max-width: 800px; margin-top: 8px; }
-.validation-tests-heading { font-size: 1rem; font-weight: 750; }
-.validation-test-list { list-style: none; border-top: 1px solid var(--rule-soft); }
-.validation-test { display: grid; gap: 4px 16px; padding: 10px 0; border-bottom: 1px solid var(--rule-soft); }
-.validation-test-verdict {
-  justify-self: start; padding: 1px 8px; border: 1px solid var(--rule); border-radius: 4px;
-  font-size: 0.8125rem; font-weight: 750; white-space: nowrap;
-}
-.validation-test.is-passed .validation-test-verdict { color: var(--earth); border-color: var(--earth); }
-.validation-test.is-failed .validation-test-verdict { color: var(--warning); border-color: var(--warning); }
+/* Validation tests: the verdict written out beside each test, with a dot in the band colour */
+.validation-tests { display: grid; gap: 12px; margin-top: 16px; }
+.validation-test-list { list-style: none; border-top: 1px solid var(--rule); }
+.validation-test { display: grid; gap: 4px 24px; padding: 16px 0; border-bottom: 1px solid var(--rule); }
+.validation-test-verdict { display: inline-flex; align-items: center; gap: 8px; font: 700 var(--text-small)/1.4 var(--font-display); white-space: nowrap; }
+.validation-test-verdict::before { content: ""; flex: none; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+.validation-test.is-passed .validation-test-verdict { color: var(--band-green-ink); }
+.validation-test.is-failed .validation-test-verdict { color: var(--band-red-ink); }
 .validation-test.is-pending .validation-test-verdict { color: var(--ink-soft); }
-.validation-test-text { display: grid; gap: 2px; min-width: 0; }
-.validation-test-name { font-weight: 700; }
-.validation-test-result { max-width: 66ch; font-size: 0.9375rem; color: var(--ink-soft); }
-@media (min-width: 560px) {
-  .validation-test { grid-template-columns: 7rem minmax(0, 1fr); align-items: baseline; }
+.validation-test-text { display: grid; gap: 4px; min-width: 0; }
+.validation-test-name { font: 600 1.0625rem/1.35 var(--font-display); }
+.validation-test-result { max-width: 70ch; font-size: 0.9375rem; color: var(--ink-soft); }
+@media (min-width: 640px) {
+  .validation-test { grid-template-columns: 8rem minmax(0, 1fr); align-items: baseline; }
 }
 
-/* Role 3's model check: plain text in a raised box, like the notes panel beside a map plate */
-.about-model-check {
-  display: grid; gap: 10px; max-width: 72ch; padding: 16px 18px;
-  border: 1px solid var(--rule); border-radius: var(--radius-control); background: var(--paper-raised);
+/* Validation grid: cell shade follows the Earth rank; outlined cells are the analogs that should win. On phones the
+   table scrolls inside its frame with the analog names held at the left edge. */
+/* position: relative keeps the cells' visually hidden labels (absolutely positioned) inside the scrolling frame;
+   without it they widen the whole page on phones */
+.validation-grid-scroll { position: relative; overflow-x: auto; margin-top: 24px; }
+.validation-grid-scroll:focus-visible { outline-offset: 4px; }
+.validation-grid { border-collapse: separate; border-spacing: 0; font-size: var(--text-small); }
+.validation-grid caption {
+  max-width: min(70ch, calc(100vw - 2 * var(--gutter))); padding-bottom: 12px;
+  text-align: left; color: var(--ink-soft);
 }
-.about-model-check-heading { font-size: 1rem; font-weight: 750; }
+.validation-grid th, .validation-grid td { padding: 8px 12px; border-bottom: 1px solid var(--rule); }
+.validation-grid th { font: 600 var(--text-small)/1.35 var(--font-display); text-align: left; }
+.validation-grid thead th { width: 8.5rem; vertical-align: bottom; text-align: right; color: var(--ink-soft); }
+.validation-grid thead th:first-child { text-align: left; }
+.validation-grid tr > th:first-child { position: sticky; left: 0; z-index: 1; width: 16rem; background: var(--paper); }
+.validation-grid td {
+  font-family: var(--font-mono); text-align: right; white-space: nowrap;
+  background: color-mix(in srgb, var(--earth) calc(var(--rank, 0) * 55%), var(--paper));
+}
+.validation-grid td.is-expected { outline: 2px solid var(--ink); outline-offset: -3px; font-weight: 500; }
+@media (max-width: 639px) {
+  .validation-grid tr > th:first-child { width: 9rem; }
+}
+
+/* Why scores look low: a short note under the grid */
+.about-note { display: grid; gap: 8px; max-width: 70ch; margin-top: 24px; }
+.about-note p { color: var(--ink-soft); }
+
+/* Role 3's model check, shown once the real file is published */
+.about-model-check { display: grid; gap: 12px; max-width: 70ch; }
 .about-model-check ul { display: grid; gap: 4px; padding-left: 1.25rem; }
+
+/* Role 3's figures, square-cornered */
+.about-figures { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 22rem), 1fr)); gap: 24px; }
+.about-figure { display: grid; align-content: start; gap: 8px; }
+.about-figure img { width: 100%; height: auto; background: var(--paper-raised); }
+.about-figure figcaption { font-size: var(--text-small); color: var(--ink-soft); }
+
+/* Credits: one column per agency, the agency over a hairline */
+.about-credits { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr)); gap: 32px clamp(32px, 4vw, 56px); }
+.about-credit-group { display: grid; align-content: start; gap: 14px; }
+.about-credit-group .about-subheading { padding-bottom: 10px; border-bottom: 1px solid var(--rule); }
+.about-credit-list { list-style: none; display: grid; gap: 14px; }
+.about-credit-list li { display: grid; gap: 2px; }
+.about-credit-name { font: 600 0.9375rem/1.4 var(--font-display); }
+.about-credit-about { font-size: var(--text-small); line-height: 1.5; color: var(--ink-soft); }
+
+/* Team: four roles side by side, each its role number over its name */
+.about-team { list-style: none; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr)); gap: 28px clamp(24px, 3vw, 40px); }
+.about-team-role { display: grid; align-content: start; gap: 6px; }
+.about-team-number { font: 400 var(--text-small)/1.3 var(--font-mono); color: var(--stat); }
+.about-team-work { font-size: 0.9375rem; color: var(--ink-soft); }

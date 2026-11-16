@@ -1,4 +1,5 @@
-// A note in Characterize's report column: what to do first, why a spot has no score, or a failed load with Try again.
+// A note in place of Characterize's report card: what to do first, a spot being scored, why a spot has no score, or a
+// failed load with Try again.
 
 export default function CharacterizeNotice({ title, children, onRetry }) {
   return (

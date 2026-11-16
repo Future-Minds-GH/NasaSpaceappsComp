@@ -18,20 +18,20 @@ export function ValidationSummary({ validation }) {
   const tests = Array.isArray(validation?.tests) ? validation.tests : [];
 
   if (value === null && !summary && tests.length === 0) {
-    return <p className="about-text">The validation check has not been published yet. It will appear here once the team's results are in.</p>;
+    return <p className="about-small-print">The validation check has not been published yet. It will appear here once the team's results are in.</p>;
   }
 
   return (
     <>
       {(value !== null || summary) && (
-        <div className="about-validation">
+        <div className="validation-headline">
           {value !== null && (
-            <p className="about-validation-number">
+            <p className="stat-value validation-number">
               {value}
-              {outOf !== null && <span className="about-validation-out-of"> of {outOf}</span>}
+              {outOf !== null && <span className="validation-out-of"> of {outOf}</span>}
             </p>
           )}
-          {summary && <p className="about-validation-summary">{summary}</p>}
+          {summary && <p className="validation-summary">{summary}</p>}
         </div>
       )}
       <ValidationTests tests={tests} />
@@ -47,7 +47,7 @@ function ValidationTests({ tests }) {
 
   return (
     <div className="validation-tests">
-      <h3 className="validation-tests-heading">{passedCount} of {tests.length} tests passed</h3>
+      <h3 className="about-subheading">{passedCount} of {tests.length} tests passed</h3>
       <ul className="validation-test-list">
         {tests.map((test) => {
           const verdict = VERDICTS[describeVerdict(test.passed)];
@@ -66,29 +66,38 @@ function ValidationTests({ tests }) {
   );
 }
 
-/** One row per target, one column per known analog, each cell that analog's Earth rank (the share of Earth it beats). */
+/**
+ * One row per known analog and one column per Moon/Mars target (five columns fit the page; nine analog columns did not),
+ * each cell that analog's Earth rank: the share of Earth it beats. The table scrolls inside its frame on phones.
+ */
 export default function ValidationGrid({ specificity }) {
   if (!specificity?.rows?.length) return null;
+  const targets = specificity.rows;
+
   return (
-    <div className="validation-grid-scroll">
+    <div className="validation-grid-scroll" role="region" aria-labelledby="validation-grid-caption" tabIndex={0}>
       <table className="validation-grid">
-        <caption>Earth rank of each known analog for each target (higher is a better match). Outlined cells are the analogs that should win.</caption>
+        <caption id="validation-grid-caption">
+          Earth rank of each known analog for each target: the share of Earth's land it beats, higher is a better match.
+          Outlined cells are the analogs that should win.
+        </caption>
         <thead>
           <tr>
-            <th scope="col">Target</th>
-            {specificity.analogs.map((analog) => <th scope="col" key={analog}>{analog}</th>)}
+            <th scope="col">Known analog</th>
+            {targets.map((target) => <th scope="col" key={target.target}>{target.target}</th>)}
           </tr>
         </thead>
         <tbody>
-          {specificity.rows.map((row) => (
-            <tr key={row.target}>
-              <th scope="row">{row.target}</th>
-              {row.ranks.map((rank, index) => {
-                const analog = specificity.analogs[index];
-                const isExpected = row.expected?.includes(analog);
+          {specificity.analogs.map((analog, analogIndex) => (
+            <tr key={analog}>
+              <th scope="row">{analog}</th>
+              {targets.map((target) => {
+                const rank = target.ranks?.[analogIndex];
+                const isExpected = Boolean(target.expected?.includes(analog));
                 return (
-                  <td key={analog} className={isExpected ? "is-expected" : undefined} style={{ "--rank": rank / 100 }}>
+                  <td key={target.target} className={isExpected ? "is-expected" : undefined} style={{ "--rank": typeof rank === "number" ? rank / 100 : 0 }}>
                     {typeof rank === "number" ? `${Math.round(rank)}%` : "n/a"}
+                    {isExpected && <span className="visually-hidden"> (should win)</span>}
                   </td>
                 );
               })}

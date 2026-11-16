@@ -1,82 +1,107 @@
-/* Characterize mode: famous-site buttons and the Earth map on the left, the picked place's report card on the right
-   (stacked on phones). Match rows carry a Mars-rust or Moon-slate edge, like unit boxes on a geologic map legend. */
+/* Characterize: famous-site chips and the Earth map on the left, the picked place's report card on the right. The card
+   comes before the map in the source, so on phones it sits right under the chips. The card (or the note standing in
+   for it) is the page's one raised panel; inside it, hairlines and space separate the matches. */
 
-.characterize-layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 28px; margin-top: 24px; }
-.characterize-explore { display: grid; grid-template-columns: minmax(0, 1fr); gap: 24px; min-width: 0; }
-.characterize-explore > section { min-width: 0; }
-.characterize-report-column { min-width: 0; }
+.characterize-layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 40px; }
+.characterize-layout > * { min-width: 0; }
 @media (min-width: 900px) {
-  .characterize-layout { grid-template-columns: minmax(0, 6fr) minmax(0, 5fr); align-items: start; gap: 32px; }
+  .characterize-layout {
+    grid-template-columns: minmax(0, 6fr) minmax(0, 5fr);
+    /* A tall card grows the flexible second row, so the map stays right under the chips */
+    grid-template-rows: auto 1fr;
+    gap: 32px clamp(32px, 4vw, 64px); align-items: start;
+  }
+  .characterize-famous { grid-column: 1; grid-row: 1; }
+  .characterize-map { grid-column: 1; grid-row: 2; }
+  .characterize-report-column { grid-column: 2; grid-row: 1 / span 2; }
 }
 
-.characterize-hint { font-size: 0.875rem; color: var(--ink-soft); max-width: 62ch; }
+.characterize-hint { font-size: var(--text-small); color: var(--ink-soft); }
 
-/* Famous sites: one-click buttons; the chosen one stays inked in */
-.characterize-famous-list { list-style: none; display: flex; flex-wrap: wrap; gap: 8px; min-width: 0; }
-.characterize-famous-list li { min-width: 0; max-width: 100%; }
-.characterize-famous-button { text-align: left; max-width: 100%; white-space: normal; }
-.characterize-famous-button[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--paper); }
+/* Famous sites: shared pill chips; the picked one is filled */
+.characterize-famous-list { list-style: none; display: flex; flex-wrap: wrap; gap: 8px; }
+.characterize-famous-list li { max-width: 100%; }
+.characterize-famous-list .chip { max-width: 100%; text-align: left; }
 
-/* Earth map: Leaflet needs a real height, so the frame keeps the world's 2:1 shape */
-.characterize-map .earth-map-frame { border: 1px solid var(--rule); border-radius: var(--radius-frame); overflow: hidden; }
-.characterize-map .earth-map { width: 100%; aspect-ratio: 2 / 1; min-height: 220px; }
+/* Earth map: square-cornered on black. Leaflet needs a real height, so the frame keeps the world's 2:1 shape. */
+.characterize-map .earth-map { width: 100%; aspect-ratio: 2 / 1; }
 body:not(.leaflet-dragging) .characterize-map .leaflet-grab { cursor: crosshair; }
-.characterize-map .picked-cell { stroke: var(--mars); fill: var(--mars); }
-.characterize-map .characterize-pin { stroke: var(--paper-raised); stroke-width: 2px; fill: var(--mars); fill-opacity: 1; }
-
-/* Typed coordinates, the keyboard way to pick a spot */
-.characterize-coordinates { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px 12px; margin-top: 12px; }
-.characterize-coordinate-field { display: grid; }
-.characterize-coordinate-field .text-input { width: 9rem; }
-.characterize-coordinates .characterize-hint { flex-basis: 100%; }
-
-/* Notes in place of results: first visit, unscored spot, failed load */
-.characterize-notice {
-  display: grid; gap: 10px; justify-items: start; padding: 20px;
-  border: 1px dashed var(--rule); border-radius: var(--radius-frame); color: var(--ink-soft);
+.characterize-picked-cell { stroke: #FFFFFF; stroke-width: 1.5px; fill: var(--mars); fill-opacity: 0.35; }
+.characterize-pin { stroke: #FFFFFF; stroke-width: 2px; fill: var(--mars); fill-opacity: 1; }
+/* Zoom buttons and credits: dark and square like the map, in place of Leaflet's white rounded controls */
+.characterize-map .leaflet-bar { border: 1px solid var(--rule-on-space); border-radius: 0; box-shadow: none; }
+.characterize-map .leaflet-bar a,
+.characterize-map .leaflet-bar a:first-child,
+.characterize-map .leaflet-bar a:last-child {
+  width: 36px; height: 36px; border-radius: 0; border-bottom-color: var(--rule-on-space);
+  background: var(--space-band); color: var(--on-space); font: 400 1.25rem/36px var(--font-display);
 }
-.characterize-notice-title { font-family: var(--font-display); font-size: 1.125rem; font-weight: 700; color: var(--ink); }
-.characterize-notice[role="alert"] { border-style: solid; border-left: 4px solid var(--warning); color: var(--ink); }
+.characterize-map .leaflet-bar a.leaflet-disabled { background: var(--space-band); color: var(--on-space-soft); opacity: 0.5; }
+.characterize-map .leaflet-control-attribution { background: rgb(0 0 0 / 0.65); color: var(--on-space-soft); }
+.characterize-map .leaflet-control-attribution a { color: var(--on-space); }
+@media (hover: hover) and (pointer: fine) {
+  .characterize-map .leaflet-bar a:not(.leaflet-disabled):hover { background: var(--space-raised); }
+}
+
+/* Typed coordinates, the keyboard way to pick a spot. Mono, like every coordinate readout on the site. */
+.characterize-coordinates { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px; margin-top: 20px; }
+.characterize-coordinate-field { display: grid; flex: 1 1 8rem; max-width: 12rem; }
+.characterize-coordinate-field .text-input { width: 100%; font-family: var(--font-mono); font-size: 0.9375rem; }
+.characterize-coordinates-hint { flex-basis: 100%; max-width: 62ch; font-size: var(--text-small); color: var(--ink-soft); }
+
+/* The page's one raised panel: the report card, or the note that stands in for it */
+.characterize-report,
+.characterize-notice { padding: clamp(20px, 2.5vw, 32px); background: var(--paper-raised); }
+
+/* Notes in place of the card: first visit, scoring, unscored spot, failed load */
+.characterize-notice { display: grid; gap: 10px; justify-items: start; color: var(--ink-soft); }
+.characterize-notice-title { font: 700 1.25rem/1.25 var(--font-display); color: var(--ink); }
+.characterize-notice[role="alert"] { color: var(--ink); }
+.characterize-notice[role="alert"] .characterize-notice-title { color: var(--warning); }
 
 /* Report card */
-.characterize-report {
-  display: grid; gap: 18px; padding: 20px;
-  border: 1px solid var(--rule); border-radius: var(--radius-frame); background: var(--paper-raised);
-}
-.characterize-report-header { display: grid; gap: 8px; }
-.characterize-report-name { font-family: var(--font-display); font-size: 1.5rem; font-weight: 700; overflow-wrap: anywhere; }
-.characterize-report-tags { font-size: 0.9375rem; font-weight: 600; color: var(--ink-soft); }
-.characterize-report-place { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; color: var(--ink-soft); font-weight: 600; }
-.characterize-report-toolbar {
-  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px;
-  padding-top: 16px; border-top: 1px solid var(--rule);
-}
-.characterize-report-heading { font-family: var(--font-display); font-size: 1.125rem; font-weight: 700; }
-.characterize-details-toggle[aria-expanded="true"] { border-color: var(--ink); }
-.characterize-report-note { font-size: 0.875rem; color: var(--ink-soft); }
+.characterize-report { display: grid; gap: 32px; }
+.characterize-report-header { display: grid; gap: 6px; }
+.characterize-report-name { font: 700 var(--text-h2)/1.1 var(--font-display); letter-spacing: -0.02em; overflow-wrap: anywhere; }
+.characterize-report-subtitle { font-size: 1.0625rem; color: var(--ink-soft); }
+.characterize-report-place { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-top: 6px; }
+.characterize-report-coordinates { font-family: var(--font-mono); font-size: 0.9375rem; }
+.characterize-report-small { font-size: var(--text-small); color: var(--ink-soft); }
+.characterize-report-section { display: grid; gap: 12px; }
+.characterize-report-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; }
+.characterize-report-heading { font: 700 1.125rem/1.3 var(--font-display); letter-spacing: -0.01em; }
 
-/* One Moon or Mars match per row, best first */
-.characterize-matches { list-style: none; display: grid; gap: 14px; }
-.characterize-match { --body-color: var(--ink-soft); display: grid; gap: 12px; padding: 4px 0 4px 14px; border-left: 4px solid var(--body-color); }
-.characterize-match-mars { --body-color: var(--mars); }
-.characterize-match-moon { --body-color: var(--moon); }
-.characterize-match-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
-.characterize-match-name { font-size: 1.0625rem; font-weight: 750; }
-.characterize-match-meta { display: flex; flex-wrap: wrap; gap: 2px 12px; margin-top: 2px; font-size: 0.875rem; color: var(--ink-soft); }
-.characterize-match-body { color: var(--body-color); font-weight: 750; }
-.characterize-match-lists { display: grid; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); gap: 10px 16px; }
-.characterize-reasons-title { font-size: 0.8125rem; font-weight: 700; color: var(--ink-soft); }
-.characterize-reasons-list { padding-left: 1.1rem; list-style: square; font-size: 0.9375rem; }
-.characterize-reasons-list li::marker { color: var(--body-color); }
+/* Which world a match or a list belongs to: a dot in the Moon's slate or Mars's rust beside the name */
+.characterize-body-moon { --body-color: var(--moon); }
+.characterize-body-mars { --body-color: var(--mars); }
+.characterize-body-label { display: inline-flex; align-items: center; gap: 6px; font: 600 var(--text-small)/1.3 var(--font-display); color: var(--ink); }
+.characterize-body-label::before { content: ""; flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--body-color, var(--ink-soft)); }
 
-/* Details: numbers for each match and for the place itself */
-.characterize-match-details, .characterize-site-factors { display: grid; gap: 8px; animation: characterize-reveal 200ms var(--ease-out); }
-.characterize-site-factors { padding-top: 16px; border-top: 1px solid var(--rule); }
+/* One Moon or Mars match per row, best first, between hairlines */
+.characterize-matches { list-style: none; border-top: 1px solid var(--rule); }
+.characterize-match { display: grid; gap: 10px; padding: 18px 0; border-bottom: 1px solid var(--rule); }
+.characterize-match-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.characterize-match-title { min-width: 0; }
+.characterize-match-name { font: 700 1.1875rem/1.25 var(--font-display); overflow-wrap: anywhere; }
+.characterize-match-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 16px; margin-top: 6px; font-size: var(--text-small); color: var(--ink-soft); }
+.characterize-match-alike { font-size: 0.9375rem; }
+.characterize-match-details { display: grid; gap: 8px; padding-top: 4px; }
+.characterize-show-all { justify-self: start; margin-top: 4px; }
+
+/* What each world has that Earth can't give: one list per world */
+.characterize-gaps { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr)); gap: 16px 32px; }
+.characterize-gap { display: grid; align-content: start; gap: 8px; }
+.characterize-bullet-list { display: grid; gap: 4px; padding-left: 1.1rem; list-style: square; font-size: 0.9375rem; }
+.characterize-bullet-list li::marker { color: var(--body-color, var(--ink-soft)); }
+
+/* Details open on a click: a short fade and drop shows what appeared (a fade only with reduced motion) */
+.characterize-reveal { animation: characterize-reveal 200ms var(--ease-out); }
 @keyframes characterize-reveal {
   from { opacity: 0; transform: translateY(-4px); }
 }
-
-@media (prefers-reduced-motion: reduce) {
-  .characterize-match-details, .characterize-site-factors { animation: none; }
+@keyframes characterize-fade {
+  from { opacity: 0; }
 }
-.characterize-show-all { justify-self: start; margin-top: 12px; }
+@media (prefers-reduced-motion: reduce) {
+  .characterize-reveal { animation-name: characterize-fade; }
+}

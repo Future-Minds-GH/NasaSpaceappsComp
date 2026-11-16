@@ -1,8 +1,8 @@
 // Characterize mode: pick a famous test site or any spot on Earth's land and see which Moon and Mars sites it can stand in for.
 import { useState } from "react";
-import { CircleMarker } from "react-leaflet";
+import { CircleMarker, Rectangle } from "react-leaflet";
 import EarthMap from "../components/EarthMap.jsx";
-import ReportCard from "../components/ReportCard.jsx";
+import ReportCard, { splitPlaceName } from "../components/ReportCard.jsx";
 import CharacterizeNotice from "../components/CharacterizeNotice.jsx";
 import CoordinateForm from "../components/CoordinateForm.jsx";
 import { loadFamousSites, loadTargets, loadWeights } from "../data/api.js";
@@ -40,80 +40,96 @@ export default function CharacterizePage() {
   }
 
   return (
-    <div className="page characterize-page">
-      <h1 className="page-title">Characterize a place</h1>
-      <p className="page-lede">Pick a place on Earth and see which Moon and Mars sites it can stand in for.</p>
-
-      <div className="characterize-layout">
-        <div className="characterize-explore">
-          <section aria-labelledby="characterize-famous-heading">
-            <h2 id="characterize-famous-heading" className="control-label">Famous test sites</h2>
-            {reference.error && (
-              <CharacterizeNotice onRetry={() => setReferenceAttempt((count) => count + 1)}>
-                The famous sites did not load. Check your connection, then try again.
-              </CharacterizeNotice>
-            )}
-            {!reference.error && !reference.data && <p className="characterize-hint">Loading the famous sites…</p>}
-            {reference.data && (
-              <ul className="characterize-famous-list">
-                {reference.data.famousSites.map((famousSite) => (
-                  <li key={famousSite.site_id}>
-                    <button
-                      className="button button-quiet characterize-famous-button"
-                      type="button"
-                      aria-pressed={selection?.famousSite?.site_id === famousSite.site_id}
-                      onClick={() => handleFamousSiteClick(famousSite)}
-                    >
-                      {famousSite.site.name}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
-
-          <section className="characterize-map" aria-labelledby="characterize-map-heading">
-            <h2 id="characterize-map-heading" className="control-label">Or click any spot on land</h2>
-            <EarthMap
-              onPick={handleSpotPick}
-              highlightBounds={selection?.cell.bounds}
-              focus={selection?.focus}
-              label="World map. Click a spot on land to see its report card."
-            >
-              {selection && (
-                <CircleMarker center={[selection.cell.lat, selection.cell.lon]} radius={6} pathOptions={{ className: "characterize-pin" }} />
-              )}
-            </EarthMap>
-            <CoordinateForm onSubmit={(lat, lon) => handleSpotPick(lat, lon, true)} />
-          </section>
+    <div className="characterize-page">
+      <header className="page-hero">
+        <div className="page-hero-inner">
+          <h1 className="page-title">Characterize a place</h1>
+          <p className="page-lede">Pick a place on Earth and see which Moon and Mars sites it can stand in for.</p>
         </div>
+      </header>
+
+      {/* Report before map in the source: on phones a picked site's card shows right under the sites, not past the map.
+          From 900 px the grid puts the map back under the sites and the card in the right-hand column. */}
+      <div className="page-body characterize-layout">
+        <section className="characterize-famous" aria-labelledby="characterize-famous-heading">
+          <h2 id="characterize-famous-heading" className="control-label">Famous test sites</h2>
+          {reference.error && (
+            <CharacterizeNotice onRetry={() => setReferenceAttempt((count) => count + 1)}>
+              The famous sites did not load. Check your connection, then try again.
+            </CharacterizeNotice>
+          )}
+          {!reference.error && !reference.data && <p className="characterize-hint">Loading the famous sites…</p>}
+          {reference.data && (
+            <ul className="characterize-famous-list">
+              {reference.data.famousSites.map((famousSite) => (
+                <li key={famousSite.site_id}>
+                  <button
+                    className="chip"
+                    type="button"
+                    aria-pressed={selection?.famousSite?.site_id === famousSite.site_id}
+                    onClick={() => handleFamousSiteClick(famousSite)}
+                  >
+                    {splitPlaceName(famousSite.site.name).main}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
 
         <div className="characterize-report-column">
           <p className="visually-hidden" role="status">{describeReport(report)}</p>
           {report.status === "empty" && (
             <CharacterizeNotice title="No place picked yet">
               Pick a famous test site or click anywhere on land. Its report card shows which Moon and Mars sites it is most
-              like, the mission tests it suits and what it can't reproduce.
+              like, the factors they share and what it can't reproduce.
             </CharacterizeNotice>
           )}
-          {report.status === "loading" && <p className="page-message">Loading the scores for {pickedCoordinates}…</p>}
+          {report.status === "loading" && (
+            <CharacterizeNotice title="Scoring this spot">
+              Comparing {pickedCoordinates} with every Moon and Mars site. The first spot takes a few seconds; the next ones
+              are quick.
+            </CharacterizeNotice>
+          )}
           {report.status === "error" && (
-            <CharacterizeNotice onRetry={() => setTileAttempt((count) => count + 1)}>
-              The scores for this area did not load. Check your connection, then try again.
+            <CharacterizeNotice title="The scores did not load" onRetry={() => setTileAttempt((count) => count + 1)}>
+              Check your connection, then try again.
             </CharacterizeNotice>
           )}
           {report.status === "unscored" && (
             <CharacterizeNotice title="No score for this spot">
-              This spot is not in the scored land tiles. {pickedCoordinates} may be ocean, ice sheet or a tile left out for
-              lack of data. Try a desert, polar or volcanic region, or pick one of the famous test sites.
+              {pickedCoordinates} is not in the scored land tiles: it may be ocean, ice sheet or a tile left out for lack of
+              data. Try a desert, polar or volcanic region, or pick one of the famous test sites.
             </CharacterizeNotice>
           )}
           {report.status === "ready" && (
             <ReportCard entry={report.entry} targetsById={reference.data?.targetsById} presets={reference.data?.presets} />
           )}
         </div>
+
+        <section className="characterize-map" aria-labelledby="characterize-map-heading">
+          <h2 id="characterize-map-heading" className="control-label">Or click any spot on land</h2>
+          <EarthMap onPick={handleSpotPick} focus={selection?.focus} label="World map. Click a spot on land to see its report card.">
+            {selection && <PickedCellMarker cell={selection.cell} />}
+          </EarthMap>
+          <CoordinateForm onSubmit={(lat, lon) => handleSpotPick(lat, lon, true)} />
+        </section>
       </div>
     </div>
+  );
+}
+
+/**
+ * The picked half-degree square and a pin at its centre. The class names go in as Leaflet options: react-leaflet hands
+ * `pathOptions` to setStyle() after the shape is drawn, and setStyle() never adds a class. Neither shape takes clicks,
+ * so a click on them still picks a spot.
+ */
+function PickedCellMarker({ cell }) {
+  return (
+    <>
+      <Rectangle bounds={cell.bounds} className="characterize-picked-cell" interactive={false} />
+      <CircleMarker center={[cell.lat, cell.lon]} radius={6} className="characterize-pin" interactive={false} />
+    </>
   );
 }
 
