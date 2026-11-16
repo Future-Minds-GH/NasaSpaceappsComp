@@ -20,7 +20,7 @@ Pick a place on Earth, the Moon or Mars. The app finds the most similar places o
 Nine factors: day and night temperature, day-night swing, sunlight, slope, roughness, elevation within its planet, surface type, minerals and ice.
 
 Limits:
-- Tolerances and weights are set by hand from the contract, not learned from data.
+- Tolerances (`data/schema.json`) and weights are set by hand, not learned from data.
 - A tile is about 27 km across. A result names a region, not one exact site.
 - Earth has no geology or atmosphere factor. Gravity, air and radiation are listed on each result as things Earth cannot reproduce.
 - The Moon's main mineral class (feldspar-rich highland rock) has no field, so Moon mineral scores are weak.
@@ -30,11 +30,10 @@ Limits:
 
 | Path | What |
 | --- | --- |
-| `notebooks/earth/`, `notebooks/moon/`, `notebooks/mars/` | Colab data prep. Each `.py` file is the source of the `.ipynb` next to it |
+| `notebooks/earth/`, `notebooks/moon/`, `notebooks/mars/` | Colab data prep as percent-format `.py` files. Make a notebook to upload to Colab with `python src/py2nb.py notebooks/earth/sun.py sun.ipynb` |
 | `src/surface_fractions.py`, `src/merge_body.py` | Shared data-prep helpers |
 | `src/build_vectors.py`, `src/build_body_vectors.py` | parquet to site files: Earth; Moon and Mars plus `vectors/schema.json` |
 | `frontend/` | The site (React + Vite, static) |
-| `matcher/` | Python matcher, fake tables and validation harness (hit@10, negative controls) |
 | `known_analogs.json` | Known Earth analog sites with sources, for validation |
 | `data/targets.json` | Moon and Mars target sites |
 | `earth_sources.md`, `moon_mars_sources.md` | Data sources and known limits |
@@ -85,7 +84,7 @@ The computed Earth table is available as a download, so you can skip the Earth n
 ## Tests
 
 ```bash
-python -m pytest -q src matcher/tests
+python -m pytest -q src
 cd frontend && npm test
 ```
 
