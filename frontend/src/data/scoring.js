@@ -1,4 +1,4 @@
-// Scoring rules shared by every screen (matcher v0.3, contract.md section 4): combining the nine factor scores into one
+// Scoring rules shared by every screen (matcher v0.3): combining the nine factor scores into one
 // 0-100 score, the score bands, and the thresholds behind the "new analog" and "false friend" badges.
 // similarity.js computes the factor scores.
 
@@ -8,8 +8,8 @@ export const FACTORS = ["temp", "swing", "sun", "slope", "rough", "elev", "surfa
 /** A site this far from every catalogued analog counts as a new analog. */
 const NEW_ANALOG_MIN_KM = 300;
 /** Score bands: green from 90, yellow from 60, else red. */
-export const BAND_GREEN_MIN = 90;
-export const BAND_YELLOW_MIN = 60;
+const BAND_GREEN_MIN = 90;
+const BAND_YELLOW_MIN = 60;
 // False friend: same slope and roughness, but the factor the mission cares most about is far off.
 const FALSE_FRIEND_GROUND = 0.7;
 const FALSE_FRIEND_TOP_FACTOR = 0.4;

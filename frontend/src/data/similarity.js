@@ -1,10 +1,11 @@
-// The live search (matcher v0.3, data/schema.json and contract.md section 4): compares one clicked tile vector with every
+// The live search (matcher v0.3, data/schema.json): compares one clicked tile vector with every
 // candidate tile vector. A click computes the nine factor scores for every candidate once (scoreAllEarthTiles); moving a
 // slider only recombines the stored scores (combineAll), so the ranking updates while dragging.
 // Two modes: "absolute" scores the real units (kelvin, W/m2, degrees, metres), "relative" scores each planet's own
 // percentile ranks. The loops read byte offsets and score lookup tables and allocate nothing per tile: 100k Earth tiles
 // must score in well under a second.
 import { FACTORS } from "./scoring.js";
+import { kthLargest } from "./ranking.js";
 
 export const NULL_CODE = 255;
 const BYTE_SCALE = 254;
@@ -127,16 +128,19 @@ function fillWithTypical(scores, tileCount, factorCount) {
   const present = new Float32Array(tileCount);
   // A tile with no real factor score at all stays empty: it is not a candidate (combineAll gives it -1).
   const hasData = new Uint8Array(tileCount);
-  for (let cell = 0; cell < scores.length; cell++) if (scores[cell] === scores[cell]) hasData[(cell / factorCount) | 0] = 1;
+  for (let tile = 0, cell = 0; tile < tileCount; tile++, cell += factorCount) {
+    for (let factor = 0; factor < factorCount; factor++) if (scores[cell + factor] === scores[cell + factor]) { hasData[tile] = 1; break; }
+  }
   for (let factor = 0; factor < factorCount; factor++) {
     let count = 0;
-    for (let tile = 0; tile < tileCount; tile++) {
-      const value = scores[tile * factorCount + factor];
-      if (value === value) present[count++] = value;   // value === value: not NaN
+    for (let cell = factor; cell < scores.length; cell += factorCount) {
+      if (scores[cell] === scores[cell]) present[count++] = scores[cell];   // x === x: not NaN
     }
     if (count === 0 || count === tileCount) continue;   // the clicked tile lacks it, or nothing is missing
-    const sorted = present.subarray(0, count).sort();
-    const median = count % 2 ? sorted[count >> 1] : (sorted[count / 2 - 1] + sorted[count / 2]) / 2;
+    // The median by quickselect (linear) instead of sorting every score.
+    const values = present.subarray(0, count);
+    const half = count >> 1;
+    const median = count % 2 ? kthLargest(values, half + 1) : (kthLargest(values, half + 1) + kthLargest(values, half)) / 2;
     for (let tile = 0; tile < tileCount; tile++) {
       const cell = tile * factorCount + factor;
       if (hasData[tile] && scores[cell] !== scores[cell]) { scores[cell] = median; typical[tile] |= 1 << factor; }

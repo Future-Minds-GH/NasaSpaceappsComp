@@ -3,13 +3,13 @@
 // ask for a re-rank. If the search fails or is slow, it falls back to the tile's pool shortlist (pools/), then to
 // Role 2's precomputed showcase.json; those results are flagged approximate.
 import { useEffect, useMemo, useState } from "react";
-import { loadBodyMeta, loadBodyVectors, loadEarthTiles, loadPool, loadShowcase, loadVectorSchema, loadWhyRules } from "./api.js";
+import { loadBodyMeta, loadBodyVectors, loadEarthTiles, loadPool, loadShowcase, loadVectorSchema } from "./api.js";
 import { baseCellOf, latLonToTile } from "./healpix.js";
 import { decideEarthSnap } from "./earthSnap.js";
 import { readLayout } from "./similarity.js";
 import { SAME_BODY_MIN_KM } from "./ranking.js";
 import { rescoreMatches } from "./scoring.js";
-import { buildMatches, buildPoolMatches, clickedTileVector, readBodyTiles, readEarthTiles } from "./tileSearch.js";
+import { buildMatches, buildPoolMatches, clickedTileVector, readBodyTiles, readEarthTiles, tileCentres } from "./tileSearch.js";
 import { searchKeyOf, useSearchWorker } from "./useSearchWorker.js";
 import { useLoaded } from "./useLoaded.js";
 
@@ -93,7 +93,7 @@ export function useTileSearch(selection, targetBody, weights, mode, attempt = 0)
   const liveMatches = useMemo(() => {
     if (!latestPicks || latestPicks.searchKey !== searchKey || !targetCandidates || !base.data) return null;
     return buildMatches(latestPicks.picks, {
-      tiles: targetCandidates.tiles, body: targetBody, nside: base.data.schema.nside[targetBody], weights: latestPicks.weights, whyRules: base.data.whyRules,
+      tiles: targetCandidates.tiles, body: targetBody, nside: base.data.schema.nside[targetBody], weights: latestPicks.weights,
       mode, clicked: clickedVector, vectors: targetCandidates.vectors, layout: base.data.layout,
     });
   }, [latestPicks, searchKey, targetCandidates, base.data, targetBody, mode, clickedVector]);
@@ -111,7 +111,7 @@ export function useTileSearch(selection, targetBody, weights, mode, attempt = 0)
   const poolMatches = useMemo(() => {
     if (liveMatches || !pool.data || !tile || !weights) return null;
     return buildPoolMatches(pool.data, tile.index, {
-      earthTiles: base.data.earth.tiles, rowByIndex: base.data.earth.rowByIndex, weights, earthNside: base.data.schema.nside.earth, whyRules: base.data.whyRules,
+      earthTiles: base.data.earth.tiles, rowByIndex: base.data.earth.rowByIndex, weights, earthNside: base.data.schema.nside.earth,
     });
   }, [liveMatches, pool.data, tile, weights, base.data]);
 
@@ -148,13 +148,12 @@ function useIsSlow(searchKey, hasResults) {
 
 // Schema, Earth tiles (always needed: Earth is a source or a target in most comparisons) and the optional files.
 async function loadSearchBase() {
-  const [schema, earthFiles, whyRules, showcase] = await Promise.all([loadVectorSchema(), loadEarthTiles(), loadWhyRules(), loadShowcase()]);
+  const [schema, earthFiles, showcase] = await Promise.all([loadVectorSchema(), loadEarthTiles(), loadShowcase()]);
   const earthTiles = readEarthTiles(earthFiles, schema.nside.earth);
   return {
     schema,
     layout: readLayout(schema),
-    earth: { vectors: earthFiles.vectors, tiles: earthTiles, lats: Float32Array.from(earthTiles, (earthTile) => earthTile.lat), lons: Float32Array.from(earthTiles, (earthTile) => earthTile.lon), rowByIndex: new Map(earthTiles.map((earthTile, row) => [earthTile.index, row])) },
-    whyRules,
+    earth: { vectors: earthFiles.vectors, tiles: earthTiles, ...tileCentres(earthTiles), rowByIndex: new Map(earthTiles.map((earthTile, row) => [earthTile.index, row])) },
     showcase,
   };
 }
@@ -167,12 +166,14 @@ function loadCandidates(body) {
       const schema = await loadVectorSchema();
       if (body === "earth") {
         const earthFiles = await loadEarthTiles();
-        return { body, vectors: earthFiles.vectors, tiles: readEarthTiles(earthFiles, schema.nside.earth) };
+        const tiles = readEarthTiles(earthFiles, schema.nside.earth);
+        return { body, vectors: earthFiles.vectors, tiles, ...tileCentres(tiles) };
       }
       const parts = await Promise.all(body === "mars" ? Array.from({ length: MARS_SHARDS }, (_, shard) => loadBodyVectors("mars", shard)) : [loadBodyVectors("moon")]);
       const vectors = new Uint8Array(parts.reduce((length, part) => length + part.length, 0));
       parts.reduce((offset, part) => { vectors.set(part, offset); return offset + part.length; }, 0);
-      return { body, vectors, tiles: readBodyTiles(schema.nside[body], await loadBodyMeta(body)) };
+      const tiles = readBodyTiles(schema.nside[body], await loadBodyMeta(body));
+      return { body, vectors, tiles, ...tileCentres(tiles) };
     })();
     request.catch(() => candidateCache.delete(body));
     candidateCache.set(body, request);

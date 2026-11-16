@@ -43,8 +43,8 @@ function bestRows(totals, size) {
   return rows.sort((first, second) => totals[second] - totals[first]);
 }
 
-// Quickselect on a copy: the value of the k-th largest total.
-function kthLargest(totals, k) {
+/** Quickselect on a copy: the value of the k-th largest number (k = 1 is the largest). */
+export function kthLargest(totals, k) {
   const values = Float32Array.from(totals);
   let low = 0;
   let high = values.length - 1;
@@ -63,7 +63,8 @@ function kthLargest(totals, k) {
   return values[target];
 }
 
-function distanceKm(latA, lonA, latB, lonB, radiusKm) {
+/** Great-circle (haversine) distance in km on a body of the given radius; Earth by default. */
+export function distanceKm(latA, lonA, latB, lonB, radiusKm = BODY_RADIUS_KM.earth) {
   const toRadians = (degrees) => (degrees * Math.PI) / 180;
   const h = Math.sin(toRadians(latB - latA) / 2) ** 2 + Math.cos(toRadians(latA)) * Math.cos(toRadians(latB)) * Math.sin(toRadians(lonB - lonA) / 2) ** 2;
   return 2 * radiusKm * Math.asin(Math.sqrt(h));
