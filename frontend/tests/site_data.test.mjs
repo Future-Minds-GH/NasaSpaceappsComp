@@ -61,7 +61,8 @@ test("discoveries are more than 300 km from every known Earth analog, by distanc
 
 test("discovery files agree: the CSV and the GeoJSON hold the same rows", () => {
   const { discoveries } = discoveriesFile;
-  const csvLines = readFileSync(here(`${DATA}discoveries.csv`), "utf8").trim().split("\n");
+  // \r?\n: a Windows checkout (core.autocrlf) turns the file's line ends into CRLF.
+  const csvLines = readFileSync(here(`${DATA}discoveries.csv`), "utf8").trim().split(/\r?\n/);
   assert.equal(csvLines.length, discoveries.length + 1);
   assert.deepEqual(csvLines[0].split(","), ["rank", "name", "lat", "lon", "env_type", "tags", "body", "best_target_id", "score", "km_to_nearest_known_analog", ...FACTORS]);
   const features = json(`${DATA}discoveries.geojson`).features;

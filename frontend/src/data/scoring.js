@@ -1,9 +1,16 @@
-// Scoring rules shared by every screen (matcher v0.3, contract.md section 4): combining the nine factor scores into one
-// 0-100 score, the score bands, and the thresholds behind the "new analog" and "false friend" badges.
-// similarity.js computes the factor scores.
+// Scoring rules shared by every screen (matcher v0.3, contract.md section 4): combining the factor scores into one
+// 0-100 score, the score bands, and the thresholds behind the "new analog" and "false friend" badges. The data holds
+// nine factors; the site scores five of them (SCORED_FACTORS). similarity.js computes the factor scores.
 
 /** The nine factors, in the order the vectors, presets and every bar chart use (same as data/schema.json). */
 export const FACTORS = ["temp", "swing", "sun", "slope", "rough", "elev", "surface", "minerals", "ice"];
+
+/**
+ * The five factors the site scores, sliders and charts show: the five the Balanced preset weights highest (15% each).
+ * The other four (day-night swing, sunlight, relative elevation, surface type) stay in the data files, but every
+ * weight the site uses sets them to 0, so they count for nothing. To change the five, edit this list only.
+ */
+export const SCORED_FACTORS = ["temp", "slope", "rough", "minerals", "ice"];
 
 /** A site this far from every catalogued analog counts as a new analog. */
 const NEW_ANALOG_MIN_KM = 300;
@@ -39,16 +46,21 @@ export function scoreBand(score) {
   return "red";
 }
 
-/** Weights scaled to sum to 1, as the sliders show them. */
-export function normaliseWeights(weights) {
-  const total = FACTORS.reduce((sum, factor) => sum + Math.max(weights[factor] ?? 0, 0), 0);
-  if (total === 0) return Object.fromEntries(FACTORS.map((factor) => [factor, 1 / FACTORS.length]));
-  return Object.fromEntries(FACTORS.map((factor) => [factor, Math.max(weights[factor] ?? 0, 0) / total]));
+/** Weights scaled to sum to 1 over `factors`, as the sliders show them. */
+export function normaliseWeights(weights, factors = FACTORS) {
+  const total = factors.reduce((sum, factor) => sum + Math.max(weights[factor] ?? 0, 0), 0);
+  if (total === 0) return Object.fromEntries(factors.map((factor) => [factor, 1 / factors.length]));
+  return Object.fromEntries(factors.map((factor) => [factor, Math.max(weights[factor] ?? 0, 0) / total]));
 }
 
-/** Sets one factor's share and scales the others in proportion so all nine still sum to 1 (the sliders' rule). */
-export function rebalanceWeights(shares, changedFactor, newShare) {
-  const others = FACTORS.filter((factor) => factor !== changedFactor);
+/** A copy of `weights` with every factor outside SCORED_FACTORS set to 0, so scoring leaves those factors out. */
+export function keepScoredFactors(weights) {
+  return Object.fromEntries(FACTORS.map((factor) => [factor, SCORED_FACTORS.includes(factor) ? weights?.[factor] ?? 0 : 0]));
+}
+
+/** Sets one factor's share and scales the others in `factors` in proportion so they still sum to 1 (the sliders' rule). */
+export function rebalanceWeights(shares, changedFactor, newShare, factors = FACTORS) {
+  const others = factors.filter((factor) => factor !== changedFactor);
   const othersTotal = others.reduce((sum, factor) => sum + (shares[factor] ?? 0), 0);
   const remaining = 1 - newShare;
   const next = { [changedFactor]: newShare };
@@ -99,6 +111,6 @@ export function weakestFactor(breakdown) {
     .reduce((weakest, factor) => (weakest === null || breakdown[factor] < breakdown[weakest] ? factor : weakest), null) ?? FACTORS[0];
 }
 
-export function areWeightsEqual(first, second) {
-  return FACTORS.every((factor) => Math.abs((first[factor] ?? 0) - (second[factor] ?? 0)) < 1e-9);
+export function areWeightsEqual(first, second, factors = FACTORS) {
+  return factors.every((factor) => Math.abs((first[factor] ?? 0) - (second[factor] ?? 0)) < 1e-9);
 }
