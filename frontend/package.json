@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "node --test tests/data.test.mjs tests/matcher.test.mjs tests/real_data.test.mjs tests/validation.test.mjs tests/site_data.test.mjs tests/characterize_spot.test.mjs",
+    "test": "node --test tests/data.test.mjs tests/matcher.test.mjs tests/real_data.test.mjs tests/validation.test.mjs tests/site_data.test.mjs tests/characterize_spot.test.mjs tests/earth_snap.test.mjs",
     "sample-data": "node scripts/make-sample-data.mjs && node scripts/make-sample-vectors.mjs && node scripts/make-sample-search-files.mjs"
   },
   "dependencies": {

@@ -60,7 +60,7 @@ export default function LandingPage() {
   const results = Object.fromEntries(BODIES.map((body) => {
     const search = searches[body];
     // The ranking already skips these tiles; this guards the fallbacks.
-    const matches = (search.data ?? []).filter((match) => !(request && body === request.inputBody && distanceKm(match, request.point, body) < SAME_BODY_MIN_KM));
+    const matches = (search.data ?? []).filter((match) => !(request && body === request.inputBody && distanceKm(match, search.searchPoint ?? request.point, body) < SAME_BODY_MIN_KM));
     return [body, { search, matches, best: matches[0] ?? null }];
   }));
 
@@ -261,6 +261,10 @@ export default function LandingPage() {
               mode={request.mode}
               clickedVector={results[body].search.clickedVector}
               layout={results[body].search.layout}
+              snapKm={results[body].search.snapKm}
+              nearestScored={results[body].search.nearestScored}
+              // The nearest-spot button is the same on every card: offer it on the first card only.
+              onUseNearest={body === request.targets[0] ? (lat, lon) => compute({ lat, lon }) : null}
               exploreLink={body === request.inputBody ? null : `/explore/${request.inputBody}?to=${body}&at=${request.point.lat.toFixed(2)},${request.point.lon.toFixed(2)}&preset=${presetId}&mode=${request.mode}`}
             />
           ))}

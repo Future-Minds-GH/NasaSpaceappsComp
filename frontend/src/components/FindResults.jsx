@@ -11,8 +11,9 @@ import TargetProfile from "./TargetProfile.jsx";
 import TileProfile from "./TileProfile.jsx";
 import ResultsMap from "./ResultsMap.jsx";
 import { areWeightsEqual } from "../data/scoring.js";
+import { snapNote } from "../data/earthSnap.js";
 
-export default function FindResults({ target, matchBodyName = "Earth", matches, matchesState, presets, presetId, onSelectPreset, groups, mode, onChangeMode, customWeights, onChangeWeights }) {
+export default function FindResults({ target, matchBodyName = "Earth", matches, matchesState, snapKm = null, presets, presetId, onSelectPreset, groups, mode, onChangeMode, customWeights, onChangeWeights }) {
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [comparedMatch, setComparedMatch] = useState(null);
 
@@ -33,6 +34,7 @@ export default function FindResults({ target, matchBodyName = "Earth", matches, 
         )}
       </header>
 
+      {snapKm !== null && <p className="tile-profile-missing" role="note">{snapNote(snapKm)}</p>}
       <TileProfile vector={matchesState.clickedVector} layout={matchesState.layout} />
 
       <div className="find-toolbar">

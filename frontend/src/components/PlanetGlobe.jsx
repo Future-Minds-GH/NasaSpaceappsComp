@@ -15,19 +15,32 @@ const START_VIEW = { earth: { lat: 20, lng: -40, altitude: 2.2 }, moon: { lat: -
 const PICTURE_VIEW = { earth: { lat: 15, lng: -30, altitude: 2.2 }, moon: { lat: 5, lng: 20, altitude: 2.2 }, mars: { lat: 5, lng: -60, altitude: 2.2 } };
 // A press that moves further than this before release is a drag (turning the globe), not a pick.
 const DRAG_TOLERANCE_PX = 6;
-// How close (in degrees of arc) a press must be to a site dot to select the site: the dot's own radius (labelDotRadius), and a bigger reach for a finger.
-const SITE_DOT_DEG = 2.4;
-const TOUCH_REACH_DEG = 4;
+// How close (in screen pixels) a press must be to a site dot's centre to select the site: a mouse is exact, a finger needs a bigger
+// reach. Pixels, not degrees, so the reach does not grow or shrink when the globe is zoomed.
+const SITE_REACH_PX = { mouse: 12, touch: 22 };
+// Pre-filter in degrees of arc: dots on the far side of the globe also have screen coordinates, so only dots near the pressed spot count.
+const SITE_PREFILTER_DEG = 20;
+const SITE_DOT_ALTITUDE = 0.012;
 
-/** The site nearest to (lat, lon) within `maxDeg` degrees of arc, or null. */
-function siteNear(sites, lat, lon, maxDeg) {
+/** Angle in degrees between two points on a sphere. */
+function arcDegrees(latA, lonA, latB, lonB) {
   const radians = (degrees) => (degrees * Math.PI) / 180;
+  const cosine = Math.sin(radians(latA)) * Math.sin(radians(latB)) + Math.cos(radians(latA)) * Math.cos(radians(latB)) * Math.cos(radians(lonA - lonB));
+  return (Math.acos(Math.min(1, Math.max(-1, cosine))) * 180) / Math.PI;
+}
+
+/** The site whose dot is nearest the press (x, y in px from the globe's top-left) within `reachPx`, or null. */
+function siteNear(globe, sites, press, coords, reachPx) {
+  // Dots on the far side still get screen coordinates: only dots on the hemisphere facing the camera can be selected.
+  const view = globe.pointOfView();
   let best = null;
-  let bestDeg = maxDeg;
+  let bestPx = reachPx;
   for (const site of sites) {
-    const cosine = Math.sin(radians(lat)) * Math.sin(radians(site.lat)) + Math.cos(radians(lat)) * Math.cos(radians(site.lat)) * Math.cos(radians(lon - site.lon));
-    const deg = (Math.acos(Math.min(1, Math.max(-1, cosine))) * 180) / Math.PI;
-    if (deg <= bestDeg) { best = site; bestDeg = deg; }
+    if (arcDegrees(coords.lat, coords.lng, site.lat, site.lon) > SITE_PREFILTER_DEG) continue;
+    if (arcDegrees(view.lat, view.lng, site.lat, site.lon) >= 90) continue;
+    const screen = globe.getScreenCoords(site.lat, site.lon, SITE_DOT_ALTITUDE);
+    const px = Math.hypot(screen.x - press.x, screen.y - press.y);
+    if (px <= bestPx) { best = site; bestPx = px; }
   }
   return best;
 }
@@ -103,10 +116,11 @@ export default function PlanetGlobe({ body, isInteractive = false, isDraggable =
       pressStart.isDown = false;
       if (Math.hypot(event.clientX - pressStart.x, event.clientY - pressStart.y) > DRAG_TOLERANCE_PX) return;
       // A mouse hovers a site dot before it clicks. A touch never hovers (and the library only knows a dot is under the finger
-      // after its next raycast frame), so a tap is hit-tested here: the site whose dot is nearest the tapped spot, within reach.
+      // after its next raycast frame), so a tap is hit-tested here: the site whose dot is nearest the tap on screen, within reach.
       const rect = container.getBoundingClientRect();
-      const coords = globe.toGlobeCoords(event.clientX - rect.left, event.clientY - rect.top); // null when the press misses the globe
-      const site = hoveredSiteRef.current ?? (coords && siteNear(sitesRef.current, coords.lat, coords.lng, event.pointerType === "touch" ? TOUCH_REACH_DEG : SITE_DOT_DEG));
+      const press = { x: event.clientX - rect.left, y: event.clientY - rect.top };
+      const coords = globe.toGlobeCoords(press.x, press.y); // null when the press misses the globe
+      const site = hoveredSiteRef.current ?? (coords && siteNear(globe, sitesRef.current, press, coords, event.pointerType === "touch" ? SITE_REACH_PX.touch : SITE_REACH_PX.mouse));
       if (site) handlersRef.current.onSelectSite?.(site);
       else if (coords) handlersRef.current.onPick?.(coords.lat, coords.lng);
     };
@@ -161,7 +175,7 @@ export default function PlanetGlobe({ body, isInteractive = false, isDraggable =
       .labelText((site) => (isInteractive ? "" : site.name))
       .labelSize(1.6)
       .labelDotRadius(isInteractive ? 2.4 : 0.7)
-      .labelAltitude(0.012)
+      .labelAltitude(SITE_DOT_ALTITUDE)
       .labelColor(() => (isInteractive ? "rgba(255, 200, 90, 0.95)" : "rgba(255, 255, 255, 0.92)"))
       .labelResolution(2)
       .onLabelHover((site) => setHoveredSite(site ?? null))
