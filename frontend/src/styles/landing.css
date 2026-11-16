@@ -33,6 +33,28 @@
 /* The weight in words, read like an instrument: Off / Low / Medium / High */
 .factor-slider-head output { font: 400 var(--text-label)/1 var(--font-mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-soft); }
 .factor-sidebar-note { font-size: var(--text-label); line-height: 1.5; color: var(--ink-soft); }
+/* Added factors can be taken out again; the five scored ones use Off instead */
+.factor-remove {
+  display: grid; place-items: center; flex: none; width: 24px; height: 24px; margin-right: -4px; padding: 0;
+  border: 0; border-radius: 50%; background: none; color: var(--ink-soft); cursor: pointer;
+  transition: color 160ms ease, background-color 160ms ease;
+}
+.factor-remove svg { width: 10px; height: 10px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; }
+@media (hover: hover) and (pointer: fine) {
+  .factor-remove:hover { color: var(--ink); background: rgb(255 255 255 / 0.1); }
+}
+/* "Add a factor": the other four measured factors, as a native select styled like a quiet button */
+.factor-add-select {
+  width: 100%; min-height: 40px; padding: 8px 36px 8px 12px; appearance: none; cursor: pointer;
+  border: 1px dashed rgb(255 255 255 / 0.3); border-radius: var(--radius-control); color: var(--ink);
+  font: 600 var(--text-small)/1.2 var(--font-display);
+  background: transparent url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%23FFFFFF' stroke-width='1.6'/%3E%3C/svg%3E") no-repeat right 12px center / 12px 8px;
+  transition: border-color 160ms ease;
+}
+.factor-add-select option { color: #000000; background: #FFFFFF; }
+@media (hover: hover) and (pointer: fine) {
+  .factor-add-select:hover { border-color: rgb(255 255 255 / 0.6); }
+}
 
 /* ---- Stage: input planet, transfer arc, output planets ---- */
 .workspace-stage {

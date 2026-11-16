@@ -40,6 +40,8 @@ export default function LandingPage() {
   // Sliders start from the Balanced preset; the preset picker was removed, so people only move the sliders.
   const presetId = presetsState.data?.default_preset ?? "balanced";
   const [weights, setWeights] = useState(null); // 0–100 per factor; null until presets load
+  // The factors with a slider: the five scored ones to start with; the other four can be added from the sidebar.
+  const [shownFactors, setShownFactors] = useState(SCORED_FACTORS);
   // Absolute or relative scoring; until a person picks one, the weights file's default.
   const [pickedMode, setPickedMode] = useState(null);
   const mode = pickedMode ?? (MODES.includes(presetsState.data?.default_mode) ? presetsState.data.default_mode : "absolute");
@@ -81,7 +83,7 @@ export default function LandingPage() {
   useEffect(() => {
     if (request && isSettled && failedBodies.length > 0 && canAutoRetry) setRequest((current) => ({ ...current, attempt: current.attempt + 1 }));
   }, [request, isSettled, failedBodies.length, canAutoRetry]);
-  const settingsKey = JSON.stringify([weights, targets, mode]);
+  const settingsKey = JSON.stringify([weights, shownFactors, targets, mode]);
   const isStale = Boolean(request) && (request.point !== point || request.inputBody !== inputBody || request.settingsKey !== settingsKey);
   const isShowingResult = (status === "done" || status === "failed") && !isStale;
 
@@ -115,6 +117,16 @@ export default function LandingPage() {
     }
   }
 
+  // An added factor joins the list in its usual place, at Medium so it counts straight away.
+  function showFactor(factor) {
+    setShownFactors((current) => FACTORS.filter((other) => current.includes(other) || other === factor));
+    setWeights((current) => ({ ...current, [factor]: STARTING_SLIDER_LEVEL }));
+  }
+
+  function hideFactor(factor) {
+    setShownFactors((current) => current.filter((shown) => shown !== factor));
+  }
+
   // Changing the mode reruns the search at once when a result is on screen; otherwise Compute uses it later.
   function changeMode(nextMode) {
     setPickedMode(nextMode);
@@ -135,12 +147,12 @@ export default function LandingPage() {
     const spot = typedPoint ? { lat: typedPoint.lat, lon: typedPoint.lon, name: null } : point;
     if (!spot || !weights) return;
     if (typedPoint) setPoint(spot);
-    // Only the five scored factors count; the other four are always 0.
-    const scoredWeights = Object.fromEntries(FACTORS.map((factor) => [factor, SCORED_FACTORS.includes(factor) ? weights[factor] / 100 : 0]));
+    // Only factors with a slider count; any factor not in the sidebar is 0.
+    const scoredWeights = Object.fromEntries(FACTORS.map((factor) => [factor, shownFactors.includes(factor) ? weights[factor] / 100 : 0]));
     setStartedAt(performance.now());
     // After a failure, Compute is a retry: a new attempt number reloads the files and restarts the search workers.
     const attempt = (request?.attempt ?? 0) + (status === "failed" ? 1 : 0);
-    setRequest({ point: spot, inputBody, targets, selection: { body: inputBody, lat: spot.lat, lon: spot.lon }, weights: scoredWeights, mode: nextMode, settingsKey: JSON.stringify([weights, targets, nextMode]), attempt, firstAttempt: attempt });
+    setRequest({ point: spot, inputBody, targets, selection: { body: inputBody, lat: spot.lat, lon: spot.lon }, weights: scoredWeights, mode: nextMode, settingsKey: JSON.stringify([weights, shownFactors, targets, nextMode]), attempt, firstAttempt: attempt });
   }
 
   // Notable sites on the input planet: the project's named sites plus well-known landmarks. Clicking one picks it.
@@ -165,8 +177,11 @@ export default function LandingPage() {
       <FactorSidebar
         weights={weights}
         mode={mode}
+        shownFactors={shownFactors}
         onChangeMode={changeMode}
         onChangeWeight={(factor, value) => setWeights((current) => ({ ...current, [factor]: value }))}
+        onShowFactor={showFactor}
+        onHideFactor={hideFactor}
       />
 
       <section className="workspace-stage" aria-label="Pick a spot, then compare">
@@ -239,7 +254,7 @@ export default function LandingPage() {
             <h2 id="similarity-results-title" className="similarity-results-title">
               {request.targets.length === 1 ? `Best match on ${IN_SENTENCE[request.targets[0]]}` : "Best match on each planet"}
             </h2>
-            <p className="similarity-results-lede">Scored on {joinWords(SCORED_FACTORS.map((factor) => FACTOR_SHORT_NAMES[factor]))}.</p>
+            <p className="similarity-results-lede">Scored on {joinWords(FACTORS.filter((factor) => request.weights[factor] > 0).map((factor) => FACTOR_SHORT_NAMES[factor]))}.</p>
           </header>
           <div className="similarity-cards">
             {request.targets.map((body) => (
