@@ -1,12 +1,13 @@
-// The nine factor scores as labelled bars, like the unit boxes in a geologic map legend. Numbers (and the real values
-// of the two places, when known) appear only when the Details panel is open, so the default view stays simple.
-import { FACTORS } from "../data/scoring.js";
+// The scored factors as labelled bars (the five in SCORED_FACTORS; the others count for nothing, so they are not drawn).
+// Numbers (and the real values of the two places, when known) appear only when the Details panel is open, so the
+// default view stays simple.
+import { SCORED_FACTORS } from "../data/scoring.js";
 import { FACTOR_LABELS, FACTOR_MEANINGS } from "../content/labels.js";
 
 export default function FactorBars({ breakdown, isShowingNumbers = false, isMineralogyEstimated = false, values = null, typicalFactors = [], tempNote = null }) {
   return (
     <dl className={isShowingNumbers ? "factor-bars is-detailed" : "factor-bars"}>
-      {FACTORS.map((factor) => {
+      {SCORED_FACTORS.map((factor) => {
         const value = breakdown?.[factor];
         const isEstimated = factor === "minerals" && isMineralogyEstimated;
         // A missing factor (no data on one of the two places) is left out of the score, which is not the same as 0.

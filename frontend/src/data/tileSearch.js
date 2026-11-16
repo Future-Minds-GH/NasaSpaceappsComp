@@ -1,6 +1,6 @@
 // Turns the search's raw numbers into result cards for any body: reads each body's tile list, picks the clicked
 // tile's vector, and builds each card (rank, novelty and tags on Earth, plain reasons, false-friend check).
-import { FACTORS, combineScore, heaviestFactor, isFalseFriend, scoreBand } from "./scoring.js";
+import { FACTORS, SCORED_FACTORS, combineScore, heaviestFactor, isFalseFriend, scoreBand } from "./scoring.js";
 import { rankTopRows } from "./ranking.js";
 import { baseCellOf, tileCenter, tileCount } from "./healpix.js";
 import { NULL_CODE } from "./similarity.js";
@@ -132,7 +132,8 @@ function realValues(layout, clicked, matchVector) {
  * the score each factor needs: { "slope": { "min": 0.7, "text": "Similar slopes" }, … }.
  */
 function plainReasons(breakdown, whyRules, typicalFactors = []) {
-  return FACTORS
+  // Only scored factors can be reasons: the others count for nothing in the score.
+  return SCORED_FACTORS
     // A factor with only a typical score (no data on the match) is never a reason.
     .filter((factor) => !typicalFactors.includes(factor))
     .filter((factor) => typeof breakdown[factor] === "number" && breakdown[factor] >= (whyRules?.[factor]?.min ?? DEFAULT_REASON_MIN))

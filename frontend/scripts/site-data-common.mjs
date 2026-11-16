@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url';
 import { baseCellOf, latLonToTile } from '../src/data/healpix.js';
 import { combineAll, readLayout, scoreAllEarthTiles } from '../src/data/similarity.js';
 import { BODY_RADIUS_KM } from '../src/data/ranking.js';
+import { keepScoredFactors } from '../src/data/scoring.js';
 import { clickedTileVector, readEarthTiles } from '../src/data/tileSearch.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -30,7 +31,8 @@ export function loadSiteData() {
   const schema = json('vectors/schema.json');
   const layout = readLayout(schema);
   const weightsFile = json('weights.json');
-  const presets = weightsFile.presets;
+  // The pages score only SCORED_FACTORS (scoring.js), so the precomputed lists use the same weights as the live search.
+  const presets = Object.fromEntries(Object.entries(weightsFile.presets).map(([id, preset]) => [id, { ...preset, weights: keepScoredFactors(preset.weights) }]));
   const earthLists = json('tiles/earth_meta.json');
   const bodyMeta = { moon: json('tiles/moon_meta.json'), mars: json('tiles/mars_meta.json') };
   const earthTiles = readEarthTiles({ meta: new Uint8Array(read('earth_meta.bin')), lists: earthLists }, schema.nside.earth);

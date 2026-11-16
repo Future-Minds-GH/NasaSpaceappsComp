@@ -1,5 +1,6 @@
 // The only place the site reads data. Every file comes from public/data/, so swapping Role 2's sample files for the
 // real ones needs no code change. Paths are built from Vite's BASE_URL so they also work under /<repo>/ on GitHub Pages.
+import { SCORED_FACTORS, keepScoredFactors } from "./scoring.js";
 
 const DATA_ROOT = `${import.meta.env.BASE_URL}data/`;
 
@@ -15,9 +16,26 @@ export function loadTargets() {
     .then((siteLists) => siteLists.flat());
 }
 
-/** Mission presets from Role 2's weights.json, the only source of weights: { factors, groups, default_preset, default_mode, presets }. */
+/**
+ * Mission presets from Role 2's weights.json, the only source of weights: { factors, groups, default_preset, default_mode,
+ * presets }. The site scores only SCORED_FACTORS, so every preset's other weights come back as 0 and the slider groups
+ * list only scored factors. Each preset keeps the file's own nine-factor weights as `published_weights`, so Discover can
+ * still recognise a list ranked with them; the lists in this repo (discoveries.json, characterize/sites.json) are built
+ * by scripts/make-*.mjs with the five-factor weights, like the live search.
+ */
 export function loadWeights() {
-  return fetchJson("weights.json");
+  return fetchJson("weights.json").then(withScoredFactorsOnly);
+}
+
+function withScoredFactorsOnly(weightsFile) {
+  const presets = Object.fromEntries(Object.entries(weightsFile.presets ?? {}).map(([presetId, preset]) => [
+    presetId,
+    { ...preset, weights: keepScoredFactors(preset.weights), published_weights: preset.weights },
+  ]));
+  const groups = weightsFile.groups && Object.fromEntries(Object.entries(weightsFile.groups)
+    .map(([group, factors]) => [group, factors.filter((factor) => SCORED_FACTORS.includes(factor))])
+    .filter(([, factors]) => factors.length > 0));
+  return { ...weightsFile, presets, groups };
 }
 
 /** Field layout of every tile vector (vectors/schema.json). */
