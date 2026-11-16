@@ -57,6 +57,13 @@ export const DEFAULT_GROUPS = {
 };
 export const GROUP_LABELS = { weather: "Weather", geology: "Ground" };
 
+/**
+ * The factors whose sliders show when the site opens: temperature, relative elevation and minerals.
+ * The other six (day-night swing, sunlight, slope, roughness, surface type, water ice) start hidden, count for nothing
+ * in the score, and come in from "+ Add a factor". Keep this in the order of FACTORS (data/scoring.js); a test checks it.
+ */
+export const DEFAULT_SHOWN_FACTORS = ["temp", "elev", "minerals"];
+
 export const ENVIRONMENT_LABELS = {
   desert: "Desert",
   polar: "Polar",
