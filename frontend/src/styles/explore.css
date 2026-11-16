@@ -37,8 +37,6 @@
 }
 .explore-sites .site-chip { background: rgb(255 255 255 / 0.08); color: #FFFFFF; border-color: rgb(255 255 255 / 0.25); }
 .explore-sites .site-chip[aria-pressed="true"] { background: #FFFFFF; color: #000000; border-color: #FFFFFF; }
-.explore-sites .cave-toggle { color: #FFFFFF; }
-.explore-sites .cave-toggle input { accent-color: #FFFFFF; }
 
 /* Results column: tabs for the two other bodies, then that body's matches */
 .explore-results { width: 100%; max-width: 1080px; margin: 0 auto; padding-inline: var(--gutter); display: grid; gap: 20px; }

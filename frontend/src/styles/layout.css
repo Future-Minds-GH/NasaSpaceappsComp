@@ -1,7 +1,7 @@
 /* Header height, shared with the one-screen landing workspace. */
 :root { --header-height: 52px; }
 
-/* Page frame shared by every route: skip link, header with mode navigation, page title block, footer. */
+/* Page frame shared by every route: skip link, header with mode navigation, page title block. */
 
 .skip-link { position: absolute; left: var(--gutter); top: -48px; padding: 8px 12px; background: var(--ink); color: var(--paper); z-index: 2000; }
 .skip-link:focus { top: 8px; }
@@ -15,16 +15,7 @@ main:focus { outline: none; }
   background: var(--space); color: var(--on-space);
 }
 .site-title { font-family: var(--font-display); font-weight: 800; font-size: 1.125rem; letter-spacing: -0.01em; text-decoration: none; }
-.site-nav { display: flex; flex-wrap: wrap; gap: 4px 20px; }
-.site-nav-link {
-  padding: 8px 0 6px; border-bottom: 3px solid transparent; text-decoration: none;
-  font-family: var(--font-display); font-weight: 600; font-size: 1.0625rem;
-}
-.site-nav-link[aria-current="page"] { border-bottom-color: var(--accent); }
 .site-header :focus-visible { outline-color: #FFFFFF; }
-@media (hover: hover) and (pointer: fine) {
-  .site-nav-link:not([aria-current="page"]):hover { border-bottom-color: var(--on-space-soft); }
-}
 
 /* Title block at the top of each mode page */
 .page { max-width: 1240px; margin: 0 auto; padding: 40px var(--gutter) 0; }
@@ -32,16 +23,3 @@ main:focus { outline: none; }
 .page-lede { margin-top: 12px; max-width: 62ch; font-size: 1.125rem; color: var(--ink-soft); }
 .section-heading { font-family: var(--font-display); font-size: 1.5rem; font-weight: 700; letter-spacing: -0.01em; }
 
-/* Black footer band, like NASA's, with the content kept in the page column */
-.site-footer {
-  margin-top: 80px; padding: 32px max(var(--gutter), calc((100% - 1240px) / 2 + var(--gutter))) 40px;
-  background: var(--space); color: var(--on-space-soft); font-size: 0.875rem; display: grid; gap: 8px;
-}
-.site-footer p { max-width: 80ch; }
-.site-footer a { color: var(--on-space); }
-.site-footer :focus-visible { outline-color: #FFFFFF; }
-.site-footer-lead { color: var(--on-space); font-family: var(--font-display); font-weight: 700; font-size: 1rem; }
-.sample-data-note { color: #FFBE2E; font-weight: 650; }
-/* The landing hero is already black down to the footer: no white gap, just a hairline between them */
-main:has(.workspace) + .site-footer { margin-top: 0; border-top: 1px solid rgb(255 255 255 / 0.14); }
-/* The footer (data credits) shows again below the results now that the page scrolls. */

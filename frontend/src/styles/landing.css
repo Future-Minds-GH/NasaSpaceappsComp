@@ -92,7 +92,6 @@
 .workspace-arrow.is-computing { color: var(--accent); }
 .workspace-arrow.is-computing .workspace-arrow-line { animation-duration: 0.35s; }
 .workspace-arrow.is-done { color: #8FD3AE; }
-.workspace-arrow-label { font-size: 0.75rem; color: var(--on-space-soft); }
 @keyframes arrow-flow { to { stroke-dashoffset: -18; } }
 
 /* ---- Compute bar ---- */
@@ -148,7 +147,6 @@
 .similarity-body { font-family: var(--font-display); font-weight: 700; font-size: 1.25rem; color: var(--body-color); display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; }
 .similarity-same { font-family: var(--font-mono); font-size: 0.6875rem; font-weight: 400; color: var(--ink-soft); }
 .similarity-place { font-family: var(--font-mono); font-size: 0.8125rem; color: var(--ink-soft); }
-.similarity-caption { font-size: 0.75rem; color: var(--ink-soft); margin-bottom: -4px; }
 .similarity-note { font-size: 0.8125rem; color: var(--warning); }
 .similarity-bars { list-style: none; display: grid; gap: 6px; }
 .similarity-bar { display: grid; grid-template-columns: 1fr 3rem; grid-template-rows: auto auto; column-gap: 8px; row-gap: 2px; align-items: center; font-size: 0.8125rem; }
@@ -172,7 +170,6 @@
 @media (max-width: 820px) {
   .workspace-stage { padding-inline: 12px; gap: 4px; }
   .workspace-arrow { width: 64px; }
-  .workspace-arrow-label { display: none; }
   .other-planet-globe { width: 32px; height: 32px; }
 }
 @media (max-width: 640px) {
@@ -225,7 +222,6 @@
 }
 @media (prefers-reduced-motion: reduce) { .target-globe { animation: none; } }
 
-
 /* ---- Coordinates: two compact readouts instead of one long mono string ---- */
 .coords { display: inline-flex; gap: 8px; font-family: var(--font-display); font-weight: 600; font-size: 0.875rem; letter-spacing: 0; color: inherit; white-space: nowrap; }
 .coord { display: inline-flex; align-items: baseline; gap: 2px; padding: 1px 7px; border-radius: 999px; background: rgb(255 255 255 / 0.08); font-variant-numeric: tabular-nums; }
@@ -262,7 +258,6 @@
 /* 2. Slider readouts are words; keep them in the display font */
 .factor-slider-head output { font-family: var(--font-display); font-weight: 600; font-size: 0.8125rem; min-width: 4.5ch; }
 
-
 /* 4. Result card: photo, summary, limits */
 .similarity-select { cursor: default; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 10px; width: 100%; }
 .similarity-photo { width: 64px; height: 64px; border-radius: 6px; overflow: hidden; background: var(--space); flex: none; }
@@ -278,7 +273,7 @@
 
 /* 8. Nothing under 12px */
 .coord-hemi, .similarity-same, .compute-from .eyebrow { font-size: 0.75rem; }
-.similarity-footer, .similarity-caption { font-size: 0.75rem; }
+.similarity-footer { font-size: 0.75rem; }
 
 /* 9. Less motion once a result is showing */
 .workspace:has(.similarity-results) .hovering-planet { animation: none; }
@@ -286,7 +281,6 @@
 /* Failed search: the bar stops where it got to and turns red */
 .compute-bar.is-failed .compute-progress-fill { background: #D83933; box-shadow: none; }
 .compute-bar.is-failed .compute-progress-label { color: #FF9A8F; }
-
 
 /* 11. Phones: a slim bar with just the progress and the button */
 @media (max-width: 640px) {

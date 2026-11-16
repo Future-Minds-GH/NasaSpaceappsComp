@@ -1,24 +1,11 @@
 /* Find mode, one column: pick a spot on the big map (or a featured site), then a grid of simple match cards. */
 
-.find-page { max-width: 1080px; margin: 0 auto; padding: 28px var(--gutter) 0; display: grid; gap: 32px; }
-
 /* Picker */
-.find-picker { display: grid; gap: 12px; }
-.find-picker-header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 24px; }
-.body-switch { display: inline-flex; gap: 2px; padding: 2px; border: 1px solid var(--rule); border-radius: var(--radius-control); }
-.body-switch-link { padding: 6px 16px; border-radius: 6px; font-weight: 700; text-decoration: none; }
-.body-switch-link[aria-current="page"].body-moon { background: var(--moon); color: #fff; }
-.body-switch-link[aria-current="page"].body-mars { background: var(--mars); color: #fff; }
-
-/* 2:1 like the equirectangular tiles, so the whole body fills the frame exactly */
-.body-map { width: 100%; aspect-ratio: 2 / 1; height: auto; margin-top: 4px; border-radius: var(--radius-frame); border: 1px solid var(--rule); cursor: crosshair; }
 .target-pin { fill: var(--paper); stroke: var(--ink); cursor: pointer; }
-.target-pin-cave { fill: var(--environment-cave); stroke: var(--paper); }
 .target-pin.is-selected { fill: var(--earth); stroke: #fff; }
 .target-pin-picked { fill: var(--focus); stroke: #fff; }
 .leaflet-tooltip { font-family: var(--font); font-weight: 650; }
 
-.featured-sites { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .site-chip {
   display: inline-flex; align-items: baseline; gap: 6px; min-height: 36px; padding: 6px 14px;
   border-radius: var(--radius-control); border: 1px solid var(--rule); background: var(--paper-raised); color: var(--ink);
@@ -26,9 +13,6 @@
 }
 .site-chip:active { transform: scale(0.97); }
 .site-chip[aria-pressed="true"] { background: var(--ink); color: var(--paper); border-color: var(--ink); }
-.site-chip-note { font-size: 0.8125rem; font-weight: 500; opacity: 0.75; }
-.cave-toggle { display: inline-flex; align-items: center; gap: 8px; margin-left: 4px; font-weight: 600; cursor: pointer; }
-.cave-toggle input { width: 18px; height: 18px; accent-color: var(--ink); }
 @media (hover: hover) and (pointer: fine) {
   .site-chip:not([aria-pressed="true"]):hover { border-color: var(--ink); }
 }
@@ -47,11 +31,6 @@
 .find-details { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); gap: 24px; padding: 16px; border: 1px solid var(--rule); border-radius: var(--radius-frame); background: var(--paper-raised); }
 .find-details-scoring { display: grid; gap: 14px; align-content: start; }
 .find-details-intro { font-size: 0.9375rem; color: var(--ink-soft); }
-.target-profile { display: grid; gap: 10px; align-content: start; }
-.target-profile-title { font-size: 1rem; font-weight: 750; }
-.profile-list { display: grid; gap: 6px; font-size: 0.875rem; }
-.profile-row { display: grid; grid-template-columns: 8rem 1fr; gap: 8px; }
-.profile-row dt { font-weight: 650; display: flex; align-items: baseline; }
 .weight-sliders { display: grid; gap: 6px; }
 .weight-row { display: grid; grid-template-columns: 7.5rem minmax(0, 1fr) 3rem; gap: 10px; align-items: center; font-size: 0.875rem; font-weight: 600; }
 .weight-row input[type="range"] { width: 100%; accent-color: var(--factor-color); }
@@ -71,10 +50,8 @@
 .match-name { font-family: var(--font-display); font-size: 1.125rem; font-weight: 700; line-height: 1.2; }
 .match-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; font-size: 0.875rem; color: var(--ink-soft); }
 .match-reasons { font-size: 0.9375rem; }
-.match-tags { font-size: 0.8125rem; color: var(--ink-soft); }
 .match-rank-pct { font-size: 0.8125rem; color: var(--ink-soft); }
 .match-compare { justify-self: start; margin-top: 4px; }
-.show-more { justify-self: center; }
 
 /* Compare dialog: centred modal, the two places at the same size side by side */
 .compare-dialog {
@@ -104,7 +81,6 @@
 
 @media (max-width: 640px) {
   .compare-pair { grid-template-columns: 1fr; }
-  .profile-row { grid-template-columns: 1fr; gap: 0; }
   .weight-row { grid-template-columns: 6.5rem minmax(0, 1fr) 2.75rem; }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -119,8 +95,6 @@
 .tile-profile-list { list-style: none; display: flex; flex-wrap: wrap; gap: 6px 8px; }
 .tile-profile-list li { padding: 3px 10px; border-radius: 999px; border: 1px solid var(--rule); font-size: 0.875rem; }
 
-/* The weights this ranking used, and the approximate-results note */
-.find-weights-used { font-size: 0.8125rem; color: var(--ink-soft); }
-.find-weights-used-label { font-weight: 700; color: var(--ink); }
+/* The approximate-results note */
 .find-approximate { padding: 10px 14px; border-left: 4px solid var(--warning); background: var(--paper-raised); border-radius: var(--radius-control); font-size: 0.9375rem; }
 .tile-profile-missing { margin-top: 8px; font-size: 0.9rem; color: var(--ink-soft, inherit); }
