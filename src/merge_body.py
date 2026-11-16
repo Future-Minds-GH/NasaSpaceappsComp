@@ -24,7 +24,6 @@ MIN = ["min_mafic", "min_feldspathic", "min_ironox", "min_sulfate", "min_clay", 
 CONTRACT = ["cell_id", "lat", "lon", "t_day_k", "t_night_k", "t_swing_k", "sun_wm2",
             "slope_deg", "rough_m", "elev_m", "elev_pct", "albedo", "ati",
             *SURF, *MIN, "ice_prob", "analog_ok", "cave_km"]
-HELPERS = ["ice_surface"]          # in a part file, not in the contract
 
 SPECS = {
     "moon": {

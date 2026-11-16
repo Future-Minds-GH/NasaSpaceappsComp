@@ -23,7 +23,7 @@ gaps, no double counting). A tile is scored only where analog_ok is true. Known 
 role "negative_control" do not count for the km field.
 
 Install:  pip install astropy-healpix pandas pyarrow numpy   (healpy also works but does not build on Windows)
-Usage:  python build_vectors.py earth.parquet --out web/public/data [--schema data/schema.json]
+Usage:  python build_vectors.py earth.parquet --out frontend/public/data [--schema data/schema.json]
                                 [--known-analogs known_analogs.json] [--natural-earth DIR]
   --natural-earth: folder with the Natural Earth admin-1 and admin-0 GeoJSON files (place names, see place_names.py).
   If the files are missing, tiles get no name and one warning is printed.
@@ -155,6 +155,8 @@ def control_rows(df, controls, nside=NSIDE, fields=None):
     fields = fields or load_schema()[1]
     df, cell, _, _, tiles, sub = scored_tiles(df, nside)
     out = np.full((len(controls), len(fields)), NULL, dtype="uint8")
+    # Each percentile field's scored values, sorted once for all controls.
+    ranked = {f["id"]: np.sort(sub[source_column(f)].dropna().to_numpy(dtype="float64")) for f in fields if f["kind"] == "percentile"}
     for i, c in enumerate(controls):
         row = min(int((90.0 - c["lat"]) // CELL), NROWS - 1)
         col = min(int((c["lon"] + 180.0) // CELL), NCOLS - 1)
@@ -163,11 +165,10 @@ def control_rows(df, controls, nside=NSIDE, fields=None):
             if f["kind"] != "percentile":
                 out[i, j] = to_byte(field_values(one, f))[0]
                 continue
-            x = one[source_column(f)].iloc[0]
-            valid = np.sort(sub[source_column(f)].dropna().to_numpy(dtype="float64"))
+            x, valid = one[source_column(f)].iloc[0], ranked[f["id"]]
             if not np.isnan(x):
-                below, equal = np.searchsorted(valid, x, "left"), np.searchsorted(valid, x, "right") - np.searchsorted(valid, x, "left")
-                out[i, j] = to_byte([(below + equal / 2) / valid.size])[0]
+                below, upto = np.searchsorted(valid, x, "left"), np.searchsorted(valid, x, "right")
+                out[i, j] = to_byte([(below + (upto - below) / 2) / valid.size])[0]
     return out
 
 

@@ -29,13 +29,13 @@ from build_vectors import DEFAULT_SCHEMA, NULL, fill_vectors, load_schema, neede
 NSIDE = {"earth": 256, "moon": 64, "mars": 128}
 CELL = 0.5
 NROWS, NCOLS = 360, 720
-REALITY_GAP = {  # same wording as frontend/scripts/sample-places.mjs
+REALITY_GAP = {
     "moon": ["Vacuum: no air at all", "Gravity 1/6 of Earth's", "Two-week days and two-week nights",
              "No shielding from cosmic radiation", "Sharp, unweathered dust"],
     "mars": ["Air 1% as thick as Earth's, mostly CO₂", "Gravity 38% of Earth's", "Strong surface radiation",
              "Toxic perchlorate salts in the soil", "Planet-wide dust storms"],
 }
-TREK = {  # same layers as trekImageUrl() in frontend/scripts/make-sample-data.mjs
+TREK = {
     "mars": ("Mars/EQ/THEMIS_DayIR_ControlledMosaics_100m_v2_oct2018", 9, "png"),
     "moon": ("Moon/EQ/LRO_WAC_Mosaic_Global_303ppd_v02", 8, "jpg"),
 }

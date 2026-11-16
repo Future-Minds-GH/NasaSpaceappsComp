@@ -7,8 +7,8 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { baseCellOf, latLonToTile } from '../src/data/healpix.js';
 import { combineAll, readLayout, scoreAllEarthTiles } from '../src/data/similarity.js';
-import { BODY_RADIUS_KM } from '../src/data/ranking.js';
-import { clickedTileVector, readEarthTiles } from '../src/data/tileSearch.js';
+import { distanceKm } from '../src/data/ranking.js';
+import { clickedTileVector, readEarthTiles, tileCentres } from '../src/data/tileSearch.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 export const DATA_DIR = join(HERE, '..', 'public', 'data');
@@ -16,12 +16,6 @@ export const NEW_MIN_KM = 300;   // scoring.js isNewAnalog
 
 const read = (path) => readFileSync(join(DATA_DIR, path));
 const json = (path) => JSON.parse(read(path));
-
-export function kmBetween(latA, lonA, latB, lonB) {
-  const toRadians = (degrees) => (degrees * Math.PI) / 180;
-  const h = Math.sin(toRadians(latB - latA) / 2) ** 2 + Math.cos(toRadians(latA)) * Math.cos(toRadians(latB)) * Math.sin(toRadians(lonB - lonA) / 2) ** 2;
-  return 2 * BODY_RADIUS_KM.earth * Math.asin(Math.sqrt(h));
-}
 
 export const round = (value, decimals) => (value === null || value === undefined || Number.isNaN(value) ? null : Math.round(value * 10 ** decimals) / 10 ** decimals);
 
@@ -36,8 +30,7 @@ export function loadSiteData() {
   const earthTiles = readEarthTiles({ meta: new Uint8Array(read('earth_meta.bin')), lists: earthLists }, schema.nside.earth);
   const earthVectors = new Uint8Array(read('vectors/earth.bin'));
   const rowByIndex = new Map(earthTiles.map((tile, row) => [tile.index, row]));
-  const lats = Float32Array.from(earthTiles, (tile) => tile.lat);
-  const lons = Float32Array.from(earthTiles, (tile) => tile.lon);
+  const { lats, lons } = tileCentres(earthTiles);
   const isSample = [weightsFile, earthLists, bodyMeta.moon, bodyMeta.mars].some((file) => file.sample !== false);
 
   /** A Moon or Mars site's tile bytes. Throws when the tile has no data. */
@@ -59,7 +52,7 @@ export function loadSiteData() {
 
   // The app's NEW rule: more than 300 km from every known Earth analog (the meta km field), checked again by distance.
   const isNew = Uint8Array.from(earthTiles, (tile, row) => (
-    tile.noveltyKm > NEW_MIN_KM && earthSites.every((site) => kmBetween(site.lat, site.lon, lats[row], lons[row]) > NEW_MIN_KM) ? 1 : 0
+    tile.noveltyKm > NEW_MIN_KM && earthSites.every((site) => distanceKm(site.lat, site.lon, lats[row], lons[row]) > NEW_MIN_KM) ? 1 : 0
   ));
 
   return { known, schema, layout, weightsFile, presets, earthSites, earthTiles, earthVectors, rowByIndex, lats, lons, targets, isNew, isSample };
