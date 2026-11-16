@@ -62,7 +62,7 @@ export default function FactorSidebar({ weights, groups = DEFAULT_GROUPS, mode, 
       {hiddenFactors.length > 0 && (
         <label className="factor-add-select">
           <span className="visually-hidden">Add a factor back</span>
-          <select value="" onChange={(event) => onShowFactor(event.target.value)}>
+          <select value="" disabled={!weights} onChange={(event) => onShowFactor(event.target.value)}>
             <option value="" disabled>+ Add a factor</option>
             {hiddenFactors.map((factor) => <option key={factor} value={factor}>{FACTOR_LABELS[factor]}</option>)}
           </select>
