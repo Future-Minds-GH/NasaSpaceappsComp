@@ -6,6 +6,8 @@ Pick a place on Earth, the Moon or Mars. The app finds the most similar places o
 
 **Live site:** https://future-minds-gh.github.io/NasaSpaceappsComp/
 
+**Pitch deck (PDF):** https://future-minds-gh.github.io/NasaSpaceappsComp/Common_Ground_NASA_Space_App.pdf
+
 > **Data status:** every file in `frontend/public/data/` is built from the real Earth, Moon and Mars tables. Accuracy check (absolute mode, About page): for 5 of 5 Moon and Mars targets a known Earth analog ranks in Earth's top 10%; 48 of the 50 top-10 matches are new places; 20 of 20 wrong-place checks (Amazon, Congo, Paris, Singapore) score red.
 
 ## How it works
