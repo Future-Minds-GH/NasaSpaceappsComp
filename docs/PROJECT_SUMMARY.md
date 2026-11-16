@@ -50,12 +50,12 @@ The Moon and Mars sources are listed in `moon_mars_sources.md`.
 ## Still open
 
 1. The demo recording (`docs/DEMO.md`).
-2. Role 3's model-check text (`frontend/public/data/model_check.md`) is still the sample. The About page hides it until it is real.
+2. Role 3's model-check text was never written; the placeholder and its About-page section were removed.
 3. The full data run is not reproducible from the repo alone: it needs an Earthdata login and the Colab notebooks in order.
 
 ## Known limits
 
-- Tolerances and weights are set by hand from `contract.md`, not learned from data.
+- Tolerances (`data/schema.json`) and weights are set by hand, not learned from data.
 - In Absolute mode, Moon and Mars scores are often low: in our data the warmest Mars night (197 K) is colder than the coldest Earth night (210 K).
 - `min_feldspathic` (the main lunar mineral class) has no field in the schema, so Moon mineral scores are weak.
 - Earth has no geology or atmosphere factor. Gravity, air and radiation are listed on each result as what Earth cannot reproduce.
