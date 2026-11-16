@@ -1,9 +1,9 @@
-// A 0–100 match score drawn as a ring that fills clockwise, with the number in the middle.
+// A 0–100 match score drawn as a thin ring that fills clockwise in the score band's colour, with the number in the middle.
 import { formatScore } from "../data/format.js";
 import { scoreBand } from "../data/scoring.js";
 import { BAND_LABELS } from "../content/labels.js";
 
-const STROKE_WIDTH = 6;
+const STROKE_WIDTH = 4;
 
 export default function ScoreRing({ score, size = 72, isPercent = false }) {
   const radius = (size - STROKE_WIDTH) / 2;

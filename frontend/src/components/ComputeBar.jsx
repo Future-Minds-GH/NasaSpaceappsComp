@@ -38,7 +38,7 @@ export default function ComputeBar({ inputBody, targetNames, point, status, star
       <p className="compute-summary">
         <span className="compute-from">
           <span className="eyebrow">From</span>
-          <strong>{BODY_NAMES[inputBody]}</strong> {point ? <Coordinates lat={point.lat} lon={point.lon} /> : "· pick a spot"}
+          <strong>{BODY_NAMES[inputBody]}</strong> {point ? <Coordinates lat={point.lat} lon={point.lon} /> : <span className="compute-pending">Pick a spot on the globe</span>}
         </span>
         <span className="compute-to" aria-hidden="true">→</span>
         <span className="compute-from">

@@ -1,44 +1,59 @@
-/* Design tokens and shared building blocks (buttons, segmented controls, tags, badges, score ring, factor bars).
-   Look: NASA's public web design language (nasa.gov, built on the U.S. Web Design System): a black header bar,
-   white pages, black space stages, Inter headings over Public Sans text, DM Mono for tracked labels and readouts,
-   red primary actions and square-cornered image frames. No NASA logo or name as branding: this is a Space Apps
-   entry, not an agency site. Mars rust, Moon slate and Earth green still mark which body a thing belongs to. */
+/* Design tokens and the building blocks every page shares: buttons, chips, segmented controls, sliders, tags, badges,
+   the score ring, factor bars and the NASA-style stat readout.
+   Look: NASA's public web design language (nasa.gov, science.nasa.gov). Black bars and space stages, #17171B dark
+   bands, white reading pages, Inter for headings and controls, Public Sans for reading, DM Mono for tracked labels and
+   number readouts, and NASA red (#D83933) for the one main action on a screen. Hairlines and space separate things;
+   boxes are rare. No NASA logo or name as branding: this is a Space Apps entry, not an agency site. */
 
 :root {
+  /* Reading pages (light theme) */
   --paper: #FFFFFF;
-  --paper-raised: #F6F6F6;
+  --paper-raised: #F4F5F6;
   --ink: #1B1B1B;
   --ink-soft: #565C65;
   --rule: #DFE1E2;
+  --rule-soft: #EDEFF0;
+
+  /* Space: the black bars, stages and bands. The same in both themes. */
   --space: #000000;
-  --space-raised: #17171B;
+  --space-band: #17171B;
+  --space-raised: #222227;
   --on-space: #FFFFFF;
-  --on-space-soft: #B8B8BC;
-  /* Primary action red, its pressed/hover shade, and the deep blue used for highlighted bands */
+  --on-space-soft: #B4B4BB;
+  --rule-on-space: rgb(255 255 255 / 0.14);
+
+  /* NASA red for the one primary action; blue for links, focus and big number readouts */
   --accent: #D83933;
-  --accent-strong: #AF1108;
-  --deep-blue: #0B3D91;
-  --mars: #A4492A;
-  --moon: #4E5C6B;
-  --earth: #2F6B4F;
-  --focus: #005EA2;
-  --warning: #9A5B00;
+  --accent-strong: #B51D17;
+  --nasa-blue: #0B3D91;
+  --link: #005EA2;
+  --focus: #2378C3;
+  --stat: #1A6FD8;
+  --warning: #8F5A00;
 
-  /* One swatch per factor, like geologic map units. Labels always sit beside them, so colour is never the only cue. */
-  --factor-temp: #D9A82E;
-  --factor-swing: #E0803A;
-  --factor-sun: #E8C547;
-  --factor-slope: #C49A55;
-  --factor-rough: #A57A4A;
-  --factor-elev: #7C8F4E;
-  --factor-surface: #8A5D96;
-  --factor-minerals: #C2604A;
-  --factor-ice: #3F86C1;
+  /* Which world a thing belongs to */
+  --earth: #2F7D55;
+  --moon: #5A6878;
+  --mars: #B4532F;
 
-  /* Score bands: green from 90, yellow from 60, else red. */
+  /* Score bands: green from 90, yellow from 60, red below. Fills, and text versions that stay readable on the page. */
   --band-green: #2E8540;
   --band-yellow: #D9A400;
   --band-red: #D83933;
+  --band-green-ink: #216E33;
+  --band-yellow-ink: #8A5F00;
+  --band-red-ink: #B51D17;
+
+  /* One colour per scored factor, so a slider and its bars read as the same thing. Labels always sit beside them. */
+  --factor-temp: #E2A93B;
+  --factor-swing: #E0803A;
+  --factor-sun: #E8C547;
+  --factor-slope: #C9935A;
+  --factor-rough: #A3785A;
+  --factor-elev: #7C8F4E;
+  --factor-surface: #8A5D96;
+  --factor-minerals: #D0674F;
+  --factor-ice: #4A9BE0;
 
   --environment-desert: #C8A464;
   --environment-arid: #B07A4F;
@@ -49,65 +64,90 @@
   --font: "Public Sans", "Helvetica Neue", Arial, sans-serif;
   --font-display: "Inter", "Helvetica Neue", Arial, sans-serif;
   --font-mono: "DM Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
-  --gutter: 16px;
-  --radius-control: 4px;
+
+  /* Type scale: big, tight NASA headlines over calm 16-19px reading text */
+  --text-hero: clamp(2.5rem, 1.4rem + 4vw, 4.5rem);
+  --text-page: clamp(2.25rem, 1.5rem + 2.6vw, 3.5rem);
+  --text-h2: clamp(1.5rem, 1.2rem + 1vw, 2rem);
+  --text-h3: 1.25rem;
+  --text-lede: 1.1875rem;
+  --text-small: 0.875rem;
+  --text-label: 0.75rem;
+
+  --gutter: clamp(16px, 3vw, 32px);
+  --content-width: 1240px;
+  --radius-control: 2px;
+  --radius-pill: 999px;
   --radius-frame: 0;
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
-  --rule-soft: color-mix(in srgb, var(--rule) 55%, transparent);
+  --header-height: 64px;
   color-scheme: light;
 }
 
+/* Dark reading pages follow the system setting. .theme-space turns any always-dark area (the workspace, a stage) to the
+   same values, so shared components inside it read correctly on black whatever the system theme. */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --paper: #17171B; --paper-raised: #2E2E32; --ink: #F6F6F6; --ink-soft: #B8B8BC; --rule: #4E4E52;
-    --space-raised: #2E2E32;
-    --mars: #D9744F; --moon: #9FB0C2; --earth: #63B08A; --focus: #73B3E7; --warning: #E0A345;
+    --paper: #17171B; --paper-raised: #222227; --ink: #F6F6F6; --ink-soft: #B4B4BB; --rule: #3A3A41; --rule-soft: #2A2A30;
+    --link: #73B3E7; --focus: #73B3E7; --stat: #288BFF; --warning: #F2B33D;
+    --earth: #63B08A; --moon: #A9B7C6; --mars: #E07B55;
+    --band-green: #4DB869; --band-yellow: #E8B931; --band-red: #F0625C;
+    --band-green-ink: #6FCB86; --band-yellow-ink: #F2C94C; --band-red-ink: #FF8A84;
     --environment-volcanic: #8C7A72; --environment-cave: #8A86A8;
     color-scheme: dark;
   }
 }
-:root[data-theme="dark"] {
-  --paper: #17171B; --paper-raised: #2E2E32; --ink: #F6F6F6; --ink-soft: #B8B8BC; --rule: #4E4E52;
-  --space-raised: #2E2E32;
-  --mars: #D9744F; --moon: #9FB0C2; --earth: #63B08A; --focus: #73B3E7; --warning: #E0A345;
+:root[data-theme="dark"],
+.theme-space {
+  --paper: #17171B; --paper-raised: #222227; --ink: #F6F6F6; --ink-soft: #B4B4BB; --rule: #3A3A41; --rule-soft: #2A2A30;
+  --link: #73B3E7; --focus: #73B3E7; --stat: #288BFF; --warning: #F2B33D;
+  --earth: #63B08A; --moon: #A9B7C6; --mars: #E07B55;
+  --band-green: #4DB869; --band-yellow: #E8B931; --band-red: #F0625C;
+  --band-green-ink: #6FCB86; --band-yellow-ink: #F2C94C; --band-red-ink: #FF8A84;
   --environment-volcanic: #8C7A72; --environment-cave: #8A86A8;
   color-scheme: dark;
 }
+.theme-space { color: var(--ink); }
 
 *, *::before, *::after { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
 body {
   margin: 0; background: var(--paper); color: var(--ink);
-  font-family: var(--font); font-size: 1rem; line-height: 1.5; font-variant-numeric: tabular-nums;
-  overflow-x: hidden;
+  font-family: var(--font); font-size: 1rem; line-height: 1.6; font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased; overflow-x: hidden;
 }
-h1, h2, h3, h4 { margin: 0; line-height: 1.15; font-weight: 700; font-family: var(--font-display); letter-spacing: -0.01em; }
+h1, h2, h3, h4 { margin: 0; line-height: 1.15; font-weight: 700; font-family: var(--font-display); letter-spacing: -0.015em; text-wrap: balance; }
 p, ul, ol, dl, dd, figure { margin: 0; }
 ul, ol { padding: 0; }
-a { color: inherit; }
+a { color: inherit; text-underline-offset: 3px; }
 img { max-width: 100%; display: block; }
 :focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
 [hidden] { display: none !important; }
 .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
 
-/* Buttons: one primary, one quiet. Pressing scales slightly so the page feels like it heard you. */
+/* ---- Buttons: one red primary per screen, an outline secondary, a light quiet one. Pressing scales slightly. ---- */
 .button {
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-  min-height: 44px; padding: 10px 18px; border-radius: var(--radius-control);
-  font: inherit; font-family: var(--font-display); font-weight: 700; text-decoration: none; cursor: pointer;
+  min-height: 44px; padding: 10px 20px; border-radius: var(--radius-control);
+  font: 600 0.9375rem/1.2 var(--font-display); letter-spacing: 0; text-decoration: none; white-space: nowrap; cursor: pointer;
   border: 1px solid var(--ink); background: transparent; color: var(--ink);
   transition: transform 140ms var(--ease-out), background-color 160ms ease, color 160ms ease, border-color 160ms ease;
 }
 .button:active:not(:disabled) { transform: scale(0.97); }
 .button:disabled { opacity: 0.45; cursor: not-allowed; }
-.button-primary { background: var(--accent); border-color: var(--accent); color: #FFFFFF; }
-.button-quiet { min-height: 36px; padding: 6px 12px; font-weight: 600; border-color: var(--rule); }
+.button-primary { background: var(--accent); border-color: var(--accent); color: #FFFFFF; font-weight: 700; }
+.button-quiet { min-height: 36px; padding: 6px 14px; border-color: var(--rule); font-size: var(--text-small); }
+/* Outline button for black backgrounds */
+.button-on-space { border-color: var(--on-space); color: var(--on-space); }
 @media (hover: hover) and (pointer: fine) {
+  .button:hover:not(:disabled) { background: color-mix(in srgb, var(--ink) 7%, transparent); }
   .button-primary:hover:not(:disabled) { background: var(--accent-strong); border-color: var(--accent-strong); }
-  .button-quiet:hover:not(:disabled) { border-color: var(--ink); }
+  .button-quiet:hover:not(:disabled) { border-color: var(--ink); background: transparent; }
+  .button-on-space:hover:not(:disabled) { background: var(--on-space); color: var(--space); }
 }
 
-/* Text link that ends in a small red arrow disc, the way NASA pages mark "go somewhere" links */
+/* Text link ending in NASA's small red arrow disc: "go somewhere" */
 .arrow-link {
   display: inline-flex; align-items: center; gap: 8px; font-family: var(--font-display); font-weight: 700;
   text-decoration: none; color: inherit;
@@ -118,127 +158,176 @@ img { max-width: 100%; display: block; }
   transition: transform 160ms var(--ease-out);
 }
 @media (hover: hover) and (pointer: fine) {
-  .arrow-link:hover { text-decoration: underline; text-underline-offset: 4px; }
+  .arrow-link:hover { text-decoration: underline; }
   .arrow-link:hover::after { transform: translateX(3px); }
 }
 
-/* Small tracked monospace label, NASA's "eyebrow" over a heading or a value */
-.eyebrow { font-family: var(--font-mono); font-size: 0.75rem; font-weight: 400; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink-soft); }
+/* NASA's tracked mono eyebrow. Used sparingly: over a stage label or a stat, never over every heading. */
+.eyebrow { font-family: var(--font-mono); font-size: var(--text-label); font-weight: 400; letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink-soft); }
 
-/* Small label above a control group. Sentence case on purpose, not tracked capitals. */
+/* Label above a control group: sentence case, small and quiet */
 .control-label {
   display: block; margin-bottom: 8px; padding: 0;
-  font-family: var(--font-mono); font-size: 0.75rem; font-weight: 400; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-soft);
+  font: 600 var(--text-small)/1.4 var(--font-display); color: var(--ink-soft);
 }
-fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
 
-/* Segmented control on real radio inputs, so arrow keys work natively */
-.segmented { display: inline-flex; flex-wrap: wrap; border: 1px solid var(--rule); border-radius: var(--radius-control); padding: 2px; gap: 2px; }
+/* ---- Segmented control on real radio inputs, so arrow keys work natively ---- */
+.segmented { display: inline-flex; flex-wrap: wrap; gap: 2px; padding: 3px; border: 1px solid var(--rule); border-radius: var(--radius-control); background: var(--paper); }
 .segmented-option { position: relative; }
 .segmented-option input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; }
-.segmented-option span { display: block; padding: 6px 12px; border-radius: 2px; font-family: var(--font-display); font-weight: 600; font-size: 0.9375rem; }
+.segmented-option span {
+  display: block; padding: 6px 14px; border-radius: 1px;
+  font: 600 var(--text-small)/1.3 var(--font-display); color: var(--ink-soft);
+  transition: background-color 160ms ease, color 160ms ease;
+}
 .segmented-option input:checked + span { background: var(--ink); color: var(--paper); }
 .segmented-option input:focus-visible + span { outline: 3px solid var(--focus); outline-offset: 1px; }
+@media (hover: hover) and (pointer: fine) {
+  .segmented-option input:not(:checked):hover + span { color: var(--ink); }
+}
 
-/* Native selects and inputs, matched to the buttons */
+/* Absolute / Relative: a two-way segmented control and the one sentence for the chosen mode */
+.mode-toggle { display: grid; gap: 8px; }
+.mode-toggle .segmented { display: grid; grid-template-columns: 1fr 1fr; }
+.mode-toggle .segmented-option span { text-align: center; }
+.mode-toggle-sentence { font-size: var(--text-small); line-height: 1.5; color: var(--ink-soft); }
+
+/* Native selects and text inputs, matched to the buttons */
 .select, .text-input {
-  min-height: 40px; padding: 6px 10px; border: 1px solid var(--rule); border-radius: var(--radius-control);
-  background: var(--paper-raised); color: var(--ink); font: inherit;
+  min-height: 44px; padding: 8px 12px; border: 1px solid var(--rule); border-radius: var(--radius-control);
+  background: var(--paper); color: var(--ink); font: inherit;
+}
+.select:focus-visible, .text-input:focus-visible { outline-offset: 0; }
+
+/* ---- Pill chips: named sites, famous places, filters. Pressed = filled. ---- */
+.chip {
+  display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 6px 14px;
+  border: 1px solid var(--rule); border-radius: var(--radius-pill); background: transparent; color: var(--ink);
+  font: 600 var(--text-small)/1.2 var(--font-display); text-decoration: none; cursor: pointer;
+  transition: transform 140ms var(--ease-out), border-color 160ms ease, background-color 160ms ease, color 160ms ease;
+}
+.chip:active { transform: scale(0.97); }
+.chip[aria-pressed="true"], .chip[aria-current="page"] { background: var(--ink); border-color: var(--ink); color: var(--paper); }
+@media (hover: hover) and (pointer: fine) {
+  .chip:not([aria-pressed="true"]):hover { border-color: var(--ink); }
 }
 
-/* Legend swatch, like a map unit box */
-.factor-swatch { display: inline-block; width: 14px; height: 10px; margin-right: 8px; border-radius: 3px; background: var(--factor-color); }
+/* ---- Range slider: a thin track filled in the factor's colour up to the thumb (--fill, set by the component) ---- */
+.range {
+  -webkit-appearance: none; appearance: none; width: 100%; height: 24px; margin: 0; background: transparent; cursor: pointer;
+  --range-color: var(--factor-color, var(--ink));
+}
+.range::-webkit-slider-runnable-track {
+  height: 4px; border-radius: 2px;
+  background: linear-gradient(to right, var(--range-color) var(--fill, 0%), var(--rule) var(--fill, 0%));
+}
+.range::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none; width: 16px; height: 16px; margin-top: -6px; border-radius: 50%;
+  background: #FFFFFF; border: 2px solid var(--range-color); box-shadow: 0 1px 3px rgb(0 0 0 / 0.35);
+  transition: transform 120ms var(--ease-out);
+}
+.range:active::-webkit-slider-thumb { transform: scale(1.15); }
+.range::-moz-range-track { height: 4px; border-radius: 2px; background: var(--rule); }
+.range::-moz-range-progress { height: 4px; border-radius: 2px; background: var(--range-color); }
+.range::-moz-range-thumb { width: 12px; height: 12px; border-radius: 50%; background: #FFFFFF; border: 2px solid var(--range-color); box-shadow: 0 1px 3px rgb(0 0 0 / 0.35); }
+.range:focus-visible { outline: none; }
+.range:focus-visible::-webkit-slider-thumb { outline: 3px solid var(--focus); outline-offset: 2px; }
+.range:focus-visible::-moz-range-thumb { outline: 3px solid var(--focus); outline-offset: 2px; }
+.range:disabled { cursor: default; opacity: 0.5; }
 
-/* Environment tag: a unit box plus the word */
+/* ---- NASA "mission status" readout: a big mono number over its label ---- */
+.stat { display: grid; gap: 6px; }
+.stat-value {
+  font-family: var(--font-mono); font-weight: 400; font-size: clamp(2rem, 1.6rem + 1.6vw, 2.75rem); line-height: 1;
+  letter-spacing: -0.03em; color: var(--stat); font-variant-numeric: tabular-nums;
+}
+.stat-label { font: 600 var(--text-small)/1.3 var(--font-display); color: var(--ink); }
+
+/* Legend swatch: a small dot in the factor's colour */
+.factor-swatch { display: inline-block; flex: none; width: 10px; height: 10px; margin-right: 8px; border-radius: 50%; background: var(--factor-color); }
+
+/* Environment tag: a dot plus the word */
 .environment-tag {
-  display: inline-flex; align-items: center; gap: 6px; padding: 2px 8px 2px 6px;
-  border: 1px solid var(--rule); border-radius: 999px; font-size: 0.8125rem; font-weight: 650;
+  display: inline-flex; align-items: center; gap: 6px; padding: 2px 10px 2px 8px;
+  border: 1px solid var(--rule); border-radius: var(--radius-pill); font: 600 0.8125rem/1.4 var(--font-display);
 }
-.environment-tag::before { content: ""; width: 10px; height: 10px; border-radius: 2px; background: var(--environment-color, var(--ink-soft)); }
+.environment-tag::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--environment-color, var(--ink-soft)); }
 .environment-desert { --environment-color: var(--environment-desert); }
 .environment-arid { --environment-color: var(--environment-arid); }
 .environment-polar { --environment-color: var(--environment-polar); }
 .environment-volcanic { --environment-color: var(--environment-volcanic); }
 .environment-cave { --environment-color: var(--environment-cave); }
 
-/* Badges carry their own explanation, so they read without hovering */
+/* Badges carry their own explanation, so they read without hovering: a coloured rule, the word, then why */
 .site-badges { list-style: none; display: grid; gap: 6px; }
-.badge { display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: baseline; padding: 6px 10px; border-radius: var(--radius-control); font-size: 0.875rem; border-left: 4px solid; background: var(--paper-raised); }
-.badge strong { font-weight: 750; }
+.badge { display: flex; flex-wrap: wrap; gap: 2px 8px; align-items: baseline; padding: 2px 0 2px 12px; font-size: var(--text-small); border-left: 3px solid; }
+.badge strong { font-family: var(--font-display); font-weight: 700; }
 .badge span { color: var(--ink-soft); }
 .badge-new { border-color: var(--earth); }
 .badge-new strong { color: var(--earth); }
 .badge-false-friend { border-color: var(--warning); }
 .badge-false-friend strong { color: var(--warning); }
 
-/* Score ring */
+/* ---- Score ring: a thin ring in the score band's colour around a mono number ---- */
 .score-ring { position: relative; flex: none; display: grid; place-items: center; }
 .score-ring svg { position: absolute; inset: 0; }
-.score-ring-track { fill: none; stroke: var(--rule-soft); }
-.score-ring-fill { fill: none; stroke: var(--focus); stroke-linecap: round; }
+.score-ring-track { fill: none; stroke: var(--rule); }
+.score-ring-fill { fill: none; stroke: var(--stat); stroke-linecap: round; }
 .score-ring.band-green .score-ring-fill { stroke: var(--band-green); }
 .score-ring.band-yellow .score-ring-fill { stroke: var(--band-yellow); }
 .score-ring.band-red .score-ring-fill { stroke: var(--band-red); }
-.band-text { font-size: 0.75rem; font-weight: 700; }
-.band-text.band-green { color: var(--band-green); }
-.band-text.band-yellow { color: var(--warning); }
-.band-text.band-red { color: var(--band-red); }
-/* Absolute / Relative choice: two radio rows, each with its one-sentence meaning */
-.mode-toggle { display: grid; gap: 6px; border: 0; padding: 0; margin: 0 0 12px; min-width: 0; }
-.mode-toggle-option { display: grid; grid-template-columns: auto 1fr; gap: 2px 8px; align-items: start; font-size: 0.8125rem; cursor: pointer; }
-.mode-toggle-option input { grid-row: 1 / span 2; margin-top: 3px; }
-.mode-toggle-option strong { font-size: 0.875rem; }
-.mode-toggle-option span { color: var(--ink-soft); }
-.factor-group { margin: 8px 0 0; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-soft); }
-.factor-real-value { display: block; font-size: 0.75rem; font-weight: 400; color: var(--ink-soft); }
-.score-ring-number { position: relative; font-family: var(--font-mono); font-weight: 500; font-size: 1.25rem; letter-spacing: -0.02em; }
+.score-ring-number { position: relative; font-family: var(--font-mono); font-weight: 500; font-size: 1.125rem; letter-spacing: -0.03em; }
+.score-ring-percent { font-size: 0.6em; margin-left: 1px; opacity: 0.7; }
+.band-text { font: 700 var(--text-label)/1.3 var(--font-display); }
+.band-text.band-green { color: var(--band-green-ink); }
+.band-text.band-yellow { color: var(--band-yellow-ink); }
+.band-text.band-red { color: var(--band-red-ink); }
 
-/* Factor bars: map-legend rows; numbers and meanings appear in the Details view */
-.factor-bars { display: grid; gap: 4px; }
-.factor-row { display: grid; grid-template-columns: minmax(7.5rem, 34%) 1fr; gap: 10px; align-items: center; font-size: 0.875rem; }
-.factor-name { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 6px; font-weight: 600; }
-.factor-meaning { flex-basis: 100%; font-weight: 400; color: var(--ink-soft); font-size: 0.8125rem; }
-.factor-estimated { font-size: 0.75rem; font-weight: 600; color: var(--warning); }
-.factor-value { display: flex; align-items: center; gap: 8px; }
-.factor-bar { flex: 1; height: 10px; border-radius: 3px; background: var(--rule-soft); overflow: hidden; }
+/* ---- Factor bars: one labelled row per scored factor; numbers and meanings show in the Details view ---- */
+.factor-bars { display: grid; gap: 8px; }
+.factor-row { display: grid; grid-template-columns: minmax(7.5rem, 36%) 1fr; gap: 12px; align-items: center; font-size: var(--text-small); }
+.factor-name { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; font-family: var(--font-display); font-weight: 600; }
+.factor-meaning { flex-basis: 100%; font-family: var(--font); font-weight: 400; color: var(--ink-soft); font-size: 0.8125rem; }
+.factor-real-value { display: block; flex-basis: 100%; font-family: var(--font); font-size: var(--text-label); font-weight: 400; color: var(--ink-soft); }
+.factor-estimated { font-size: var(--text-label); font-weight: 600; color: var(--warning); }
+.factor-value { display: flex; align-items: center; gap: 10px; }
+.factor-bar { flex: 1; height: 6px; border-radius: 3px; background: var(--rule-soft); overflow: hidden; }
 .factor-bar-fill { display: block; height: 100%; background: var(--factor-color); border-radius: 3px; }
-/* Estimated values are hatched, the convention for inferred units on a geologic map */
+/* Estimated values are hatched, the map convention for inferred units */
 .factor-bar.is-estimated .factor-bar-fill {
   background: repeating-linear-gradient(135deg, var(--factor-color) 0 4px, color-mix(in srgb, var(--factor-color) 45%, transparent) 4px 8px);
 }
-.factor-number { width: 2.5rem; text-align: right; font-family: var(--font-mono); font-weight: 500; }
+.factor-number { width: 2.75rem; text-align: right; font-family: var(--font-mono); font-weight: 500; }
 .factor-not-scored { color: var(--ink-soft); font-size: 0.8125rem; font-style: italic; }
+.factor-group { margin: 12px 0 0; font: 600 var(--text-label)/1.3 var(--font-display); color: var(--ink-soft); }
+
+/* ---- "Weight the criteria" (Explore and Discover): a quiet raised panel of sliders, two columns when wide ---- */
+.weight-panel { display: grid; gap: 12px; padding: 20px; background: var(--paper-raised); border-radius: var(--radius-frame); }
+.weight-panel-intro { font-size: 0.9375rem; color: var(--ink-soft); max-width: 75ch; }
+.weight-panel-intro strong { color: var(--ink); font-family: var(--font-display); }
+.weight-sliders { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 4px 40px; }
+.weight-sliders > .control-label, .weight-sliders > legend { grid-column: 1 / -1; }
+.weight-sliders > .button { grid-column: 1 / -1; justify-self: start; margin-top: 8px; }
+.weight-row { display: grid; grid-template-columns: minmax(8.5rem, 11rem) minmax(0, 1fr) 3rem; gap: 12px; align-items: center; min-height: 36px; }
+.weight-row label { display: flex; align-items: center; font: 600 var(--text-small)/1.3 var(--font-display); }
+.weight-row output { text-align: right; font-family: var(--font-mono); font-size: var(--text-small); color: var(--ink-soft); }
+@media (max-width: 480px) {
+  .weight-row { grid-template-columns: 7.5rem minmax(0, 1fr) 2.75rem; }
+}
 
 /* Loading, empty and error messages inside a page */
-.page-message { padding: 32px var(--gutter); color: var(--ink-soft); max-width: 60ch; }
+.page-message { padding: 32px 0; color: var(--ink-soft); max-width: 60ch; }
 .page-message[role="alert"] { color: var(--ink); }
+.page-loading { padding: 48px var(--gutter); color: var(--ink-soft); }
 
-/* Leaflet: our font, a dark backdrop behind tiles, and pins styled from tokens */
+/* Leaflet: our font, a black backdrop behind tiles */
 .leaflet-container { font-family: var(--font); background: var(--space); }
 .leaflet-container .leaflet-control-attribution { font-size: 0.6875rem; }
 
 @media (prefers-reduced-motion: reduce) {
-  .button { transition: background-color 160ms ease, color 160ms ease, border-color 160ms ease; }
-  .button:active:not(:disabled) { transform: none; }
+  .button, .chip { transition: background-color 160ms ease, color 160ms ease, border-color 160ms ease; }
+  .button:active:not(:disabled), .chip:active { transform: none; }
   .arrow-link::after, .arrow-link:hover::after { transition: none; transform: none; }
-}
-
-/* "Weight the criteria": the nine sliders, always on show under the mission type (Explore and Discover).
-   Two columns on wide screens keep the panel short; the reset button spans both. */
-.weight-panel { display: grid; gap: 10px; padding: 14px 16px; border: 1px solid var(--rule); border-radius: var(--radius-frame); background: var(--paper-raised); }
-.weight-panel-intro { font-size: 0.9375rem; color: var(--ink-soft); max-width: 75ch; }
-.weight-panel-intro strong { color: var(--ink); }
-.weight-panel .weight-sliders { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); gap: 6px 32px; }
-.weight-panel .weight-sliders > .button { grid-column: 1 / -1; justify-self: start; }
-.weight-panel .weight-row { display: grid; grid-template-columns: 9.5rem minmax(0, 1fr) 3rem; gap: 10px; align-items: center; font-size: 0.875rem; font-weight: 600; }
-.weight-panel .weight-row input[type="range"] { width: 100%; accent-color: var(--factor-color); }
-.weight-panel .weight-row output { text-align: right; font-variant-numeric: tabular-nums; }
-@media (max-width: 480px) {
-  .weight-panel .weight-row { grid-template-columns: 7rem minmax(0, 1fr) 2.75rem; }
-}
-
-/* Outline button for black backgrounds (the landing hero) */
-.button-on-space { border-color: var(--on-space); color: var(--on-space); }
-@media (hover: hover) and (pointer: fine) {
-  .button-on-space:hover:not(:disabled) { background: var(--on-space); color: var(--space); }
+  .range::-webkit-slider-thumb { transition: none; }
+  .range:active::-webkit-slider-thumb { transform: none; }
 }
