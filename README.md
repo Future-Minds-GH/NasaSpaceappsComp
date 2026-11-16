@@ -1,4 +1,4 @@
-# Terrestrial Analog Finder
+# Common Ground
 
 NASA Space Apps Challenge 2026: *Identify Earth Locations that Analog the Permanent Moon Base Locations and Mars*.
 

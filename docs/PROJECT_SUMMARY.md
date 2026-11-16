@@ -1,6 +1,6 @@
 # Project summary
 
-Terrestrial Analog Finder. NASA Space Apps Challenge 2026: *Identify Earth Locations that Analog the Permanent Moon Base Locations and Mars*. Status as of 15 Nov 2026.
+Common Ground. NASA Space Apps Challenge 2026: *Identify Earth Locations that Analog the Permanent Moon Base Locations and Mars*. Status as of 15 Nov 2026.
 
 ## What it is
 
