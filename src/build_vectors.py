@@ -87,10 +87,11 @@ def tile_cell_ids(nside=NSIDE):
 def to_byte(x, scale=254):
     """0-1 array (NaN = missing) to uint8. Missing -> 255."""
     x = np.asarray(x, dtype="float64")
-    assert np.all((x[~np.isnan(x)] >= -1e-6) & (x[~np.isnan(x)] <= 1 + 1e-6)), "value outside 0-1"
-    out = np.full(x.shape, NULL, dtype="uint8")
     ok = ~np.isnan(x)
-    out[ok] = np.floor(np.clip(x[ok], 0, 1) * scale + 0.5).astype("uint8")   # half up, like JS Math.round
+    valid = x[ok]
+    assert np.all((valid >= -1e-6) & (valid <= 1 + 1e-6)), "value outside 0-1"
+    out = np.full(x.shape, NULL, dtype="uint8")
+    out[ok] = np.floor(np.clip(valid, 0, 1) * scale + 0.5).astype("uint8")   # half up, like JS Math.round
     return out
 
 
@@ -114,8 +115,9 @@ def fill_vectors(sub, fields, rows, vectors):
     """Write every field of the scored tiles `sub` into vectors[rows]. Returns the non-null share per field."""
     filled = {}
     for j, f in enumerate(fields):
-        vectors[rows, j] = to_byte(field_values(sub, f))
-        filled[f["id"]] = float((vectors[rows, j] != NULL).mean())
+        column = to_byte(field_values(sub, f))
+        vectors[rows, j] = column
+        filled[f["id"]] = float((column != NULL).mean())
     return filled
 
 
