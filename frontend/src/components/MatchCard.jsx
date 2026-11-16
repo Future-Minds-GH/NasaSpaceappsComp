@@ -2,7 +2,7 @@
 import ScoreRing from "./ScoreRing.jsx";
 import BodyPhoto from "./BodyPhoto.jsx";
 import FactorBars from "./FactorBars.jsx";
-import { EnvironmentTag, SiteBadges } from "./SiteTags.jsx";
+import { SiteBadges } from "./SiteTags.jsx";
 import { formatCoordinates } from "../data/format.js";
 import { BAND_LABELS, FACTOR_REASONS } from "../content/labels.js";
 import { scoreBand } from "../data/scoring.js";
@@ -32,11 +32,9 @@ export default function MatchCard({ match, isShowingDetails, onCompare }) {
         <h3 className="match-name">{placeName}</h3>
         <p className="match-meta">
           {match.name && <span>{coordinates}</span>}
-          <EnvironmentTag envType={match.env_type} />
           <span className={`band-text band-${scoreBand(match.score)}`}>{BAND_LABELS[scoreBand(match.score)]}</span>
         </p>
         {reasons.length > 0 && <p className="match-reasons">{reasons.join(". ")}.</p>}
-        {match.tags?.length > 0 && <p className="match-tags">{match.tags.join(", ")}</p>}
         {/* One decimal, capped below 100: the best tile beats everything except itself. */}
         {typeof match.earth_rank_pct === "number" && <p className="match-rank-pct">Better than {Math.min(99.9, match.earth_rank_pct).toFixed(1)}% of {SURFACE_NAMES[match.body ?? "earth"]}</p>}
         <SiteBadges site={match} />

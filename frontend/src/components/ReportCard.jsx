@@ -1,8 +1,7 @@
-// Report card for one place on Earth: its tags, the Moon and Mars sites it can stand in for, best first, and a Details view of the numbers.
+// Report card for one place on Earth: the Moon and Mars sites it can stand in for, best first, and a Details view of the numbers.
 import { useState } from "react";
 import ScoreRing from "./ScoreRing.jsx";
 import FactorBars from "./FactorBars.jsx";
-import { EnvironmentTag } from "./SiteTags.jsx";
 import { BODY_NAMES } from "../content/labels.js";
 import { formatCoordinates } from "../data/format.js";
 
@@ -23,16 +22,9 @@ export default function ReportCard({ entry, targetsById = {}, presets = {} }) {
     <article className="characterize-report" aria-labelledby="characterize-report-name">
       <header className="characterize-report-header">
         <h2 id="characterize-report-name" className="characterize-report-name">{site.name}</h2>
-        {Array.isArray(site.tags) && site.tags.length > 0 && (
-          <p className="characterize-report-tags">
-            <span className="visually-hidden">Tags: </span>
-            {describeTags(site.tags)}
-          </p>
-        )}
         {site.nearest_km > 0 && <p className="characterize-report-note">Scored from the nearest land tile, {site.nearest_km} km away.</p>}
         <p className="characterize-report-place">
           <span>{formatCoordinates(site.lat, site.lon)}</span>
-          <EnvironmentTag envType={site.env_type} />
         </p>
       </header>
 
@@ -99,7 +91,6 @@ function TargetMatch({ match, targetName, realityGap, presetLabel, isShowingDeta
       </div>
 
       <div className="characterize-match-lists">
-        <ReasonList title="Mission tests it suits" items={match.good_for} />
         <ReasonList title="What it can't reproduce" items={match.cant_reproduce ?? realityGap} />
       </div>
 
@@ -111,12 +102,6 @@ function TargetMatch({ match, targetName, realityGap, presetLabel, isShowingDeta
       )}
     </li>
   );
-}
-
-/** Habitability and process tags as one short line: "Hyperarid soil, aeolian". */
-function describeTags(tags) {
-  const line = tags.join(", ");
-  return line.charAt(0).toUpperCase() + line.slice(1);
 }
 
 function ReasonList({ title, items }) {

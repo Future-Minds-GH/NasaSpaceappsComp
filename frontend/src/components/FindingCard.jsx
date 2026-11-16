@@ -3,15 +3,12 @@
 import { useId } from "react";
 import ScoreRing from "./ScoreRing.jsx";
 import FactorBars from "./FactorBars.jsx";
-import { EnvironmentTag } from "./SiteTags.jsx";
-import { FINDINGS_EXPLORATION_USES } from "../content/about.js";
 import { FACTOR_LABELS } from "../content/labels.js";
 import { formatCoordinates, formatKm } from "../data/format.js";
 import { FACTORS } from "../data/scoring.js";
 
 /** How many of the closest and of the weakest factors each finding names. */
 const NAMED_FACTOR_COUNT = 2;
-const MAX_EXPLORATION_USES = 2;
 const BODY_PLACES = { moon: "the Moon", mars: "Mars" };
 
 /** One discovery written up: where it is, what it stands in for, the three questions, and the numbers on request. */
@@ -30,7 +27,6 @@ export default function FindingCard({ finding, target }) {
           <h2 id={headingId} className="findings-item-name">{finding.name}</h2>
           <p className="findings-item-meta">
             <span>{formatCoordinates(finding.lat, finding.lon)}</span>
-            <EnvironmentTag envType={finding.env_type} />
           </p>
           <p className="findings-item-target">
             Stands in for {target ? <strong>{target.name}</strong> : "a site"} on {place}
@@ -55,7 +51,7 @@ export default function FindingCard({ finding, target }) {
         </div>
         <div className="findings-item-part">
           <h3 className="findings-item-part-title">How it helps exploration</h3>
-          <p>{describeExplorationUse(finding.tags, target, place)}</p>
+          <p>A fresh place to field-test rovers and instruments before using them {target ? `at ${target.name} on ${place}` : `on ${place}`}.</p>
         </div>
       </div>
 
@@ -95,12 +91,4 @@ function FactorList({ label, factors }) {
 function rankFactors(breakdown) {
   return FACTORS.filter((factor) => typeof breakdown?.[factor] === "number")
     .sort((first, second) => breakdown[second] - breakdown[first]);
-}
-
-/** One plain sentence on what teams could rehearse there, built from the place's tags. */
-function describeExplorationUse(tags, target, place) {
-  const uses = [...new Set((tags ?? []).map((tag) => FINDINGS_EXPLORATION_USES[tag]).filter(Boolean))].slice(0, MAX_EXPLORATION_USES);
-  const destination = target ? `at ${target.name} on ${place}` : `on ${place}`;
-  if (uses.length === 0) return `A fresh place to field-test rovers and instruments before using them ${destination}.`;
-  return `A place to run ${uses.join(" and ")} before trying them ${destination}.`;
 }
