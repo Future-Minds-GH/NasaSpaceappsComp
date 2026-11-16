@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Coordinates from "./Coordinates.jsx";
 
-export default function CoordinateInput({ point, onChange, placeholder }) {
+export default function CoordinateInput({ point, onChange }) {
   const [draft, setDraft] = useState(null);
   const [error, setError] = useState(false);
 
@@ -39,7 +39,7 @@ export default function CoordinateInput({ point, onChange, placeholder }) {
   }
   return (
     <button type="button" className="coord-edit" onClick={startEditing} title="Type exact coordinates">
-      {point ? <Coordinates lat={point.lat} lon={point.lon} /> : <span>{placeholder}</span>}
+      {point ? <Coordinates lat={point.lat} lon={point.lon} /> : <span />}
       <span className="coord-edit-icon" aria-hidden="true">✎</span>
     </button>
   );

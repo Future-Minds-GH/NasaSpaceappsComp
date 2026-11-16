@@ -1,6 +1,5 @@
 // Ranked table of Discover candidates in their live order. Each place name is a button that shows that candidate on the map.
 import ScoreRing from "./ScoreRing.jsx";
-import { EnvironmentTag } from "./SiteTags.jsx";
 import { BODY_NAMES } from "../content/labels.js";
 import { formatCoordinates, formatKm } from "../data/format.js";
 
@@ -61,9 +60,8 @@ function DiscoveryRow({ candidate, target, isSelected, onSelect }) {
         </button>
         <span className="discover-coordinates">{formatCoordinates(candidate.lat, candidate.lon)}</span>
       </th>
-      <td data-label="Environment">
-        <EnvironmentTag envType={candidate.env_type} />
-      </td>
+      {/* shortcut: always empty, the data pipeline writes no environment types; drop the column if that stays so. */}
+      <td data-label="Environment" />
       <td data-label="Best Moon or Mars match">
         <span className="discover-target-name">{target?.name ?? candidate.best_target_id}</span>
         {body && <span className="discover-body">{BODY_NAMES[body] ?? body}</span>}

@@ -1,5 +1,5 @@
 // Results of a search: the picked site in a few words and as a tile profile, mission type and the always-visible weight
-// sliders, the Details panel (site profile, factor numbers, downloads) and the top 10 matches as cards on a map.
+// sliders, the Details panel (factor numbers, downloads) and the top 10 matches as cards on a map.
 import { useState } from "react";
 import PresetPicker from "./PresetPicker.jsx";
 import ModeToggle from "./ModeToggle.jsx";
@@ -7,7 +7,6 @@ import WeightSliders from "./WeightSliders.jsx";
 import MatchExports from "./MatchExports.jsx";
 import MatchCard from "./MatchCard.jsx";
 import CompareDialog from "./CompareDialog.jsx";
-import TargetProfile from "./TargetProfile.jsx";
 import TileProfile from "./TileProfile.jsx";
 import ResultsMap from "./ResultsMap.jsx";
 import { areWeightsEqual } from "../data/scoring.js";
@@ -59,7 +58,6 @@ export default function FindResults({ target, matchBodyName = "Earth", matches, 
       </section>
 
       <div id="find-details" className="find-details" hidden={!isDetailsOpen}>
-        {target.factors && <TargetProfile target={target} />}
         <div className="find-details-scoring">
           <p className="find-details-intro">
             Each factor scores from 0 (unlike) to 1 (alike). The match score is their weighted average, scored in {mode} mode. {isCustom ? "Scored with your own weights." : presets[presetId]?.description}
