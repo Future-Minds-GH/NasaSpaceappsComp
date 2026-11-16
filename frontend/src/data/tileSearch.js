@@ -11,11 +11,16 @@ import { FACTOR_REASONS } from "../content/labels.js";
 const META_RECORD_BYTES = 12;
 const NO_NAME = 65535;
 const REASON_COUNT = 3;
-// Without Role 2's why_rules.json, a factor counts as a reason from this score up.
+// A factor counts as a reason from this score up.
 const DEFAULT_REASON_MIN = 0.6;
 
-/** One entry per Earth tile, in the same order as vectors/earth.bin. */
+// Parsed tiles per earth_meta.bin bytes: api.js caches the bytes, so every search hook and Characterize share one parse.
+const earthTilesByMeta = new WeakMap();
+
+/** One entry per Earth tile, in the same order as vectors/earth.bin. Shared and cached: callers must not mutate it. */
 export function readEarthTiles({ meta, lists }, nside) {
+  const cached = earthTilesByMeta.get(meta);
+  if (cached?.nside === nside && cached.lists === lists) return cached.tiles;
   const view = new DataView(meta.buffer, meta.byteOffset, meta.byteLength);
   const tileTotal = meta.byteLength / META_RECORD_BYTES;
   const tiles = new Array(tileTotal);
@@ -24,9 +29,11 @@ export function readEarthTiles({ meta, lists }, nside) {
     const index = view.getUint32(base, true);
     const tagBits = view.getUint16(base + 6, true);
     const nameIndex = view.getUint16(base + 8, true);
+    const { lat, lon } = tileCenter(nside, index);
     tiles[row] = {
       index,
-      ...tileCenter(nside, index),
+      lat,
+      lon,
       noveltyKm: view.getUint16(base + 4, true),
       tags: lists.tags.filter((tag, bit) => tagBits & (1 << bit)),
       name: nameIndex === NO_NAME ? null : lists.names[nameIndex] ?? null,
@@ -35,15 +42,25 @@ export function readEarthTiles({ meta, lists }, nside) {
       minEstimated: Boolean(view.getUint8(base + 11) & 1),
     };
   }
+  earthTilesByMeta.set(meta, { nside, lists, tiles });
   return tiles;
 }
 
 /** Every Moon or Mars tile in nested order (their vector files hold all of them), named where meta names one. */
 export function readBodyTiles(nside, meta) {
   const estimated = new Set(meta?.min_estimated ?? []);
-  return Array.from({ length: tileCount(nside) }, (_, index) => ({
-    index, ...tileCenter(nside, index), name: meta?.named?.[index] ?? null, tags: [], noveltyKm: null, envType: null, minEstimated: estimated.has(index),
-  }));
+  return Array.from({ length: tileCount(nside) }, (_, index) => {
+    const { lat, lon } = tileCenter(nside, index);   // no object spread: it was most of the time for 196k Mars tiles
+    return { index, lat, lon, name: meta?.named?.[index] ?? null, tags: [], noveltyKm: null, envType: null, minEstimated: estimated.has(index) };
+  });
+}
+
+/** Tile centres as two typed arrays in row order (what the ranking reads). A plain loop: TypedArray.from with a map function is ~10x slower. */
+export function tileCentres(tiles, ArrayType = Float32Array) {
+  const lats = new ArrayType(tiles.length);
+  const lons = new ArrayType(tiles.length);
+  for (let row = 0; row < tiles.length; row++) { lats[row] = tiles[row].lat; lons[row] = tiles[row].lon; }
+  return { lats, lons };
 }
 
 /**
@@ -63,7 +80,7 @@ export function clickedTileVector(body, nside, tileIndex, vectorBytes, bytesPerT
  * Result cards from the worker's picks ({ row, total, earthRankPct, factorScores }), best first. With `clicked`,
  * `vectors` and `layout`, each card also carries `values`: the real values of the two tiles side by side per factor.
  */
-export function buildMatches(picks, { tiles, body = "earth", nside, weights, whyRules = null, mode = null, clicked = null, vectors = null, layout = null }) {
+export function buildMatches(picks, { tiles, body = "earth", nside, weights, mode = null, clicked = null, vectors = null, layout = null }) {
   return picks.map((pick, position) => {
     const tile = tiles[pick.row];
     const breakdown = Object.fromEntries(FACTORS.map((factor, index) => {
@@ -91,7 +108,7 @@ export function buildMatches(picks, { tiles, body = "earth", nside, weights, why
       typical_factors: pick.typicalFactors ?? [],   // no data on this tile: the factor uses a typical score
       false_friend: isFalseFriend(breakdown, weights),
       false_friend_factor: heaviestFactor(breakdown, weights),
-      why: plainReasons(breakdown, whyRules, pick.typicalFactors ?? []),
+      why: plainReasons(breakdown, pick.typicalFactors ?? []),
       temp_note: clicked && vectors && layout ? halfTempNote(layout, clicked, vectors.subarray(pick.row * layout.bytesPerTile, (pick.row + 1) * layout.bytesPerTile)) : null,
       values: clicked && vectors && layout ? realValues(layout, clicked, vectors.subarray(pick.row * layout.bytesPerTile, (pick.row + 1) * layout.bytesPerTile)) : null,
     };
@@ -102,7 +119,7 @@ export function buildMatches(picks, { tiles, body = "earth", nside, weights, why
  * Approximate result cards from a pool shortlist (pools/ file) for one Moon/Mars tile: its 30 Earth candidates are
  * re-scored with the current weights and the top 10 kept. Earth rank is left out: the pool is not the whole planet.
  */
-export function buildPoolMatches(pool, tileIndex, { earthTiles, rowByIndex, weights, earthNside, whyRules = null }) {
+export function buildPoolMatches(pool, tileIndex, { earthTiles, rowByIndex, weights, earthNside }) {
   // Pools are scored in absolute mode (the default); the caller never asks for them in another mode.
   const entries = (pool?.tiles?.[tileIndex] ?? []).filter(([earthIndex]) => rowByIndex.has(earthIndex));
   if (entries.length === 0) return null;
@@ -119,7 +136,7 @@ export function buildPoolMatches(pool, tileIndex, { earthTiles, rowByIndex, weig
     // Optional last item of a pool row: bit flags of the factors that hold a typical score (no data on that tile).
     typicalFactors: FACTORS.filter((_, factor) => ((entries[pick.row][1 + FACTORS.length] ?? 0) >> factor) & 1),
   }));
-  return buildMatches(picks, { tiles: earthTiles, body: "earth", nside: earthNside, weights, whyRules, mode: "absolute" });
+  return buildMatches(picks, { tiles: earthTiles, body: "earth", nside: earthNside, weights, mode: "absolute" });
 }
 
 /** Per factor, the clicked tile's and the match's real values as one phrase ("Night 170 K vs 215 K"), or null. */
@@ -127,16 +144,13 @@ function realValues(layout, clicked, matchVector) {
   return Object.fromEntries(FACTORS.map((factor) => [factor, describeFactorValue(layout, factor, clicked, matchVector)]));
 }
 
-/**
- * Two or three plain reasons, strongest factor first. Role 2's why_rules.json, when present, sets the wording and
- * the score each factor needs: { "slope": { "min": 0.7, "text": "Similar slopes" }, … }.
- */
-function plainReasons(breakdown, whyRules, typicalFactors = []) {
+/** Two or three plain reasons, strongest factor first. */
+function plainReasons(breakdown, typicalFactors = []) {
   return FACTORS
     // A factor with only a typical score (no data on the match) is never a reason.
     .filter((factor) => !typicalFactors.includes(factor))
-    .filter((factor) => typeof breakdown[factor] === "number" && breakdown[factor] >= (whyRules?.[factor]?.min ?? DEFAULT_REASON_MIN))
+    .filter((factor) => typeof breakdown[factor] === "number" && breakdown[factor] >= DEFAULT_REASON_MIN)
     .sort((first, second) => breakdown[second] - breakdown[first])
     .slice(0, REASON_COUNT)
-    .map((factor) => whyRules?.[factor]?.text ?? FACTOR_REASONS[factor]);
+    .map((factor) => FACTOR_REASONS[factor]);
 }

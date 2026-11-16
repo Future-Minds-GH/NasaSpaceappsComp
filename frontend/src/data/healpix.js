@@ -114,21 +114,22 @@ function facePointToLatLon(face, x, y) {
   return { lat, lon };
 }
 
-// Morton order: x bits on even positions, y bits on odd positions. Works for nside up to 2^15 without 32-bit overflow.
-function interleaveBits(x, y) {
-  let result = 0;
-  for (let bit = 0; bit < 16; bit++) {
-    result += ((x >> bit) & 1) * 2 ** (2 * bit) + ((y >> bit) & 1) * 2 ** (2 * bit + 1);
-  }
-  return result;
+// Morton order: x bits on even positions, y bits on odd positions, by the standard bit-spreading masks.
+// 32-bit integer ops: correct for nside up to 2^15 (index within a face below 2^30).
+function spreadBits(v) {
+  v = (v | (v << 8)) & 0x00ff00ff;
+  v = (v | (v << 4)) & 0x0f0f0f0f;
+  v = (v | (v << 2)) & 0x33333333;
+  return (v | (v << 1)) & 0x55555555;
 }
 
-function deinterleaveBits(value) {
-  let x = 0;
-  let y = 0;
-  for (let bit = 0; bit < 16; bit++) {
-    x += Math.floor(value / 2 ** (2 * bit)) % 2 << bit;
-    y += Math.floor(value / 2 ** (2 * bit + 1)) % 2 << bit;
-  }
-  return { x, y };
+function compactBits(v) {
+  v &= 0x55555555;
+  v = (v | (v >> 1)) & 0x33333333;
+  v = (v | (v >> 2)) & 0x0f0f0f0f;
+  v = (v | (v >> 4)) & 0x00ff00ff;
+  return (v | (v >> 8)) & 0x0000ffff;
 }
+
+const interleaveBits = (x, y) => spreadBits(x) | (spreadBits(y) << 1);
+const deinterleaveBits = (value) => ({ x: compactBits(value), y: compactBits(value >> 1) });
