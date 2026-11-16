@@ -1,39 +1,56 @@
-/* Findings page: the top three discoveries as map-legend plates, each with what matches, where it breaks and how it helps. */
+/* Findings: the top three discoveries, each split by a hairline into the place (name, target, score, distance) on the
+   left and its write-up on the right: what matches, where the analogy breaks, how it helps exploration. */
 
-.findings-note { margin-top: 8px; max-width: 62ch; font-size: 0.9375rem; color: var(--ink-soft); }
-.findings-list { display: grid; gap: 28px; margin-top: 32px; }
+.findings-hero-note { margin-top: 16px; max-width: 62ch; font-size: 0.9375rem; color: var(--on-space-soft); }
+.findings-hero-link { margin-top: 20px; color: var(--on-space); }
 
-/* One finding: a plate with a body-coloured edge, Moon slate or Mars rust, named in words beside it */
+.findings-list { list-style: none; display: grid; }
+
+/* One finding. Body colour (Moon slate or Mars rust) marks only the dot beside its target. */
 .findings-for-moon { --findings-body-color: var(--moon); }
 .findings-for-mars { --findings-body-color: var(--mars); }
 .findings-item {
-  display: grid; gap: 20px; min-width: 0; padding: 20px 16px;
-  border: 1px solid var(--rule); border-left: 6px solid var(--findings-body-color, var(--earth));
-  border-radius: var(--radius-frame); background: var(--paper-raised);
+  display: grid; gap: 28px; min-width: 0;
+  padding-block: clamp(32px, 4vw, 48px); border-top: 1px solid var(--rule);
 }
-@media (min-width: 560px) { .findings-item { padding: 22px 24px; } }
-
-.findings-item-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
-.findings-item-title { display: grid; gap: 6px; min-width: 0; }
-.findings-item-name {
-  font-family: var(--font-display); font-weight: 700; line-height: 1.1;
-  font-size: clamp(1.25rem, 1.05rem + 0.8vw, 1.625rem); overflow-wrap: anywhere;
+.findings-list > li:first-child .findings-item { padding-top: 32px; }
+/* Wide screens: the place stays in view beside its write-up while you read */
+@media (min-width: 960px) {
+  .findings-item { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); column-gap: clamp(40px, 6vw, 96px); }
+  .findings-item-header { position: sticky; top: calc(var(--header-height) + 32px); align-self: start; }
 }
-.findings-item-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; font-size: 0.875rem; color: var(--ink-soft); }
-.findings-item-distance { font-size: 0.9375rem; color: var(--ink-soft); }
-.findings-item-distance strong { color: var(--ink); }
 
-/* The three questions side by side on wide screens, stacked on phones */
-.findings-item-parts { display: grid; gap: 20px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr)); }
-.findings-item-part { display: grid; align-content: start; gap: 10px; min-width: 0; padding-top: 12px; border-top: 1px solid var(--rule); }
-.findings-item-part-title { font-size: 1rem; font-weight: 750; }
-.findings-phrases { display: grid; gap: 4px; padding-left: 1.125rem; font-size: 0.9375rem; }
-.findings-factors { display: grid; gap: 4px; }
-.findings-factors-label { font-size: 0.8125rem; font-weight: 700; color: var(--ink-soft); }
-.findings-factor-list { list-style: none; display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 0.9375rem; font-weight: 600; }
+/* The place */
+.findings-item-header { display: grid; align-content: start; justify-items: start; gap: 8px; min-width: 0; }
+.findings-item-name { font: 700 var(--text-h2)/1.1 var(--font-display); letter-spacing: -0.02em; overflow-wrap: anywhere; }
+.findings-item-coordinates { font: 400 var(--text-small)/1.4 var(--font-mono); color: var(--ink-soft); }
+.findings-item-target { margin-top: 8px; font-size: 1.0625rem; }
+.findings-item-target::before {
+  content: ""; display: inline-block; width: 10px; height: 10px; margin-right: 10px; border-radius: 50%;
+  background: var(--findings-body-color, var(--earth)); vertical-align: 0.05em;
+}
+.findings-item-target strong { font-family: var(--font-display); font-weight: 700; }
+.findings-item-readouts { display: flex; flex-wrap: wrap; align-items: center; gap: 20px 40px; margin-top: 16px; }
+.findings-item-score { display: flex; align-items: center; gap: 12px; }
+
+/* The write-up: three parts stacked under hairlines, then the numbers on request */
+.findings-item-body { display: grid; align-content: start; gap: 24px; min-width: 0; }
+.findings-item-part { display: grid; gap: 10px; min-width: 0; }
+.findings-item-part + .findings-item-part { padding-top: 24px; border-top: 1px solid var(--rule); }
+.findings-item-part-title { font: 700 var(--text-h3)/1.25 var(--font-display); }
+.findings-item-part p { max-width: 66ch; }
+/* Discs set outright: inside the findings <ol> a nested list would otherwise default to hollow circles */
+.findings-phrases { display: grid; gap: 4px; padding-left: 1.125rem; list-style: disc; }
+.findings-phrases ::marker { color: var(--ink-soft); }
+.findings-factors { display: grid; gap: 6px; }
+.findings-factors-label { font: 600 var(--text-small)/1.3 var(--font-display); color: var(--ink-soft); }
+.findings-factor-list { list-style: none; display: flex; flex-wrap: wrap; gap: 6px 20px; font: 600 0.9375rem/1.4 var(--font-display); }
 .findings-factor-list li { display: inline-flex; align-items: center; }
 
-/* The nine numbers, only when asked for */
-.findings-item-details summary { width: fit-content; min-height: 36px; padding: 6px 0; font-weight: 650; cursor: pointer; }
-.findings-item-details[open] summary { margin-bottom: 8px; }
+.findings-item-details { padding-top: 16px; border-top: 1px solid var(--rule); }
+.findings-item-details summary {
+  width: fit-content; min-height: 36px; padding: 6px 0; cursor: pointer;
+  font: 600 0.9375rem/1.5 var(--font-display);
+}
+.findings-item-details[open] summary { margin-bottom: 12px; }
 .findings-item-details .factor-bars { max-width: 560px; }

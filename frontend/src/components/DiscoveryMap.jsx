@@ -1,5 +1,5 @@
 // Discover's map: one pin per listed candidate, coloured by the body it stands in for, with the selected pin enlarged
-// and labelled, plus the colour legend and a line describing the selection.
+// and labelled, plus the colour legend and a line describing the selection. It sits on Discover's black stage.
 import { CircleMarker, LayerGroup, Tooltip } from "react-leaflet";
 import EarthMap from "./EarthMap.jsx";
 import { BODY_NAMES } from "../content/labels.js";
@@ -41,10 +41,10 @@ export default function DiscoveryMap({ pins, selectedCandidate, selectedId, isSe
             <li key={body} className={`discover-for-${body}`}>{BODY_NAMES[body]} match</li>
           ))}
         </ul>
-        <p aria-live="polite">
+        <p className="discover-selection" aria-live="polite">
           {selectedCandidate
-            ? `Selected: ${selectedCandidate.name}, rank ${selectedCandidate.rank}.${isSelectedListed ? " It is highlighted in the table." : ""}`
-            : "Pins show the places in the table. Select a pin, or a place name in the table, to see it in both."}
+            ? `Selected: ${selectedCandidate.name}, rank ${selectedCandidate.rank}.${isSelectedListed ? " It is highlighted in the list." : ""}`
+            : "Pins show the places in the list below. Select a pin or a place name to see it in both."}
         </p>
       </div>
     </>
