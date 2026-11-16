@@ -1,6 +1,6 @@
 // Landing workspace, laid out like the team's paper sketch: the mode toggle and the factor sliders down the left
-// (grouped weather / ground; three show at first, the other six come from "+ Add a factor"), two hovering planets joined by an animated arrow, small "other planets" buttons above
-// side, and a Compute bar along the bottom. Clicking a small planet on the right adds it as another output globe;
+// (grouped weather / ground; three show at first, the other six come from "+ Add a factor"), two hovering planets
+// joined by an animated arrow, small "other planets" buttons above side, and a Compute bar along the bottom. Clicking a small planet on the right adds it as another output globe;
 // one Compute searches every output planet from the picked spot (its own planet too), shows a short loading bar, then
 // one similarity vector per output planet.
 import { useCallback, useMemo, useState, useEffect } from "react";
@@ -109,6 +109,7 @@ export default function LandingPage() {
 
   // Re-added factors go back to their usual place in the list, with a starting weight if theirs was 0 so they count.
   function showFactor(factor) {
+    if (!weights) return;   // the presets are still loading: the dropdown is disabled until then
     setShownFactors((current) => FACTORS.filter((other) => current.includes(other) || other === factor));
     setWeights((current) => (current[factor] ? current : { ...current, [factor]: 20 }));
   }
