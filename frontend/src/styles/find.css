@@ -1,126 +1,148 @@
-/* Find mode, one column: pick a spot on the big map (or a featured site), then a grid of simple match cards. */
+/* Results for one body (FindResults and its parts): the picked place and its fact sheet, mission type and compare mode,
+   then the weight sliders beside the ranked matches (map, rows, downloads), and the compare dialog. A reading page:
+   hairlines and space separate things, and the shared weight panel is the only raised surface. */
 
-.find-page { max-width: 1080px; margin: 0 auto; padding: 28px var(--gutter) 0; display: grid; gap: 32px; }
+.find-results { display: grid; gap: clamp(32px, 4vw, 44px); padding-top: clamp(28px, 4vw, 40px); }
+.find-subheading { font: 700 1.0625rem/1.3 var(--font-display); letter-spacing: -0.01em; }
+.find-note { max-width: 72ch; font-size: var(--text-small); line-height: 1.5; color: var(--ink-soft); }
 
-/* Picker */
-.find-picker { display: grid; gap: 12px; }
-.find-picker-header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 24px; }
-.body-switch { display: inline-flex; gap: 2px; padding: 2px; border: 1px solid var(--rule); border-radius: var(--radius-control); }
-.body-switch-link { padding: 6px 16px; border-radius: 6px; font-weight: 700; text-decoration: none; }
-.body-switch-link[aria-current="page"].body-moon { background: var(--moon); color: #fff; }
-.body-switch-link[aria-current="page"].body-mars { background: var(--mars); color: #fff; }
-
-/* 2:1 like the equirectangular tiles, so the whole body fills the frame exactly */
-.body-map { width: 100%; aspect-ratio: 2 / 1; height: auto; margin-top: 4px; border-radius: var(--radius-frame); border: 1px solid var(--rule); cursor: crosshair; }
-.target-pin { fill: var(--paper); stroke: var(--ink); cursor: pointer; }
-.target-pin-cave { fill: var(--environment-cave); stroke: var(--paper); }
-.target-pin.is-selected { fill: var(--earth); stroke: #fff; }
-.target-pin-picked { fill: var(--focus); stroke: #fff; }
-.leaflet-tooltip { font-family: var(--font); font-weight: 650; }
-
-.featured-sites { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
-.site-chip {
-  display: inline-flex; align-items: baseline; gap: 6px; min-height: 36px; padding: 6px 14px;
-  border-radius: var(--radius-control); border: 1px solid var(--rule); background: var(--paper-raised); color: var(--ink);
-  font: inherit; font-weight: 600; cursor: pointer; transition: transform 140ms var(--ease-out), border-color 160ms ease;
-}
-.site-chip:active { transform: scale(0.97); }
-.site-chip[aria-pressed="true"] { background: var(--ink); color: var(--paper); border-color: var(--ink); }
-.site-chip-note { font-size: 0.8125rem; font-weight: 500; opacity: 0.75; }
-.cave-toggle { display: inline-flex; align-items: center; gap: 8px; margin-left: 4px; font-weight: 600; cursor: pointer; }
-.cave-toggle input { width: 18px; height: 18px; accent-color: var(--ink); }
-@media (hover: hover) and (pointer: fine) {
-  .site-chip:not([aria-pressed="true"]):hover { border-color: var(--ink); }
-}
-
-/* Results header: the chosen site in a sentence or two */
-.find-results { display: grid; gap: 16px; min-width: 0; }
-.find-results-header { display: grid; gap: 6px; padding-left: 14px; border-left: 4px solid var(--body-color, var(--ink)); }
-.find-results-header.body-moon { --body-color: var(--moon); }
-.find-results-header.body-mars { --body-color: var(--mars); }
-.find-results-title { font-family: var(--font-display); font-weight: 700; font-size: clamp(1.4rem, 1.1rem + 1.2vw, 2rem); line-height: 1.1; }
+/* ---- Header: the picked place in a sentence or two ---- */
+.find-results-header { display: grid; gap: 10px; }
+.find-results-title { font: 700 var(--text-h2)/1.1 var(--font-display); letter-spacing: -0.02em; max-width: 28ch; }
 .find-results-summary { max-width: 70ch; color: var(--ink-soft); }
-.find-results-resources { display: flex; flex-wrap: wrap; gap: 4px 24px; font-size: 0.9375rem; }
-.find-toolbar { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px; }
+.find-results-resources { display: flex; flex-wrap: wrap; gap: 4px 28px; max-width: 80ch; }
+.find-results-resources strong { font-family: var(--font-display); }
 
-/* Details panel: site profile beside the scoring controls */
-.find-details { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); gap: 24px; padding: 16px; border: 1px solid var(--rule); border-radius: var(--radius-frame); background: var(--paper-raised); }
-.find-details-scoring { display: grid; gap: 14px; align-content: start; }
-.find-details-intro { font-size: 0.9375rem; color: var(--ink-soft); }
-.target-profile { display: grid; gap: 10px; align-content: start; }
-.target-profile-title { font-size: 1rem; font-weight: 750; }
-.profile-list { display: grid; gap: 6px; font-size: 0.875rem; }
-.profile-row { display: grid; grid-template-columns: 8rem 1fr; gap: 8px; }
-.profile-row dt { font-weight: 650; display: flex; align-items: baseline; }
-.weight-sliders { display: grid; gap: 6px; }
-.weight-row { display: grid; grid-template-columns: 7.5rem minmax(0, 1fr) 3rem; gap: 10px; align-items: center; font-size: 0.875rem; font-weight: 600; }
-.weight-row input[type="range"] { width: 100%; accent-color: var(--factor-color); }
-.weight-row output { text-align: right; }
-.weight-sliders .button { justify-self: start; margin-top: 6px; }
-.exports-buttons { display: flex; gap: 8px; }
+/* ---- Fact sheet (the picked tile, a named site): one column per scored factor, label over value, a hairline on top ---- */
+.tile-profile, .target-profile { display: grid; gap: 12px; }
+.find-facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 10rem), 1fr)); gap: 0 24px; }
+.find-fact { display: grid; gap: 6px; align-content: start; padding: 14px 0 4px; border-top: 1px solid var(--rule); }
+.find-fact dt { display: flex; align-items: center; font: 600 var(--text-small)/1.3 var(--font-display); color: var(--ink-soft); }
+.find-fact dd { font: 400 0.9375rem/1.45 var(--font-mono); letter-spacing: -0.01em; }
 
-/* Match cards: photo with the score on it, then the place and why it matches */
-.match-list { list-style: none; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 16px; }
-.match-list > li { display: flex; }
-.match-card { flex: 1; display: grid; grid-template-rows: auto 1fr; border: 1px solid var(--rule); border-radius: var(--radius-frame); background: var(--paper-raised); overflow: hidden; }
-.match-photo { position: relative; }
-.match-photo img, .match-photo-missing { width: 100%; height: auto; aspect-ratio: 16 / 10; object-fit: cover; background: var(--rule-soft); }
-.match-photo-missing { display: grid; place-items: center; padding: 16px; text-align: center; color: var(--ink-soft); font-size: 0.875rem; }
-.match-photo .score-ring { position: absolute; right: 10px; bottom: 10px; background: var(--paper-raised); border-radius: 50%; }
-.match-body { display: grid; gap: 8px; align-content: start; padding: 14px 16px 16px; min-width: 0; }
-.match-name { font-family: var(--font-display); font-size: 1.125rem; font-weight: 700; line-height: 1.2; }
-.match-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; font-size: 0.875rem; color: var(--ink-soft); }
-.match-reasons { font-size: 0.9375rem; }
-.match-tags { font-size: 0.8125rem; color: var(--ink-soft); }
-.match-rank-pct { font-size: 0.8125rem; color: var(--ink-soft); }
+/* ---- Mission type and compare mode, side by side when there is room ---- */
+.find-scoring { display: flex; flex-wrap: wrap; align-items: start; gap: 24px 48px; padding-top: 24px; border-top: 1px solid var(--rule); }
+.find-scoring .mode-toggle { width: min(100%, 22rem); }
+
+/* ---- Weight sliders beside the matches; on wide screens they stay in view while the list scrolls ---- */
+.find-layout { display: grid; gap: 32px; align-items: start; }
+@media (min-width: 1100px) {
+  .find-layout { grid-template-columns: minmax(300px, 340px) minmax(0, 1fr); gap: 48px; }
+}
+/* A narrow panel (the side column, or a phone): each factor's name and share on one line, its slider full width below */
+@media (max-width: 640px), (min-width: 1100px) {
+  .find-weights .weight-sliders { grid-template-columns: minmax(0, 1fr); }
+  .find-weights .weight-row { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "name share" "slider slider"; gap: 2px 12px; padding-bottom: 6px; }
+  .find-weights .weight-row label { grid-area: name; }
+  .find-weights .weight-row output { grid-area: share; }
+  .find-weights .weight-row .range { grid-area: slider; }
+}
+/* Sticky only when the whole panel fits under the header */
+@media (min-width: 1100px) and (min-height: 760px) {
+  .find-weights { position: sticky; top: calc(var(--header-height) + 24px); }
+}
+
+/* ---- The matches column: count and Details, the map, the ranked rows, the downloads ---- */
+.find-matches { display: grid; gap: 24px; min-width: 0; }
+.find-matches-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; min-height: 36px; }
+.find-matches-count { font: 600 var(--text-small)/1.3 var(--font-display); color: var(--ink-soft); }
+.find-details-toggle { margin-left: auto; }
+.find-details { display: grid; gap: 20px; padding-top: 16px; border-top: 1px solid var(--rule); }
+.find-details-intro { max-width: 70ch; font-size: 0.9375rem; color: var(--ink-soft); }
+.find-approximate strong { font-family: var(--font-display); color: var(--warning); }
+
+/* Map of the matches, 2:1 like the planet maps so the whole body fills the frame, with numbered pins */
+/* isolation keeps Leaflet's high z-index panes inside the map, so they never paint over the sticky header */
+.results-map { display: grid; gap: 8px; isolation: isolate; }
+.results-map .earth-map { width: 100%; aspect-ratio: 2 / 1; }
+.results-map figcaption { font-size: var(--text-small); color: var(--ink-soft); }
+.results-map .result-pin {
+  display: grid; place-items: center; border: 1.5px solid #FFFFFF; border-radius: 50%;
+  background: #000000; color: #FFFFFF; font: 500 0.75rem/1 var(--font-mono);
+}
+.results-map .leaflet-tooltip { font: 600 var(--text-small)/1.3 var(--font-display); }
+/* Zoom buttons: square and black, like the rest of the site's controls on imagery */
+.results-map .leaflet-bar { border: 0; border-radius: 0; box-shadow: none; }
+.results-map .leaflet-bar a,
+.results-map .leaflet-bar a:first-child,
+.results-map .leaflet-bar a:last-child {
+  width: 32px; height: 32px; line-height: 32px; border-radius: 0; border-bottom-color: var(--rule-on-space);
+  background: var(--space); color: var(--on-space);
+}
+.results-map .leaflet-bar a.leaflet-disabled { background: var(--space); color: #5C5C66; }
+@media (hover: hover) and (pointer: fine) {
+  .results-map .leaflet-bar a:not(.leaflet-disabled):hover { background: var(--space-raised); }
+}
+
+/* ---- Ranked rows: picture, rank and place, score on the right; a hairline between rows ---- */
+.match-list { list-style: none; border-top: 1px solid var(--rule); }
+.match-list > li { border-bottom: 1px solid var(--rule); }
+.match-card {
+  display: grid; grid-template-columns: clamp(148px, 17vw, 208px) minmax(0, 1fr) auto;
+  grid-template-rows: auto 1fr; grid-template-areas: "photo heading score" "photo details score";
+  gap: 6px 24px; padding: 24px 0;
+}
+.match-photo { grid-area: photo; }
+.match-photo img, .match-photo .body-photo, .match-photo-missing {
+  display: block; width: 100%; aspect-ratio: 16 / 10; object-fit: cover; background-color: var(--paper-raised);
+}
+.match-photo-missing { display: grid; place-items: center; padding: 8px; text-align: center; font-size: var(--text-label); color: var(--ink-soft); }
+.match-heading { grid-area: heading; display: grid; gap: 8px; min-width: 0; }
+.match-name { font: 700 1.25rem/1.25 var(--font-display); letter-spacing: -0.01em; }
+.match-rank { display: inline-block; min-width: 2.25ch; margin-right: 8px; font: 400 1rem/1 var(--font-mono); color: var(--ink-soft); }
+.match-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; font-size: var(--text-small); color: var(--ink-soft); }
+.match-coordinates { font: 400 0.8125rem/1.4 var(--font-mono); }
+.match-card > .score-ring { grid-area: score; }
+.match-details { grid-area: details; display: grid; gap: 10px; align-content: start; min-width: 0; padding-top: 4px; }
+.match-reasons { max-width: 62ch; }
+.match-tags, .match-rank-pct { font-size: var(--text-small); color: var(--ink-soft); }
+.match-details .factor-bars { max-width: 560px; margin-top: 6px; }
 .match-compare { justify-self: start; margin-top: 4px; }
-.show-more { justify-self: center; }
 
-/* Compare dialog: centred modal, the two places at the same size side by side */
+/* BodyPhoto's crop of a globe map: the texture must not repeat at the poles' edges */
+.body-photo { background-repeat: no-repeat; background-color: var(--space); }
+
+.match-exports { padding-top: 8px; }
+.match-exports-buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+
+/* ---- Compare dialog: an always-dark viewer, the two places at the same size side by side ---- */
 .compare-dialog {
-  width: min(960px, calc(100% - 2 * var(--gutter))); max-height: calc(100% - 32px); padding: 20px;
-  border: 1px solid var(--rule); border-radius: var(--radius-frame); background: var(--paper); color: var(--ink);
+  width: min(1040px, calc(100% - 2 * var(--gutter))); max-width: none; max-height: calc(100dvh - 48px);
+  padding: clamp(16px, 3vw, 32px); border: 1px solid var(--rule-on-space); border-radius: 0;
+  background: var(--paper); color: var(--ink);
   opacity: 1; transform: none; transition: opacity 200ms var(--ease-out), transform 200ms var(--ease-out);
 }
-@starting-style { .compare-dialog[open] { opacity: 0; transform: scale(0.96); } }
-.compare-dialog::backdrop { background: rgb(0 0 0 / 0.7); }
-.compare-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 16px; }
-.compare-header h2 { font-family: var(--font-display); font-size: 1.25rem; font-weight: 700; }
-.compare-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@starting-style { .compare-dialog[open] { opacity: 0; transform: scale(0.97); } }
+.compare-dialog::backdrop { background: rgb(0 0 0 / 0.72); }
+.compare-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 24px; }
+.compare-title { font: 700 var(--text-h3)/1.25 var(--font-display); }
+.compare-pair { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(12px, 2vw, 24px); }
 /* Direct children only: Leaflet's own tile images sit inside .body-snapshot and must keep their size. */
-.compare-side > img, .compare-side > .match-photo-missing, .body-snapshot { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: var(--radius-control); background: var(--space); border-top: 4px solid var(--body-color); overflow: hidden; }
+.compare-side > img, .compare-side > .match-photo-missing, .compare-side > .body-snapshot {
+  display: block; width: 100%; aspect-ratio: 1; object-fit: cover; background: var(--space); overflow: hidden; isolation: isolate;
+}
+.compare-side > .match-photo-missing { background: var(--paper-raised); }
 .body-snapshot .leaflet-container { width: 100%; height: 100%; }
-.compare-side.body-moon { --body-color: var(--moon); }
-.compare-side.body-mars { --body-color: var(--mars); }
-.compare-side.body-earth { --body-color: var(--earth); }
-.compare-side .body-snapshot { border-top-color: var(--body-color); }
-.compare-side figcaption { display: grid; margin-top: 8px; font-size: 0.875rem; }
-.compare-side figcaption span { color: var(--ink-soft); }
-.compare-figure { margin-top: 16px; }
-.compare-figure figcaption { margin-top: 6px; font-size: 0.875rem; color: var(--ink-soft); }
-.reality-gap { margin-top: 16px; padding: 12px 16px; border-left: 4px solid var(--warning); background: var(--paper-raised); border-radius: var(--radius-control); }
-.reality-gap h3 { font-size: 1rem; font-weight: 750; margin-bottom: 6px; }
-.reality-gap ul { padding-left: 20px; display: grid; gap: 2px; }
+.body-snapshot-pin { fill: var(--focus); stroke: #FFFFFF; }
+.compare-side figcaption { display: grid; gap: 2px; margin-top: 12px; }
+.compare-side figcaption strong { font: 700 0.9375rem/1.3 var(--font-display); }
+.compare-side figcaption span { font: 400 0.8125rem/1.4 var(--font-mono); color: var(--ink-soft); }
+.compare-figure { margin-top: 24px; }
+.compare-figure figcaption { margin-top: 8px; font-size: var(--text-small); color: var(--ink-soft); }
+.reality-gap { margin-top: 28px; }
+.reality-gap-title { margin-bottom: 8px; font: 700 1rem/1.3 var(--font-display); }
+.reality-gap-list { list-style: none; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr)); gap: 0 24px; }
+.reality-gap-list li { padding: 10px 0; border-top: 1px solid var(--rule); font-size: var(--text-small); }
 
 @media (max-width: 640px) {
-  .compare-pair { grid-template-columns: 1fr; }
-  .profile-row { grid-template-columns: 1fr; gap: 0; }
-  .weight-row { grid-template-columns: 6.5rem minmax(0, 1fr) 2.75rem; }
+  .match-card {
+    grid-template-columns: 104px minmax(0, 1fr) auto; grid-template-rows: auto auto;
+    grid-template-areas: "photo heading score" "details details details"; gap: 12px 14px; padding: 20px 0;
+  }
+  .match-name { font-size: 1.0625rem; }
+  .match-rank { margin-right: 6px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .compare-dialog { transition: opacity 200ms ease; }
   @starting-style { .compare-dialog[open] { transform: none; } }
-  .site-chip:active { transform: none; }
 }
-
-/* Tile profile: the clicked tile in plain words, before the matches */
-.tile-profile { padding: 12px 16px; border: 1px solid var(--rule); border-radius: var(--radius-frame); background: var(--paper-raised); }
-.tile-profile-title { font-size: 1rem; font-weight: 750; margin-bottom: 6px; }
-.tile-profile-list { list-style: none; display: flex; flex-wrap: wrap; gap: 6px 8px; }
-.tile-profile-list li { padding: 3px 10px; border-radius: 999px; border: 1px solid var(--rule); font-size: 0.875rem; }
-
-/* The weights this ranking used, and the approximate-results note */
-.find-weights-used { font-size: 0.8125rem; color: var(--ink-soft); }
-.find-weights-used-label { font-weight: 700; color: var(--ink); }
-.find-approximate { padding: 10px 14px; border-left: 4px solid var(--warning); background: var(--paper-raised); border-radius: var(--radius-control); font-size: 0.9375rem; }
-.tile-profile-missing { margin-top: 8px; font-size: 0.9rem; color: var(--ink-soft, inherit); }

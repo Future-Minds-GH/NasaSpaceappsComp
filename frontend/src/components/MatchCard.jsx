@@ -1,40 +1,42 @@
-// One Earth match: photo, place, score and plain reasons. The nine factor bars show only with Details open.
+// One row of the ranked matches: its picture, rank, place and score, then the plain reasons it matches. The five
+// factor bars show only with Details open.
 import ScoreRing from "./ScoreRing.jsx";
 import BodyPhoto from "./BodyPhoto.jsx";
 import FactorBars from "./FactorBars.jsx";
 import { EnvironmentTag, SiteBadges } from "./SiteTags.jsx";
 import { formatCoordinates } from "../data/format.js";
 import { BAND_LABELS, FACTOR_REASONS } from "../content/labels.js";
-import { scoreBand } from "../data/scoring.js";
+import { SCORED_FACTORS, scoreBand } from "../data/scoring.js";
 
 const SURFACE_NAMES = { earth: "Earth's land", moon: "the Moon's surface", mars: "Mars's surface" };
+const SCORE_RING_SIZE = 56;
 
-export default function MatchCard({ match, isShowingDetails, onCompare }) {
+export default function MatchCard({ match, rank, isShowingDetails, onCompare }) {
   const coordinates = formatCoordinates(match.lat, match.lon);
   const placeName = match.name ?? coordinates;
-  // Featured sites come with written reasons; picked spots name their strongest factors instead.
-  const reasons = match.why ?? (match.why_factors ?? []).map((factor) => FACTOR_REASONS[factor]);
+  const band = scoreBand(match.score);
+  // Featured sites come with written reasons; picked spots name their strongest scored factors instead.
+  const reasons = match.why ?? (match.why_factors ?? []).filter((factor) => SCORED_FACTORS.includes(factor)).map((factor) => FACTOR_REASONS[factor]);
 
   return (
     <article className="match-card">
       <div className="match-photo">
-        {match.image_url ? (
-          <img src={match.image_url} alt={`Satellite view of ${placeName}`} loading="lazy" />
-        ) : match.body && match.body !== "earth" ? (
-          <BodyPhoto body={match.body} lat={match.lat} lon={match.lon} label={`Orbital map around ${placeName}`} />
-        ) : (
-          <div className="match-photo-missing">No photo for this spot yet</div>
-        )}
-        <ScoreRing score={match.score} size={60} />
+        <MatchPhoto match={match} placeName={placeName} />
       </div>
 
-      <div className="match-body">
-        <h3 className="match-name">{placeName}</h3>
+      <header className="match-heading">
+        {/* The list itself is numbered for screen readers, so the visible rank is hidden from them. */}
+        <h3 className="match-name"><span className="match-rank" aria-hidden="true">{rank}</span>{placeName}</h3>
         <p className="match-meta">
-          {match.name && <span>{coordinates}</span>}
+          {match.name && <span className="match-coordinates">{coordinates}</span>}
           <EnvironmentTag envType={match.env_type} />
-          <span className={`band-text band-${scoreBand(match.score)}`}>{BAND_LABELS[scoreBand(match.score)]}</span>
+          <span className={`band-text band-${band}`}>{BAND_LABELS[band]}</span>
         </p>
+      </header>
+
+      <ScoreRing score={match.score} size={SCORE_RING_SIZE} />
+
+      <div className="match-details">
         {reasons.length > 0 && <p className="match-reasons">{reasons.join(". ")}.</p>}
         {match.tags?.length > 0 && <p className="match-tags">{match.tags.join(", ")}</p>}
         {/* One decimal, capped below 100: the best tile beats everything except itself. */}
@@ -47,4 +49,13 @@ export default function MatchCard({ match, isShowingDetails, onCompare }) {
       </div>
     </article>
   );
+}
+
+/** Earth matches have a satellite picture; Moon and Mars matches crop their globe's map; anything else says so. */
+function MatchPhoto({ match, placeName }) {
+  if (match.image_url) return <img src={match.image_url} alt={`Satellite view of ${placeName}`} loading="lazy" />;
+  if (match.body && match.body !== "earth") {
+    return <BodyPhoto body={match.body} lat={match.lat} lon={match.lon} label={`Orbital map around ${placeName}`} />;
+  }
+  return <div className="match-photo-missing">No photo yet</div>;
 }

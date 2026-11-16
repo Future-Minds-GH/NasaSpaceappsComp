@@ -1,5 +1,6 @@
-// Results of a search: the picked site in a few words and as a tile profile, mission type and the always-visible weight
-// sliders, the Details panel (site profile, factor numbers, downloads) and the top 10 matches as cards on a map.
+// Results of a search: the picked place in a sentence and as a fact sheet of its scored factors, the mission type and
+// compare mode, then the weight sliders beside the ranked matches (map, rows, downloads). Details adds every match's
+// factor numbers and explains the score.
 import { useState } from "react";
 import PresetPicker from "./PresetPicker.jsx";
 import ModeToggle from "./ModeToggle.jsx";
@@ -10,20 +11,22 @@ import CompareDialog from "./CompareDialog.jsx";
 import TargetProfile from "./TargetProfile.jsx";
 import TileProfile from "./TileProfile.jsx";
 import ResultsMap from "./ResultsMap.jsx";
-import { areWeightsEqual } from "../data/scoring.js";
+import { SCORED_FACTORS, areWeightsEqual, normaliseWeights } from "../data/scoring.js";
 import { snapNote } from "../data/earthSnap.js";
 
-export default function FindResults({ target, matchBodyName = "Earth", matches, matchesState, snapKm = null, presets, presetId, onSelectPreset, groups, mode, onChangeMode, customWeights, onChangeWeights }) {
+export default function FindResults({ target, matchBodyName = "Earth", matches, matchesState, snapKm = null, presets, presetId, onSelectPreset, mode, onChangeMode, customWeights, onChangeWeights }) {
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [comparedMatch, setComparedMatch] = useState(null);
 
-  const presetWeights = presets[presetId]?.weights ?? {};
-  const isCustom = Boolean(customWeights) && !areWeightsEqual(customWeights, presetWeights);
+  const preset = presets[presetId];
+  const presetWeights = preset?.weights ?? {};
+  // Slider weights are shares that add up to 1 and a preset's need not be, so both are compared as shares.
+  const isCustom = Boolean(customWeights) && !areWeightsEqual(normaliseWeights(customWeights, SCORED_FACTORS), normaliseWeights(presetWeights, SCORED_FACTORS), SCORED_FACTORS);
   const weightsUsed = customWeights ?? presetWeights;
 
   return (
     <section className="find-results" aria-labelledby="find-results-title">
-      <header className={`find-results-header body-${target.body}`}>
+      <header className="find-results-header">
         <h2 id="find-results-title" className="find-results-title">Best {matchBodyName} matches for {target.name}</h2>
         {target.summary && <p className="find-results-summary">{target.summary}</p>}
         {target.resources && (
@@ -32,52 +35,60 @@ export default function FindResults({ target, matchBodyName = "Earth", matches, 
             <span><strong>Sunlight:</strong> {target.resources.illumination}</span>
           </p>
         )}
+        {snapKm !== null && <p className="find-note" role="note">{snapNote(snapKm)}</p>}
       </header>
 
-      {snapKm !== null && <p className="tile-profile-missing" role="note">{snapNote(snapKm)}</p>}
       <TileProfile vector={matchesState.clickedVector} layout={matchesState.layout} />
 
-      <div className="find-toolbar">
-        <PresetPicker presets={presets} selectedPresetId={presetId} onSelect={onSelectPreset} />
+      <div className="find-scoring">
+        <PresetPicker presets={presets} selectedPresetId={presetId} onSelect={onSelectPreset} name="explore-preset" />
         <ModeToggle mode={mode} onChange={onChangeMode} name="explore-mode" />
-        <button
-          type="button"
-          className="button button-quiet"
-          aria-expanded={isDetailsOpen}
-          aria-controls="find-details"
-          onClick={() => setIsDetailsOpen((isOpen) => !isOpen)}
-        >
-          {isDetailsOpen ? "Hide details" : "Details"}
-        </button>
       </div>
-      <section className="weight-panel" aria-label="Weight the criteria">
-        <p className="weight-panel-intro">
-          <strong>Weight the criteria.</strong> Drag a slider to say how much each one matters; the matches re-rank as you
-          drag. {isCustom ? "You're using your own weights." : `Starting from ${presets[presetId]?.label ?? "the mission type"}.`}
-        </p>
-        <WeightSliders groups={groups} weights={weightsUsed} onChange={onChangeWeights} onReset={() => onChangeWeights(null)} isCustom={isCustom} />
-      </section>
 
-      <div id="find-details" className="find-details" hidden={!isDetailsOpen}>
-        {target.factors && <TargetProfile target={target} />}
-        <div className="find-details-scoring">
-          <p className="find-details-intro">
-            Each factor scores from 0 (unlike) to 1 (alike). The match score is their weighted average, scored in {mode} mode. {isCustom ? "Scored with your own weights." : presets[presetId]?.description}
+      <div className="find-layout">
+        <section className="weight-panel find-weights" aria-label="Weight the criteria">
+          <p className="weight-panel-intro">
+            <strong>Weight the criteria.</strong> The matches re-rank as you drag.{" "}
+            {isCustom ? "You're using your own weights." : `Starting from ${preset?.label ?? "the mission type"}.`}
           </p>
-          <MatchExports matches={matches} weights={weightsUsed} clickedTileId={target.target_id} fileStem={`${target.target_id}_${isCustom ? "custom" : presetId}_${mode}_matches`} />
+          <WeightSliders weights={weightsUsed} onChange={onChangeWeights} onReset={() => onChangeWeights(null)} isCustom={isCustom} />
+        </section>
+
+        <div className="find-matches">
+          <div className="find-matches-bar">
+            {matches.length > 0 && <p className="find-matches-count">{matches.length} matches, best first</p>}
+            <button
+              type="button"
+              className="button button-quiet find-details-toggle"
+              aria-expanded={isDetailsOpen}
+              aria-controls="find-details"
+              onClick={() => setIsDetailsOpen((isOpen) => !isOpen)}
+            >
+              {isDetailsOpen ? "Hide details" : "Details"}
+            </button>
+          </div>
+          <div id="find-details" className="find-details" hidden={!isDetailsOpen}>
+            {/* Not the preset's description from weights.json: it still names factors the site no longer scores. */}
+            <p className="find-details-intro">
+              Each of the five factors scores from 0 (unlike) to 1 (alike). The match score is their weighted average, scored
+              in {mode} mode with {isCustom ? "your own weights" : `the ${preset?.label ?? "mission type"} weights`} shown in the sliders.
+            </p>
+            {target.factors && <TargetProfile target={target} />}
+          </div>
+
+          {matchesState.isApproximate && matches.length > 0 && (
+            <p className="find-note find-approximate" role="status">
+              <strong>Approximate.</strong> These come from a precomputed shortlist because the full search is slow or
+              unavailable on this device. They update by themselves when the full search finishes.
+            </p>
+          )}
+          {matches.length > 0 && <ResultsMap matches={matches} body={matches[0].body ?? "earth"} />}
+          <MatchList matches={matches} matchesState={matchesState} matchBodyName={matchBodyName} isShowingDetails={isDetailsOpen} onCompare={setComparedMatch} />
+          {matches.length > 0 && (
+            <MatchExports matches={matches} weights={weightsUsed} clickedTileId={target.target_id} fileStem={`${target.target_id}_${isCustom ? "custom" : presetId}_${mode}_matches`} />
+          )}
         </div>
       </div>
-
-      {matchesState.isApproximate && matches.length > 0 && (
-        <p className="find-approximate" role="status">
-          Approximate: these come from a precomputed shortlist because the full search is slow or unavailable on this
-          device. They update by themselves when the full search finishes.
-        </p>
-      )}
-
-      {matches.length > 0 && <ResultsMap matches={matches} body={matches[0].body ?? "earth"} />}
-
-      <MatchList matches={matches} matchesState={matchesState} matchBodyName={matchBodyName} isShowingDetails={isDetailsOpen} onCompare={setComparedMatch} />
 
       <CompareDialog target={target} match={comparedMatch} onClose={() => setComparedMatch(null)} />
     </section>
@@ -88,14 +99,14 @@ function MatchList({ matches, matchesState, matchBodyName, isShowingDetails, onC
   if (matchesState.error) {
     return <p className="page-message" role="alert">The matches didn't load. Check your connection, then pick the spot again.</p>;
   }
-  if (matchesState.isLoading && matches.length === 0) return <p className="page-message">Finding matches…</p>;
+  if (matchesState.isLoading && matches.length === 0) return <p className="page-message" role="status">Finding matches…</p>;
   if (matches.length === 0) return <p className="page-message">No {matchBodyName} matches for this spot yet. Try another spot or mission type.</p>;
 
   return (
     <ol className="match-list" aria-busy={matchesState.isLoading}>
-      {matches.map((match) => (
+      {matches.map((match, index) => (
         <li key={`${match.lat}-${match.lon}`}>
-          <MatchCard match={match} isShowingDetails={isShowingDetails} onCompare={onCompare} />
+          <MatchCard match={match} rank={match.rank ?? index + 1} isShowingDetails={isShowingDetails} onCompare={onCompare} />
         </li>
       ))}
     </ol>

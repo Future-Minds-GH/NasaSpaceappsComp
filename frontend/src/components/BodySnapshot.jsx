@@ -24,7 +24,7 @@ export default function BodySnapshot({ body, lat, lon, label }) {
         touchZoom={false}
       >
         <TileLayer url={tiles.url} tileSize={256} maxNativeZoom={tiles.maxNativeZoom} noWrap />
-        <CircleMarker center={[lat, lon]} radius={8} pathOptions={{ className: "target-pin target-pin-picked", weight: 3, fillOpacity: 1 }} />
+        <CircleMarker center={[lat, lon]} radius={8} pathOptions={{ className: "body-snapshot-pin", weight: 3, fillOpacity: 1 }} />
         <MeasureWhenShown center={[lat, lon]} />
       </MapContainer>
     </div>

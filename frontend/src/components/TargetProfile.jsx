@@ -1,14 +1,17 @@
-// The chosen featured site's factors in plain words, shown inside the Details panel.
-import { FACTORS } from "../data/scoring.js";
+// A named site's own scored factors in plain words (when its data has them), shown inside the Details panel.
+import { SCORED_FACTORS } from "../data/scoring.js";
 import { FACTOR_LABELS } from "../content/labels.js";
 
 export default function TargetProfile({ target }) {
+  const factors = SCORED_FACTORS.filter((factor) => target.factors[factor] !== undefined);
+  if (factors.length === 0) return null;
+
   return (
-    <section className={`target-profile body-${target.body}`} aria-labelledby="target-profile-title">
-      <h3 id="target-profile-title" className="target-profile-title">What {target.name} is like</h3>
-      <dl className="profile-list">
-        {FACTORS.filter((factor) => target.factors[factor] !== undefined).map((factor) => (
-          <div className="profile-row" key={factor} style={{ "--factor-color": `var(--factor-${factor})` }}>
+    <section className="target-profile" aria-labelledby="target-profile-title">
+      <h3 id="target-profile-title" className="find-subheading">What {target.name} is like</h3>
+      <dl className="find-facts">
+        {factors.map((factor) => (
+          <div className="find-fact" key={factor} style={{ "--factor-color": `var(--factor-${factor})` }}>
             <dt><span className="factor-swatch" aria-hidden="true" />{FACTOR_LABELS[factor]}</dt>
             <dd>{describeFactor(target.factors[factor])}</dd>
           </div>

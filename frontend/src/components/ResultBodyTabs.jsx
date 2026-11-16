@@ -32,7 +32,7 @@ export default function ResultBodyTabs({ bodies, selectedBody, onSelect }) {
             aria-selected={isSelected}
             aria-controls={RESULTS_PANEL_ID}
             tabIndex={isSelected ? 0 : -1}
-            className={`result-tab result-tab-${body}`}
+            className="result-tab"
             onClick={() => onSelect(body)}
             onKeyDown={(event) => handleKeyDown(event, index)}
           >
