@@ -8,7 +8,7 @@ import { loadTargets, loadWeights } from "../data/api.js";
 import { EXTRA_SITES, isPickableSite, shortSiteName } from "../content/notableSites.js";
 import { useLoaded } from "../data/useLoaded.js";
 import { useTileSearch } from "../data/useTileSearch.js";
-import { FACTORS } from "../data/scoring.js";
+import { FACTORS, SCORED_FACTORS } from "../data/scoring.js";
 import { BODY_RADIUS_KM, SAME_BODY_MIN_KM } from "../data/ranking.js";
 import { BODY_NAMES } from "../content/labels.js";
 import PlanetGlobe, { GLOBE_TEXTURES } from "../components/PlanetGlobe.jsx";
@@ -35,7 +35,7 @@ export default function LandingPage() {
   // Sliders start from the Balanced preset; the preset picker was removed, so people only move the sliders.
   const presetId = presetsState.data?.default_preset ?? "balanced";
   const [weights, setWeights] = useState(null); // 0–100 per factor; null until presets load
-  const [shownFactors, setShownFactors] = useState(FACTORS);
+  const [shownFactors, setShownFactors] = useState(SCORED_FACTORS);
   // Absolute or relative scoring; until a person picks one, the weights file's default.
   const [pickedMode, setPickedMode] = useState(null);
   const mode = pickedMode ?? (MODES.includes(presetsState.data?.default_mode) ? presetsState.data.default_mode : "absolute");

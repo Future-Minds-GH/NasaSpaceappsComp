@@ -15,19 +15,6 @@ export const FACTOR_LABELS = {
   ice: "Water ice",
 };
 
-/** Each factor's name inside a sentence ("Very close on slope and water ice"). */
-export const FACTOR_SHORT_NAMES = {
-  temp: "temperature",
-  swing: "day-night swing",
-  sun: "sunlight",
-  slope: "slope",
-  rough: "roughness",
-  elev: "elevation",
-  surface: "surface type",
-  minerals: "minerals",
-  ice: "water ice",
-};
-
 /** One-line meaning of each factor, shown beside the numbers in the Details panel. */
 export const FACTOR_MEANINGS = {
   temp: "Average day and night surface temperature, in kelvin",
@@ -62,6 +49,13 @@ export const MODE_INFO = {
 
 /** Text for each score band (colour is never the only cue). */
 export const BAND_LABELS = { green: "Strong analog", yellow: "Partial analog", red: "Weak analog" };
+
+/** The groups of sliders when weights.json has none. */
+export const DEFAULT_GROUPS = {
+  weather: ["temp", "swing", "sun"],
+  geology: ["slope", "rough", "elev", "surface", "minerals", "ice"],
+};
+export const GROUP_LABELS = { weather: "Weather", geology: "Ground" };
 
 export const ENVIRONMENT_LABELS = {
   desert: "Desert",
