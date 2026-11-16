@@ -2,8 +2,8 @@
 // computed (absolute mode, typical-score fill included). Pure: the page (characterizeSpot.js) and the build script
 // (scripts/make-characterize.mjs) both use it, so the famous-site cards and the live cards follow one rule.
 import { FACTORS, combineScore } from "./scoring.js";
-import { NULL_CODE, decodeByte } from "./similarity.js";
-import { BODY_RADIUS_KM } from "./ranking.js";
+import { decodeByte } from "./similarity.js";
+import { distanceKm } from "./ranking.js";
 
 /** Smallest radius for the nearest-tile fallback, in km (the rule of scripts/make-characterize.mjs: max(site radius, 100 km)). */
 export const MIN_FALLBACK_KM = 100;
@@ -19,18 +19,11 @@ const PERCENTILE_FIELDS = {
 
 const roundTo = (value, decimals) => Math.round(value * 10 ** decimals) / 10 ** decimals;
 
-/** Great-circle distance between two Earth points, in km. */
-export function earthKmBetween(latA, lonA, latB, lonB) {
-  const radians = (degrees) => (degrees * Math.PI) / 180;
-  const h = Math.sin(radians(latB - latA) / 2) ** 2 + Math.cos(radians(latA)) * Math.cos(radians(latB)) * Math.sin(radians(lonB - lonA) / 2) ** 2;
-  return 2 * BODY_RADIUS_KM.earth * Math.asin(Math.sqrt(h));
-}
-
 /** The row of the scored tile nearest to a point within `maxKm`, as { row, km }, or null when none is that close. */
 export function nearestTileRow(lat, lon, lats, lons, maxKm) {
   let best = null;
   for (let row = 0; row < lats.length; row++) {
-    const km = earthKmBetween(lat, lon, lats[row], lons[row]);
+    const km = distanceKm(lat, lon, lats[row], lons[row]);
     if (km <= maxKm && (best === null || km < best.km)) best = { row, km };
   }
   return best;

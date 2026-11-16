@@ -5,7 +5,7 @@ import { loadBodyVectors, loadEarthTiles, loadTargets, loadVectorSchema, loadWei
 import { MIN_FALLBACK_KM, coordinateLabel, nearestTileRow, siteFactors, targetMatches } from "./characterizeReport.js";
 import { baseCellOf, latLonToTile } from "./healpix.js";
 import { readLayout, scoreAllEarthTiles, typicalFactorsOf } from "./similarity.js";
-import { clickedTileVector, readEarthTiles } from "./tileSearch.js";
+import { clickedTileVector, readEarthTiles, tileCentres } from "./tileSearch.js";
 
 let basePromise = null;
 
@@ -66,8 +66,7 @@ async function buildBase() {
     await new Promise((resolve) => setTimeout(resolve, 0));
   }
   return {
-    lats: Float64Array.from(earthTiles, (tile) => tile.lat), lons: Float64Array.from(earthTiles, (tile) => tile.lon),
-    layout, earthTiles, earthVectors: earthFiles.vectors, targets, presets: weightsFile.presets,
+    ...tileCentres(earthTiles, Float64Array), layout, earthTiles, earthVectors: earthFiles.vectors, targets, presets: weightsFile.presets,
     nside: schema.nside.earth, rowByIndex: new Map(earthTiles.map((tile, row) => [tile.index, row])),
   };
 }

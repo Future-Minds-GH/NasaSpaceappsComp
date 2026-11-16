@@ -4,8 +4,6 @@
 const DATA_ROOT = `${import.meta.env.BASE_URL}data/`;
 
 const responseCache = new Map();
-const sampleFlagListeners = new Set();
-let isShowingSampleData = false;
 
 /** Named Earth, Moon and Mars sites (the globes' shortcut buttons), each with its body, from tiles/<body>_meta.json. */
 export function loadTargets() {
@@ -36,11 +34,6 @@ export function loadEarthTiles() {
     .then(([vectors, meta, lists]) => ({ vectors, meta, lists }));
 }
 
-/** Role 2's wording and thresholds for the plain reasons on result cards; null until Role 2 ships the file. */
-export function loadWhyRules() {
-  return fetchJson("why_rules.json", { isOptional: true }).then((file) => file?.rules ?? file);
-}
-
 /** Role 2's precomputed results for the demo's showcase clicks, used only if the live search fails. */
 export function loadShowcase() {
   return fetchJson("showcase.json", { isOptional: true });
@@ -69,11 +62,6 @@ export function loadDiscoveries() {
   return fetchJson("discoveries.json").then((file) => file.discoveries);
 }
 
-/** Role 3's model check (plain Markdown text), or null until Role 3 ships it. */
-export function loadModelCheck() {
-  return fetch(`${DATA_ROOT}model_check.md`).then((response) => (response.ok ? response.text() : null)).catch(() => null);
-}
-
 export function loadValidation() {
   return fetchJson("validation.json");
 }
@@ -83,16 +71,6 @@ export function dataFileUrl(fileName) {
   return `${DATA_ROOT}${fileName}`;
 }
 
-/** Lets the footer show a "sample data" note while any loaded file still carries Role 2's `sample: true` flag. */
-export function subscribeToSampleFlag(listener) {
-  sampleFlagListeners.add(listener);
-  return () => sampleFlagListeners.delete(listener);
-}
-
-export function getIsShowingSampleData() {
-  return isShowingSampleData;
-}
-
 function fetchJson(path, { isOptional = false } = {}) {
   if (!responseCache.has(path)) {
     const request = fetch(`${DATA_ROOT}${path}`).then(async (response) => {
@@ -100,9 +78,7 @@ function fetchJson(path, { isOptional = false } = {}) {
       // The Vite dev server answers a missing file with index.html (200), not a 404: treat that as missing too.
       if (isOptional && !(response.headers.get("content-type") ?? "").includes("json")) return null;
       if (!response.ok) throw new Error(`Could not load ${path} (HTTP ${response.status}).`);
-      const file = await response.json();
-      if (file?.sample) markSampleData();
-      return file;
+      return response.json();
     });
     // Forget failed requests so a retry after a network blip fetches again.
     request.catch(() => responseCache.delete(path));
@@ -122,10 +98,4 @@ function fetchBinary(path) {
     responseCache.set(path, request);
   }
   return responseCache.get(path);
-}
-
-function markSampleData() {
-  if (isShowingSampleData) return;
-  isShowingSampleData = true;
-  sampleFlagListeners.forEach((listener) => listener());
 }

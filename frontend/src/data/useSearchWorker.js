@@ -1,7 +1,6 @@
 // Talks to the search worker for useTileSearch: starts it, sends the schema once and each body's tiles once, then a
 // "score" message for each new search and a "rank" message for each new set of weights. Only the newest answer counts.
 import { useEffect, useMemo, useRef, useState } from "react";
-import { startSearchWorker } from "./startSearchWorker.js";
 
 /** Owns the worker: sends the schema once, each body's tiles once, then "score" per new search or mode and "rank" per new weights. */
 export function useSearchWorker(baseData) {
@@ -19,7 +18,8 @@ export function useSearchWorker(baseData) {
     setLatestPicks(null);
     let searchWorker;
     try {
-      searchWorker = startSearchWorker();
+      // Vite bundles searchWorker.js as its own file from this URL pattern.
+      searchWorker = new Worker(new URL("./searchWorker.js", import.meta.url), { type: "module" });
     } catch (error) {
       setWorkerError(error);
       return undefined;
@@ -44,11 +44,7 @@ export function useSearchWorker(baseData) {
   const requestRanking = useMemo(() => (tileId, body, candidates, clickedVector, weights, mode, exclude = null) => {
     const state = requestRef.current;
     if (!state.sentBodies.has(body)) {
-      worker.postMessage({
-        type: "candidates", body, vectors: candidates.vectors,
-        lats: Float32Array.from(candidates.tiles, (candidate) => candidate.lat),
-        lons: Float32Array.from(candidates.tiles, (candidate) => candidate.lon),
-      });
+      worker.postMessage({ type: "candidates", body, vectors: candidates.vectors, lats: candidates.lats, lons: candidates.lons });
       state.sentBodies.add(body);
     }
     state.id += 1;
