@@ -1,23 +1,28 @@
-// A map of the body the matches are on (Earth, the Moon or Mars) with one numbered pin per current match.
+// A map of the body the matches are on (Earth, the Moon or Mars) with one pin per match, numbered with its rank in the
+// list below, so the map and the list read together.
 import L from "leaflet";
-import { CircleMarker, MapContainer, TileLayer, Tooltip } from "react-leaflet";
+import { MapContainer, Marker, TileLayer, Tooltip } from "react-leaflet";
 import EarthMap from "./EarthMap.jsx";
 import { BODY_TILE_LAYERS } from "../content/tileSources.js";
 import { BODY_NAMES } from "../content/labels.js";
 
 const WHOLE_BODY_BOUNDS = [[-90, -180], [90, 180]];
+const PIN_SIZE_PX = 24;
+// One icon per rank, made once: a new icon object on every re-rank would make Leaflet rebuild every pin.
+const pinIconsByRank = new Map();
 
 export default function ResultsMap({ matches, body = "earth" }) {
-  const pins = matches.map((match) => (
-    <CircleMarker key={`${match.lat}-${match.lon}`} center={[match.lat, match.lon]} radius={7} pathOptions={{ className: "result-pin", weight: 2, fillOpacity: 1 }}>
-      <Tooltip direction="top" offset={[0, -6]}>{`${match.rank}. ${match.name ?? `${BODY_NAMES[body]} tile`}`}</Tooltip>
-    </CircleMarker>
+  // The list below holds the same places, so the pins stay out of the keyboard order.
+  const pins = matches.map((match, index) => (
+    <Marker key={`${match.lat}-${match.lon}`} position={[match.lat, match.lon]} icon={rankPinIcon(match.rank ?? index + 1)} keyboard={false}>
+      <Tooltip direction="top" offset={[0, -PIN_SIZE_PX / 2]}>{match.name ?? `${BODY_NAMES[body]} tile`}</Tooltip>
+    </Marker>
   ));
 
   return (
-    <section className="results-map" aria-label={`Where the matches are on ${BODY_NAMES[body]}`}>
+    <figure className="results-map">
       {body === "earth" ? (
-        <EarthMap label="World map with a pin on each Earth match">{pins}</EarthMap>
+        <EarthMap label="World map with a numbered pin on each Earth match">{pins}</EarthMap>
       ) : (
         <MapContainer
           key={body}
@@ -35,6 +40,14 @@ export default function ResultsMap({ matches, body = "earth" }) {
           {pins}
         </MapContainer>
       )}
-    </section>
+      <figcaption>Where the matches are on {body === "moon" ? "the Moon" : BODY_NAMES[body]}. Each pin carries the match's rank.</figcaption>
+    </figure>
   );
+}
+
+function rankPinIcon(rank) {
+  if (!pinIconsByRank.has(rank)) {
+    pinIconsByRank.set(rank, L.divIcon({ className: "result-pin", html: `<span>${rank}</span>`, iconSize: [PIN_SIZE_PX, PIN_SIZE_PX] }));
+  }
+  return pinIconsByRank.get(rank);
 }

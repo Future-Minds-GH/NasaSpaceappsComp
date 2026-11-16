@@ -40,7 +40,9 @@ export default function ExplorePage() {
   const targetBody = BODIES.includes(requestedTarget) && requestedTarget !== body ? requestedTarget : DEFAULT_TARGET[body];
   const bodySites = (targetsState.data ?? []).filter((site) => site.body === body);
   const shownSites = bodySites.filter((site) => site.track !== "cave" || isShowingCaves);
-  const namedSite = bodySites.find((site) => site.target_id === searchParams.get("site")) ?? null;
+  const hasCaves = bodySites.some((site) => site.track === "cave");
+  const requestedSiteId = searchParams.get("site");
+  const namedSite = bodySites.find((site) => site.target_id === requestedSiteId) ?? null;
   const pickedPoint = useMemo(() => parsePoint(searchParams.get("at")), [searchParams]);
   const selection = useMemo(() => {
     if (namedSite) return { body, lat: namedSite.lat, lon: namedSite.lon };
@@ -57,11 +59,16 @@ export default function ExplorePage() {
 
   if (!BODIES.includes(body)) return <Navigate to="/explore/mars" replace />;
   const target = selection && search.tile ? describeSelection({ body, targetBody, namedSite, selection, tile: search.tile, meta: bodyMeta.data, sites: targetsState.data }) : null;
+  const isShowingResults = Boolean(target && presetId && !search.hasNoData);
 
   function updateSearchParams(changes) {
     const nextParams = new URLSearchParams(searchParams);
     Object.entries(changes).forEach(([key, value]) => (value === null ? nextParams.delete(key) : nextParams.set(key, value)));
     setSearchParams(nextParams, { replace: true });
+  }
+
+  function pickPoint(lat, lon) {
+    updateSearchParams({ at: `${lat.toFixed(2)},${lon.toFixed(2)}`, site: null });
   }
 
   function handleSelectSite(site) {
@@ -71,59 +78,68 @@ export default function ExplorePage() {
 
   return (
     <div className="explore-page">
-      <section className={`explore-stage body-${body}`} aria-labelledby="explore-title">
-        <PlanetGlobe
-          body={body}
-          isInteractive
-          sites={shownSites}
-          selectedTile={search.tile}
-          focus={focus}
-          onPick={(lat, lon) => updateSearchParams({ at: `${lat.toFixed(2)},${lon.toFixed(2)}`, site: null })}
-          onSelectSite={handleSelectSite}
-          label={`Globe of ${BODY_NAMES[body]}. Drag to turn it, scroll to zoom, click a spot to pick that tile.`}
-        />
-        <div className="explore-heading">
+      <section className="explore-stage theme-space" aria-labelledby="explore-title">
+        <div className="explore-intro">
+          <p className="eyebrow">Explore</p>
           <h1 id="explore-title" className="explore-title">Click anywhere on {ON_BODY[body]}</h1>
           <p className="explore-hint">Each click picks a tile about 27 km across. Drag to turn the globe and pick again any time.</p>
         </div>
-        <nav className="body-switchers" aria-label="Switch globe">
-          {BODIES.filter((other) => other !== body).map((other) => (
-            <Link key={other} className="body-switcher" to={`/explore/${other}?to=${other === targetBody ? body : targetBody}`}>
-              <span className="body-switcher-globe" style={{ backgroundImage: `url(${GLOBE_TEXTURES[other].url})` }} aria-hidden="true" />
-              {BODY_NAMES[other]}
-            </Link>
-          ))}
-        </nav>
-        <div className="explore-sites" role="group" aria-label="Named sites">
-          {shownSites.map((site) => (
-            <button key={site.target_id} type="button" className="site-chip" aria-pressed={site.target_id === namedSite?.target_id} onClick={() => handleSelectSite(site)}>
-              {site.name}
-            </button>
-          ))}
-          {bodySites.some((site) => site.track === "cave") && (
-            <label className="cave-toggle">
-              <input type="checkbox" checked={isShowingCaves} onChange={(event) => setIsShowingCaves(event.target.checked)} />
-              Show caves
-            </label>
-          )}
-        </div>
-      </section>
 
-      <div className="explore-results">
-        <ResultBodyTabs bodies={BODIES.filter((other) => other !== body)} selectedBody={targetBody} onSelect={(other) => updateSearchParams({ to: other })} />
-        <div id={RESULTS_PANEL_ID} role="tabpanel" aria-labelledby={`result-tab-${targetBody}`} className="explore-results-panel">
-          {!selection && <p className="page-message explore-empty">Pick a spot on the globe, or a named site, to rank every place on {ON_BODY[targetBody]} against it.</p>}
-          {search.hasNoData && (
-            <div className="page-message explore-empty" role="status">
-              <p>{body === "earth" && search.nearestScored ? noScoreNote(search.nearestScored.km) : "This tile has no data yet. Try a spot nearby."}</p>
-              {body === "earth" && search.nearestScored && (
-                <button type="button" className="button" onClick={() => updateSearchParams({ at: `${search.nearestScored.lat.toFixed(2)},${search.nearestScored.lon.toFixed(2)}`, site: null })}>
-                  {nearestButtonLabel(search.nearestScored.km)}
+        <div className="explore-globe">
+          <PlanetGlobe
+            body={body}
+            isInteractive
+            sites={shownSites}
+            selectedTile={search.tile}
+            focus={focus}
+            onPick={pickPoint}
+            onSelectSite={handleSelectSite}
+            label={`Globe of ${BODY_NAMES[body]}. Drag to turn it, scroll to zoom, click a spot to pick that tile.`}
+          />
+          <nav className="body-switchers" aria-label="Switch globe">
+            {BODIES.filter((other) => other !== body).map((other) => (
+              <Link key={other} className="body-switcher" to={`/explore/${other}?to=${other === targetBody ? body : targetBody}`}>
+                <span className="body-switcher-globe" style={{ backgroundImage: `url(${GLOBE_TEXTURES[other].url})` }} aria-hidden="true" />
+                {BODY_NAMES[other]}
+              </Link>
+            ))}
+          </nav>
+        </div>
+
+        {(shownSites.length > 0 || hasCaves) && (
+          <div className="explore-sites" role="group" aria-labelledby="explore-sites-label">
+            <p id="explore-sites-label" className="control-label">Named sites</p>
+            <div className="explore-site-chips">
+              {shownSites.map((site) => (
+                <button key={site.target_id} type="button" className="chip" aria-pressed={site.target_id === namedSite?.target_id} onClick={() => handleSelectSite(site)}>
+                  {site.name}
+                </button>
+              ))}
+              {hasCaves && (
+                <button type="button" className="chip" aria-pressed={isShowingCaves} onClick={() => setIsShowingCaves((isShowing) => !isShowing)}>
+                  Show caves
                 </button>
               )}
             </div>
+          </div>
+        )}
+      </section>
+
+      <div className="explore-results page-body">
+        <ResultBodyTabs bodies={BODIES.filter((other) => other !== body)} selectedBody={targetBody} onSelect={(other) => updateSearchParams({ to: other })} />
+        <div id={RESULTS_PANEL_ID} role="tabpanel" aria-labelledby={`result-tab-${targetBody}`} className="explore-results-panel">
+          {!isShowingResults && (
+            <ResultsMessage
+              body={body}
+              targetBody={targetBody}
+              selection={selection}
+              requestedSiteId={requestedSiteId}
+              isLoadingSites={targetsState.isLoading}
+              search={search}
+              onUseNearest={(nearest) => pickPoint(nearest.lat, nearest.lon)}
+            />
           )}
-          {target && presetId && !search.hasNoData && (
+          {isShowingResults && (
             <FindResults
               key={`${target.target_id}-${targetBody}-${presetId}`}
               target={target}
@@ -134,7 +150,6 @@ export default function ExplorePage() {
               presets={presets}
               presetId={presetId}
               onSelectPreset={(nextPresetId) => { setCustomWeights(null); updateSearchParams({ preset: nextPresetId }); }}
-              groups={presetsState.data?.groups}
               mode={mode}
               onChangeMode={(nextMode) => updateSearchParams({ mode: nextMode })}
               customWeights={customWeights}
@@ -145,4 +160,33 @@ export default function ExplorePage() {
       </div>
     </div>
   );
+}
+
+/** What the results panel says before there are results: how to start, that data is loading, or why a spot has none. */
+function ResultsMessage({ body, targetBody, selection, requestedSiteId, isLoadingSites, search, onUseNearest }) {
+  if (!selection && requestedSiteId && isLoadingSites) return <p className="page-message" role="status">Loading the named sites…</p>;
+  if (!selection) {
+    return (
+      <p className="page-message">
+        {/* An old or mistyped link names a site this body doesn't have: say so instead of silently showing nothing. */}
+        {requestedSiteId && `No named site “${requestedSiteId}” on ${ON_BODY[body]}. `}
+        Pick a spot on the globe, or a named site, to rank every place on {ON_BODY[targetBody]} against it.
+      </p>
+    );
+  }
+  if (search.hasNoData) {
+    const nearest = body === "earth" ? search.nearestScored : null;
+    return (
+      <div className="page-message explore-no-data" role="status">
+        <p>{nearest ? noScoreNote(nearest.km) : "This tile has no data yet. Try a spot nearby."}</p>
+        {nearest && (
+          <button type="button" className="button button-primary" onClick={() => onUseNearest(nearest)}>
+            {nearestButtonLabel(nearest.km)}
+          </button>
+        )}
+      </div>
+    );
+  }
+  if (search.error) return <p className="page-message" role="alert">The map data didn't load. Check your connection, then reload the page.</p>;
+  return <p className="page-message" role="status">Loading the tiles…</p>;
 }
