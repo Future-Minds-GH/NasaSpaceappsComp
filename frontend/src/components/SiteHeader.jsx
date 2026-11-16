@@ -5,7 +5,7 @@ import { Link } from "react-router-dom";
 export default function SiteHeader() {
   return (
     <header className="site-header">
-      <Link className="site-title" to="/">Terrestrial Analog Finder</Link>
+      <Link className="site-title" to="/">Common Ground</Link>
     </header>
   );
 }
