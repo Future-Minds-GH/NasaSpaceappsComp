@@ -1,47 +1,86 @@
-/* Header height, shared with the one-screen landing workspace. */
-:root { --header-height: 52px; }
-
-/* Page frame shared by every route: skip link, header with mode navigation, page title block, footer. */
+/* Page frame shared by every route: skip link, the black header with page navigation, the black page-hero band that
+   opens every reading page (NASA's science pages open the same way), the page body and its sections, and the footer. */
 
 .skip-link { position: absolute; left: var(--gutter); top: -48px; padding: 8px 12px; background: var(--ink); color: var(--paper); z-index: 2000; }
 .skip-link:focus { top: 8px; }
 main { display: block; min-height: 60vh; }
 main:focus { outline: none; }
 
-/* NASA-style black bar: white Inter navigation, the current page underlined in red */
+/* ---- Header: black bar, the site name on the left (home is the workspace), page links on the right ---- */
 .site-header {
-  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 24px;
-  min-height: var(--header-height); height: var(--header-height); padding: 10px max(var(--gutter), calc((100% - 1240px) / 2 + var(--gutter)));
-  background: var(--space); color: var(--on-space);
+  position: sticky; top: 0; z-index: 30;
+  display: flex; align-items: center; justify-content: space-between; gap: 4px 32px;
+  height: var(--header-height); padding: 0 var(--gutter);
+  background: var(--space); color: var(--on-space); border-bottom: 1px solid var(--rule-on-space);
 }
-.site-title { font-family: var(--font-display); font-weight: 800; font-size: 1.125rem; letter-spacing: -0.01em; text-decoration: none; }
-.site-nav { display: flex; flex-wrap: wrap; gap: 4px 20px; }
-.site-nav-link {
-  padding: 8px 0 6px; border-bottom: 3px solid transparent; text-decoration: none;
-  font-family: var(--font-display); font-weight: 600; font-size: 1.0625rem;
-}
-.site-nav-link[aria-current="page"] { border-bottom-color: var(--accent); }
 .site-header :focus-visible { outline-color: #FFFFFF; }
+.site-title {
+  display: inline-flex; align-items: center; gap: 10px; flex: none;
+  font: 800 1.0625rem/1 var(--font-display); letter-spacing: -0.01em; text-decoration: none; white-space: nowrap;
+}
+/* Two overlapping worlds: a place on Earth standing in for a place on another body */
+.site-mark { width: 30px; height: 20px; flex: none; }
+.site-header-end { display: flex; align-items: center; gap: 12px 28px; min-width: 0; }
+.site-nav { display: flex; gap: 4px 28px; min-width: 0; overflow-x: auto; scrollbar-width: none; }
+.site-nav::-webkit-scrollbar { display: none; }
+.site-nav-link {
+  position: relative; display: inline-flex; align-items: center; height: 44px;
+  font: 600 0.9375rem/1 var(--font-display); color: var(--on-space-soft); text-decoration: none; white-space: nowrap;
+  transition: color 160ms ease;
+}
+/* The current page: white, with NASA red underneath */
+.site-nav-link[aria-current="page"] { color: var(--on-space); }
+.site-nav-link[aria-current="page"]::after { content: ""; position: absolute; left: 0; right: 0; bottom: 4px; height: 3px; background: var(--accent); }
 @media (hover: hover) and (pointer: fine) {
-  .site-nav-link:not([aria-current="page"]):hover { border-bottom-color: var(--on-space-soft); }
+  .site-nav-link:hover { color: var(--on-space); }
+}
+/* Visit count: a small outlined mono tag, like NASA's "LIVE" tag beside NASA+ */
+.visit-count {
+  display: inline-flex; align-items: center; gap: 8px; flex: none; padding: 4px 10px;
+  border: 1px solid var(--rule-on-space); border-radius: var(--radius-control);
+  font: 400 var(--text-label)/1.2 var(--font-mono); letter-spacing: 0.06em; color: var(--on-space); white-space: nowrap;
+}
+.visit-count-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+@media (max-width: 720px) {
+  /* Phones: the bar wraps (name, then the links) and scrolls away, so it never eats a fifth of the screen. */
+  .site-header { position: static; height: auto; flex-wrap: wrap; padding-block: 10px 0; }
+  /* The visit count joins the name's row; the links get a full row of their own underneath */
+  .site-header-end { display: contents; }
+  .visit-count { order: 1; }
+  .site-nav { order: 2; width: 100%; gap: 20px; }
 }
 
-/* Title block at the top of each mode page */
-.page { max-width: 1240px; margin: 0 auto; padding: 40px var(--gutter) 0; }
-.page-title { font-family: var(--font-display); font-weight: 700; font-size: clamp(2rem, 1.3rem + 2.6vw, 3.25rem); line-height: 1.05; letter-spacing: -0.02em; }
-.page-lede { margin-top: 12px; max-width: 62ch; font-size: 1.125rem; color: var(--ink-soft); }
-.section-heading { font-family: var(--font-display); font-size: 1.5rem; font-weight: 700; letter-spacing: -0.01em; }
+/* ---- Reading pages: a black hero band with the title, then the page body ---- */
+.page-hero { background: var(--space); color: var(--on-space); padding: clamp(40px, 6vw, 72px) 0 clamp(32px, 5vw, 56px); }
+.page-hero-inner,
+.page-body,
+.page { width: min(100% - 2 * var(--gutter), var(--content-width)); margin-inline: auto; }
+.page-hero .eyebrow { display: block; margin-bottom: 16px; color: var(--on-space-soft); }
+.page-title { font: 700 var(--text-page)/1.04 var(--font-display); letter-spacing: -0.025em; max-width: 22ch; }
+.page-lede { margin-top: 16px; max-width: 62ch; font-size: var(--text-lede); line-height: 1.55; color: var(--ink-soft); }
+.page-hero .page-lede { color: var(--on-space-soft); }
+.page-hero :focus-visible { outline-color: #FFFFFF; }
+.page-body { padding: clamp(32px, 5vw, 56px) 0 0; }
+/* Pages not yet on the hero band keep a plain title block */
+.page { padding: 40px 0 0; }
 
-/* Black footer band, like NASA's, with the content kept in the page column */
-.site-footer {
-  margin-top: 80px; padding: 32px max(var(--gutter), calc((100% - 1240px) / 2 + var(--gutter))) 40px;
-  background: var(--space); color: var(--on-space-soft); font-size: 0.875rem; display: grid; gap: 8px;
+/* Sections inside a page body: a hairline above, generous space, a big plain heading */
+.page-section { display: grid; gap: 16px; margin-top: clamp(40px, 6vw, 72px); padding-top: 32px; border-top: 1px solid var(--rule); }
+.page-section:first-child { margin-top: 0; }
+.section-heading { font: 700 var(--text-h2)/1.15 var(--font-display); letter-spacing: -0.015em; }
+.section-lede { max-width: 66ch; color: var(--ink-soft); }
+
+/* ---- Footer: black band with who built the site and the data credits ---- */
+.site-footer { margin-top: clamp(56px, 8vw, 96px); background: var(--space); color: var(--on-space-soft); border-top: 1px solid var(--rule-on-space); }
+/* The workspace is black down to the footer: no gap, just the hairline */
+main:has(.workspace) + .site-footer { margin-top: 0; }
+.site-footer-inner {
+  width: min(100% - 2 * var(--gutter), var(--content-width)); margin-inline: auto; padding: 40px 0 48px;
+  display: grid; gap: 32px;
 }
-.site-footer p { max-width: 80ch; }
+.site-footer-text { display: grid; gap: 8px; font-size: var(--text-small); line-height: 1.6; }
+.site-footer-text p { max-width: 72ch; }
+.site-footer-lead { font: 700 1rem/1.4 var(--font-display); color: var(--on-space); }
 .site-footer a { color: var(--on-space); }
 .site-footer :focus-visible { outline-color: #FFFFFF; }
-.site-footer-lead { color: var(--on-space); font-family: var(--font-display); font-weight: 700; font-size: 1rem; }
-.sample-data-note { color: #FFBE2E; font-weight: 650; }
-/* The landing hero is already black down to the footer: no white gap, just a hairline between them */
-main:has(.workspace) + .site-footer { margin-top: 0; border-top: 1px solid rgb(255 255 255 / 0.14); }
-/* The footer (data credits) shows again below the results now that the page scrolls. */
+.sample-data-note { color: #FFBE2E; font-weight: 600; }

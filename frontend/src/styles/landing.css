@@ -1,426 +1,312 @@
-/* Landing workspace, laid out like the paper sketch: factor sliders in a left column, two hovering planets with an
-   animated arrow between them, "other planets" buttons above each, and a Compute bar across the bottom. */
+/* Landing workspace on a black NASA stage: the five factor sliders in a dark band on the left, the input planet and the
+   output planets joined by a transfer arc, the Compute bar under them, and the best match on each planet below.
+   The first screen fits the window; results scroll in underneath while the sliders stay pinned. */
 
 .workspace {
+  --sidebar-width: clamp(260px, 22vw, 320px);
+  --compute-height: 84px;
   display: grid;
-  grid-template-columns: clamp(210px, 22vw, 300px) minmax(0, 1fr);
-  grid-template-areas: "sidebar stage" "sidebar compute" "sidebar result";
-  background: radial-gradient(ellipse at 60% 45%, var(--space-raised) 0%, var(--space) 70%);
-  color: var(--on-space);
-  min-height: calc(100vh - var(--header-height));
-  grid-template-rows: 1fr auto auto;
+  grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
+  grid-template-areas: "sidebar stage" "sidebar compute" "sidebar results";
   align-items: start;
+  background: var(--space);
 }
 .workspace :focus-visible { outline-color: #FFFFFF; }
 
-/* ---- Left column: factor sliders ---- */
+/* ---- Sidebar: how to compare, then the five sliders ---- */
 .factor-sidebar {
-  grid-area: sidebar; display: flex; flex-direction: column; gap: 16px; align-self: start;
-  position: sticky; top: 0; max-height: 100vh; overflow-y: auto;
-  padding: 24px clamp(12px, 1.6vw, 20px); border-right: 1px solid rgb(255 255 255 / 0.12); background: rgb(255 255 255 / 0.03);
+  grid-area: sidebar; align-self: start; position: sticky; top: var(--header-height);
+  height: calc(100dvh - var(--header-height)); overflow-y: auto;
+  display: flex; flex-direction: column; gap: 20px; padding: 24px;
+  background: var(--space-band); border-right: 1px solid var(--rule-on-space);
 }
-.factor-sidebar .eyebrow { color: var(--on-space-soft); }
-.factor-sidebar-title { font-size: 1.25rem; }
+.factor-sidebar-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.factor-sidebar-title { font: 700 1.25rem/1.2 var(--font-display); letter-spacing: -0.01em; }
+.factor-sidebar-toggle { display: none; }
+.factor-sidebar-body { display: grid; gap: 24px; }
+.factor-sidebar .segmented { background: var(--space); }
+.factor-sliders { display: grid; padding-top: 20px; border-top: 1px solid var(--rule-on-space); }
 .factor-slider-list { list-style: none; display: grid; gap: 14px; }
-.factor-slider { display: grid; gap: 4px; }
-.factor-slider-head { display: flex; align-items: center; gap: 8px; font-size: 0.9375rem; font-weight: 600; }
-.factor-slider-head label { flex: 1; display: flex; align-items: center; }
-.factor-slider-head output { font-family: var(--font-mono); font-size: 0.875rem; color: var(--on-space-soft); min-width: 3ch; text-align: right; }
-.factor-slider input[type="range"] { width: 100%; accent-color: var(--factor-color, #FFFFFF); }
-.factor-remove {
-  border: 0; background: none; color: var(--on-space-soft); font-size: 1.125rem; line-height: 1; cursor: pointer;
-  width: 24px; height: 24px; border-radius: 50%;
-}
-.factor-remove:hover { color: #FFFFFF; background: rgb(255 255 255 / 0.1); }
+.factor-slider { display: grid; gap: 2px; }
+.factor-slider-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.factor-slider-head label { display: flex; align-items: center; font: 600 0.9375rem/1.3 var(--font-display); }
+/* The weight in words, read like an instrument: Off / Low / Medium / High */
+.factor-slider-head output { font: 400 var(--text-label)/1 var(--font-mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-soft); }
+.factor-sidebar-note { font-size: var(--text-label); line-height: 1.5; color: var(--ink-soft); }
 
-/* ---- Stage: two hovering planets and the arrow ---- */
+/* ---- Stage: input planet, transfer arc, output planets ---- */
 .workspace-stage {
-  grid-area: stage; align-self: stretch; display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 8px;
-  padding: 16px clamp(16px, 3vw, 48px); min-width: 0;
+  grid-area: stage; position: relative; min-width: 0;
+  height: calc(100dvh - var(--header-height) - var(--compute-height)); min-height: 440px;
+  display: grid; grid-template-columns: minmax(0, 1fr) clamp(96px, 12vw, 220px) minmax(0, 1fr); align-items: center; gap: 8px;
+  padding: 20px clamp(16px, 3vw, 48px) 16px;
+  /* A size container, so each globe is sized from the height the stage really has and never runs into the Compute bar */
+  container-type: size; overflow: hidden;
 }
-.planet-column { display: grid; justify-items: center; gap: 12px; min-width: 0; }
-.other-planets { display: grid; justify-items: center; gap: 6px; }
+.workspace-stage:has(.targets-2) { grid-template-columns: minmax(0, 1fr) clamp(72px, 7vw, 120px) minmax(0, 1.6fr); }
+
+.planet-column { display: grid; justify-items: center; align-content: center; gap: 14px; min-width: 0; }
+
+/* "From" and "Compare with": a tracked label over small globe buttons */
+.other-planets { display: grid; justify-items: center; gap: 10px; }
 .other-planets-label { color: var(--on-space-soft); }
-.other-planets-row { display: flex; gap: 10px; }
+.other-planets-row { display: flex; gap: 14px; }
 .other-planet {
-  display: grid; justify-items: center; gap: 4px; padding: 4px; border: 0; background: none; color: var(--on-space-soft);
-  font: inherit; font-size: 0.75rem; font-weight: 600; cursor: pointer; transition: transform 160ms var(--ease-out), color 160ms ease;
+  display: grid; justify-items: center; gap: 6px; padding: 4px 6px; border: 0; border-radius: var(--radius-control);
+  background: none; color: var(--on-space-soft); font: 600 var(--text-label)/1.2 var(--font-display); cursor: pointer;
+  transition: color 160ms ease;
 }
 .other-planet-globe {
-  width: 40px; height: 40px; border-radius: 50%; background-size: 200% 100%; background-position: 25% 50%;
-  box-shadow: inset -6px -5px 12px rgb(0 0 0 / 0.65), 0 0 0 1px rgb(255 255 255 / 0.18);
+  width: 36px; height: 36px; border-radius: 50%; background-size: 200% 100%; background-position: 25% 50%;
+  box-shadow: inset -6px -5px 12px rgb(0 0 0 / 0.6), 0 0 0 1px rgb(255 255 255 / 0.2);
+  transition: box-shadow 160ms ease, transform 140ms var(--ease-out);
 }
-.other-planet:hover { color: #FFFFFF; transform: translateY(-2px); }
-.other-planet:hover .other-planet-globe { box-shadow: inset -6px -5px 12px rgb(0 0 0 / 0.65), 0 0 0 2px #FFFFFF; }
-.other-planet:active { transform: scale(0.95); }
-
-/* The planet floats gently up and down: the sketch's "hovering planet". */
-.hovering-planet {
-  position: relative; width: min(100%, 360px, 40vh); aspect-ratio: 1;
-  animation: planet-hover 6s ease-in-out infinite;
+.other-planet:active .other-planet-globe { transform: scale(0.94); }
+@media (hover: hover) and (pointer: fine) {
+  .other-planet:hover { color: var(--on-space); }
+  .other-planet:hover .other-planet-globe { box-shadow: inset -6px -5px 12px rgb(0 0 0 / 0.6), 0 0 0 2px #FFFFFF; }
 }
-.planet-column-target .hovering-planet { animation-delay: -3s; }
-.hovering-planet::after {
-  /* soft shadow on the "floor" that shrinks as the planet rises */
-  content: ""; position: absolute; left: 20%; right: 20%; bottom: -28px; height: 14px; border-radius: 50%;
-  background: radial-gradient(ellipse, rgb(255 255 255 / 0.10), transparent 70%);
-  animation: planet-shadow 6s ease-in-out infinite; animation-delay: inherit; pointer-events: none;
+
+/* The globes: sized from the stage's height (cqh), never bigger than 400px */
+.globe-frame { position: relative; width: min(100%, 400px, calc(100cqh - 200px)); min-width: 96px; aspect-ratio: 1; }
+.targets-2 .target-globe .globe-frame { width: min(100%, 320px, calc(100cqh - 200px)); }
+.globe-frame .planet-globe,
+.planet-globe-wrap { position: absolute; inset: 0; }
+.planet-globe.is-pickable { cursor: crosshair; }
+.planet-globe.is-draggable { cursor: grab; }
+.planet-globe.is-draggable:active { cursor: grabbing; }
+.planet-column-target .planet-globe:not(.is-draggable) { cursor: default; }
+.globe-failed { position: absolute; inset: auto 0 0; text-align: center; font-size: var(--text-small); }
+
+.planet-caption { display: grid; justify-items: center; gap: 6px; min-height: 60px; text-align: center; }
+.planet-caption-name { font: 700 clamp(1.5rem, 1.1rem + 1.1vw, 2.25rem)/1 var(--font-display); letter-spacing: -0.02em; color: var(--on-space); }
+.planet-caption-detail { display: inline-flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 4px 10px; font: 400 var(--text-small)/1.4 var(--font-mono); color: var(--on-space-soft); }
+.planet-column-input .planet-caption-detail { flex-direction: column; gap: 2px; }
+.picked-site-name { font: 600 var(--text-small)/1.3 var(--font-display); color: #FF9F85; }
+.caption-score { font: 500 1rem/1 var(--font-mono); color: var(--on-space); }
+
+/* The first step, over the input globe until a spot is picked: three slow pulses, then it rests */
+.pick-prompt {
+  position: absolute; left: 50%; top: 50%; z-index: 2; transform: translate(-50%, -50%); pointer-events: none;
+  padding: 8px 16px; border-radius: var(--radius-pill); background: rgb(0 0 0 / 0.72); border: 1px solid rgb(255 255 255 / 0.4);
+  font: 600 var(--text-small)/1.2 var(--font-display); color: #FFFFFF; white-space: nowrap;
 }
-.hovering-planet .planet-globe { position: absolute; inset: 0; }
-.planet-column-target .planet-globe { cursor: default; }
-@keyframes planet-hover { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
-@keyframes planet-shadow { 0%, 100% { transform: scaleX(1); opacity: 1; } 50% { transform: scaleX(0.8); opacity: 0.6; } }
-
-.planet-caption { display: grid; justify-items: center; gap: 2px; margin-top: 10px; text-align: center; }
-.planet-caption-name { font-family: var(--font-display); font-weight: 700; font-size: clamp(1.4rem, 1rem + 1.2vw, 2rem); line-height: 1; }
-.planet-caption-detail { font-family: var(--font-mono); font-size: 0.8125rem; color: var(--on-space-soft); }
-.body-earth .planet-caption-name { color: #8FD3AE; }
-.body-moon .planet-caption-name { color: #C9D3DE; }
-.body-mars .planet-caption-name { color: #F0A07F; }
-
-/* Animated arrow (decoration only): dashes flow left to right, faster while computing. */
-.workspace-arrow-wrap { display: grid; justify-items: center; gap: 4px; }
-.workspace-arrow {
-  width: clamp(90px, 10vw, 160px); padding: 4px; border: 0; background: none; cursor: pointer; color: #FFFFFF;
-  border-radius: 12px; transition: transform 160ms var(--ease-out);
+.pick-prompt::after {
+  content: ""; position: absolute; inset: -1px; border-radius: inherit; border: 2px solid #FF5A36; opacity: 0;
+  animation: pick-prompt-ring 1.8s var(--ease-out) 500ms 3;
 }
-.workspace-arrow:hover { transform: scale(1.05); }
-.workspace-arrow:active { transform: scale(0.96); }
-.workspace-arrow svg { display: block; width: 100%; overflow: visible; }
-.workspace-arrow-line { fill: none; stroke: currentColor; stroke-width: 3; stroke-linecap: round; stroke-dasharray: 10 8; animation: arrow-flow 1.2s linear infinite; }
-.workspace-arrow-head { fill: none; stroke: currentColor; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
-.workspace-arrow.is-computing { color: var(--accent); }
-.workspace-arrow.is-computing .workspace-arrow-line { animation-duration: 0.35s; }
-.workspace-arrow.is-done { color: #8FD3AE; }
-.workspace-arrow-label { font-size: 0.75rem; color: var(--on-space-soft); }
-@keyframes arrow-flow { to { stroke-dashoffset: -18; } }
+@keyframes pick-prompt-ring { from { opacity: 0.8; transform: scale(1); } to { opacity: 0; transform: scale(1.2); } }
 
-/* ---- Compute bar ---- */
+/* Output globes: each one added on the right joins the row; removing one keeps at least one */
+.target-globes { display: flex; justify-content: center; align-items: flex-start; gap: 16px; width: 100%; }
+.target-globe { position: relative; flex: 1 1 0; min-width: 0; display: grid; justify-items: center; gap: 14px; animation: target-in 220ms var(--ease-out); }
+@keyframes target-in { from { opacity: 0; transform: scale(0.96); } }
+.target-remove {
+  position: absolute; inset: 0; z-index: 2; display: grid; place-items: center; padding: 0; border: 0; border-radius: 50%;
+  background: rgb(0 0 0 / 0.55); color: #FFFFFF; cursor: pointer; opacity: 0; transition: opacity 160ms ease;
+}
+.target-remove svg { width: 36%; height: 36%; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; }
+.target-remove:focus-visible { opacity: 1; }
+@media (hover: hover) and (pointer: fine) {
+  .target-remove:hover { opacity: 1; }
+}
+/* Touch screens, and output globes that can be turned after Compute: a small corner X instead of a cover */
+@media (hover: none) {
+  .target-remove { inset: 4% 4% auto auto; width: 32px; height: 32px; opacity: 1; background: rgb(0 0 0 / 0.7); border: 1px solid rgb(255 255 255 / 0.35); }
+  .target-remove svg { width: 50%; height: 50%; }
+}
+.target-globe.has-result .target-remove { inset: 2% 2% auto auto; width: 28px; height: 28px; background: rgb(0 0 0 / 0.7); border: 1px solid rgb(255 255 255 / 0.35); }
+.target-globe.has-result .target-remove svg { width: 50%; height: 50%; }
+@media (hover: hover) and (pointer: fine) {
+  .target-globe.has-result:hover .target-remove { opacity: 1; }
+}
+
+/* ---- Transfer arc: the dotted orbit between the planets. A red probe rides it while Compute runs. ---- */
+.transfer-arc { width: 100%; justify-self: center; }
+.transfer-arc svg { display: block; width: 100%; overflow: visible; }
+.transfer-arc-path, .transfer-arc-head { fill: none; stroke: rgb(255 255 255 / 0.4); stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; transition: stroke 240ms ease; }
+.transfer-arc-path { stroke-dasharray: 2 5; }
+.transfer-arc.is-computing .transfer-arc-path,
+.transfer-arc.is-computing .transfer-arc-head { stroke: rgb(255 255 255 / 0.6); }
+.transfer-arc.is-done .transfer-arc-path { stroke: #FFFFFF; stroke-dasharray: none; }
+.transfer-arc.is-done .transfer-arc-head { stroke: #FFFFFF; }
+.transfer-arc.is-failed .transfer-arc-path,
+.transfer-arc.is-failed .transfer-arc-head { stroke: var(--band-red); }
+/* A zero-length dash with round caps draws a dot; moving the dash offset carries it along the arc (pathLength 100) */
+.transfer-arc-probe {
+  fill: none; stroke: var(--accent); stroke-width: 8; stroke-linecap: round; stroke-dasharray: 0.001 200;
+  filter: drop-shadow(0 0 4px rgb(216 57 51 / 0.85));
+  animation: transfer-probe 1.4s linear infinite;
+}
+@keyframes transfer-probe { from { stroke-dashoffset: 0; } to { stroke-dashoffset: -100; } }
+
+/* ---- Compute bar: from → to, the status or the progress, then the coordinate box and the red Compute button ---- */
 .compute-bar {
-  grid-area: compute; position: sticky; bottom: 0; z-index: 10;
-  display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 12px 24px;
-  padding: 14px max(var(--gutter), 24px); background: rgb(12 12 14 / 0.92); backdrop-filter: blur(8px);
-  border-top: 1px solid rgb(255 255 255 / 0.14);
+  grid-area: compute; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 12px 32px;
+  height: var(--compute-height); padding: 0 clamp(16px, 3vw, 40px);
+  background: var(--space-band); border-block: 1px solid var(--rule-on-space);
 }
-.compute-summary { display: flex; align-items: center; gap: 14px; font-size: 0.9375rem; min-width: 0; }
-.compute-from { display: grid; gap: 0; font-family: var(--font-mono); font-size: 0.8125rem; color: var(--on-space-soft); }
-.compute-from strong { font-family: var(--font-display); font-size: 1rem; color: #FFFFFF; }
-.compute-from .eyebrow { font-size: 0.6875rem; color: var(--on-space-soft); }
-.compute-to { font-size: 1.25rem; color: var(--on-space-soft); }
-.compute-hint { color: var(--on-space-soft); font-size: 0.9375rem; }
+.compute-summary { display: flex; align-items: center; gap: 20px; min-width: 0; }
+.compute-from { display: grid; gap: 3px; min-width: 0; }
+.compute-from .eyebrow { color: var(--on-space-soft); }
+.compute-from strong { font: 700 1rem/1.2 var(--font-display); color: var(--on-space); }
+.compute-pending { font-size: var(--text-small); color: var(--on-space-soft); }
+.compute-to { font-size: 1.125rem; color: var(--on-space-soft); }
+.compute-hint { font-size: 0.9375rem; color: var(--on-space-soft); }
 .compute-bar.is-stale .compute-hint { color: #FFBE2E; }
-.compute-progress { display: grid; gap: 6px; min-width: 0; }
-.compute-progress[hidden] { display: none; }
-.compute-progress-track { height: 8px; border-radius: 999px; background: rgb(255 255 255 / 0.12); overflow: hidden; }
-.compute-progress-fill {
-  height: 100%; width: 100%; transform-origin: left center; border-radius: 999px;
-  background: linear-gradient(90deg, var(--accent), #FF8A5B);
-  box-shadow: 0 0 12px rgb(216 57 51 / 0.6);
+.compute-progress { display: grid; gap: 8px; min-width: 0; }
+.compute-progress-track { height: 4px; border-radius: 2px; background: rgb(255 255 255 / 0.14); overflow: hidden; }
+.compute-progress-fill { height: 100%; width: 100%; transform-origin: left center; background: var(--accent); }
+.compute-progress-label { font: 400 var(--text-small)/1.3 var(--font-mono); color: var(--on-space-soft); }
+.compute-bar.is-failed .compute-progress-fill { background: var(--band-red); }
+.compute-bar.is-failed .compute-progress-label { color: #FF9A8F; }
+.compute-actions { display: flex; align-items: center; gap: 8px; }
+.compute-coords input {
+  width: 10rem; min-height: 48px; padding: 8px 12px; border: 1px solid rgb(255 255 255 / 0.28); border-radius: var(--radius-control);
+  background: transparent; color: var(--on-space); font: 400 var(--text-small)/1.2 var(--font-mono);
 }
-.compute-progress-label { font-family: var(--font-mono); font-size: 0.8125rem; color: var(--on-space-soft); }
-.compute-button { min-width: 160px; font-size: 1.0625rem; }
+.compute-coords input::placeholder { color: var(--on-space-soft); }
+.compute-coords input:focus-visible { outline: 2px solid #FFFFFF; outline-offset: 0; }
+.compute-coords input[aria-invalid="true"] { border-color: #FF9A8F; }
+.compute-button { min-width: 168px; min-height: 48px; font-size: 1rem; }
 
-/* ---- Result: one similarity vector per body, side by side ---- */
+/* ---- Results: the best match on each output planet ---- */
 .similarity-results {
-  grid-area: result; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;
-  padding: 24px max(var(--gutter), 24px) 40px; background: var(--paper); color: var(--ink);
-  animation: similarity-in 400ms var(--ease-out);
+  grid-area: results; display: grid; gap: 24px;
+  padding: clamp(32px, 4vw, 56px) clamp(16px, 3vw, 40px) clamp(40px, 5vw, 72px);
+  scroll-margin-top: calc(var(--header-height) + 8px);
 }
+.similarity-results-header { display: grid; gap: 8px; }
+/* Side by side for two or three planets; one card alone keeps a comfortable reading width */
+.similarity-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); align-items: start; gap: 24px; }
+.similarity-cards:has(> .similarity:only-child) { grid-template-columns: minmax(0, 760px); }
+.similarity-results-title { font: 700 var(--text-h2)/1.1 var(--font-display); letter-spacing: -0.02em; }
+.similarity-results-lede { color: var(--ink-soft); }
+
 .similarity {
-  display: grid; align-content: start; gap: 12px; padding: 14px; min-width: 0;
-  border: 1px solid var(--rule); border-top: 4px solid var(--body-color, var(--rule)); background: var(--paper);
-  --band: var(--ink-soft);
+  --band: var(--ink-soft); --bar: var(--ink-soft);
+  display: grid; align-content: start; gap: 16px; min-width: 0; padding: 24px; background: var(--space-band);
+  animation: similarity-in 240ms var(--ease-out) both;
 }
+.similarity:nth-of-type(2) { animation-delay: 60ms; }
+.similarity:nth-of-type(3) { animation-delay: 120ms; }
+@keyframes similarity-in { from { opacity: 0; transform: translateY(8px); } }
 .similarity.body-earth { --body-color: var(--earth); }
 .similarity.body-moon { --body-color: var(--moon); }
 .similarity.body-mars { --body-color: var(--mars); }
-.similarity :focus-visible { outline-color: var(--focus); }
+.similarity.band-green { --band: var(--band-green-ink); }
+.similarity.band-yellow { --band: var(--band-yellow-ink); }
+.similarity.band-red { --band: var(--band-red-ink); }
 .similarity.is-message { color: var(--ink-soft); }
-.similarity.band-green { --band: var(--band-green); }
-.similarity.band-yellow { --band: var(--band-yellow); }
-.similarity.band-red { --band: var(--band-red); }
-.similarity .score-ring-fill { stroke: var(--band); }
-.similarity-select {
-  display: flex; align-items: center; gap: 14px; padding: 0; border: 0; background: none; color: inherit;
-  font: inherit; text-align: left; cursor: pointer;
-}
-.similarity-head-text { display: grid; gap: 2px; min-width: 0; }
-.similarity-body { font-family: var(--font-display); font-weight: 700; font-size: 1.25rem; color: var(--body-color); display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; }
-.similarity-same { font-family: var(--font-mono); font-size: 0.6875rem; font-weight: 400; color: var(--ink-soft); }
-.similarity-place { font-family: var(--font-mono); font-size: 0.8125rem; color: var(--ink-soft); }
-.similarity-caption { font-size: 0.75rem; color: var(--ink-soft); margin-bottom: -4px; }
-.similarity-note { font-size: 0.8125rem; color: var(--warning); }
-.similarity-bars { list-style: none; display: grid; gap: 6px; }
-.similarity-bar { display: grid; grid-template-columns: 1fr 3rem; grid-template-rows: auto auto; column-gap: 8px; row-gap: 2px; align-items: center; font-size: 0.8125rem; }
-.similarity-bar-name { display: flex; align-items: center; font-weight: 600; }
-.similarity-bar-value { grid-column: 2; grid-row: 1; font-family: var(--font-mono); text-align: right; }
-.similarity-bar-real { grid-column: 1 / -1; font-size: 0.75rem; color: var(--ink-soft); }
-.similarity-bar-track { grid-column: 1 / -1; grid-row: 2; height: 8px; border-radius: 4px; background: var(--rule-soft); overflow: hidden; }
-.similarity-bar-fill { display: block; height: 100%; width: 100%; transform-origin: left; border-radius: 4px; animation: bar-grow 700ms var(--ease-out) both; }
-.similarity-bar.band-green .similarity-bar-fill { background: var(--band-green); }
-.similarity-bar.band-yellow .similarity-bar-fill { background: var(--band-yellow); }
-.similarity-bar.band-red .similarity-bar-fill { background: var(--band-red); }
-.similarity-bar.is-missing { color: var(--ink-soft); }
-.similarity-bar.is-missing .factor-swatch { background: transparent; border: 1px dashed currentColor; }
-.similarity-bar.is-missing .similarity-bar-value { font-style: italic; font-family: var(--font); }
-.similarity-footer { font-size: 0.875rem; color: var(--ink-soft); }
-@keyframes similarity-in { from { opacity: 0; transform: translateY(12px); } }
-@keyframes bar-grow { from { transform: scaleX(0); } }
+.similarity.is-message .button { justify-self: start; }
 
-/* ---- Narrower windows: the sliders stay on the side; only phones stack ---- */
+.similarity-head { display: grid; grid-template-columns: 88px minmax(0, 1fr) auto; gap: 16px; align-items: start; }
+.similarity-photo { width: 88px; height: 88px; overflow: hidden; background: var(--space); }
+.similarity-photo img,
+.similarity-photo .body-photo { display: block; width: 100%; height: 100%; object-fit: cover; aspect-ratio: auto; }
+.similarity-head-text { display: grid; gap: 4px; min-width: 0; }
+.similarity-body { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
+.similarity-body .eyebrow { color: var(--body-color, var(--ink-soft)); }
 
-@media (max-width: 820px) {
-  .workspace-stage { padding-inline: 12px; gap: 4px; }
-  .workspace-arrow { width: 64px; }
-  .workspace-arrow-label { display: none; }
-  .other-planet-globe { width: 32px; height: 32px; }
-}
-@media (max-width: 640px) {
-  .workspace { grid-template-columns: 1fr; grid-template-areas: "stage" "sidebar" "compute" "result"; }
-  .factor-sidebar { position: static; max-height: none; border-right: 0; border-top: 1px solid rgb(255 255 255 / 0.12); }
-  .workspace-stage { grid-template-columns: 1fr; }
-  .workspace-arrow svg { transform: rotate(90deg); }
-  .hovering-planet { width: min(100%, 280px); }
-  .compute-bar { grid-template-columns: 1fr; }
-  .compute-button { width: 100%; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .hovering-planet, .hovering-planet::after, .workspace-arrow-line, .similarity-results, .similarity-bar-fill { animation: none; }
-}
+.similarity-place { font: 700 1.375rem/1.2 var(--font-display); letter-spacing: -0.015em; overflow-wrap: anywhere; }
+.similarity-head-text .coords { color: var(--ink-soft); }
+.similarity-rank { font-size: var(--text-small); color: var(--ink-soft); }
+.similarity-score { display: grid; justify-items: end; gap: 6px; text-align: right; }
+.similarity-score-value { font: 400 clamp(2.5rem, 2rem + 1.4vw, 3.25rem)/0.9 var(--font-mono); letter-spacing: -0.04em; color: var(--band); }
+.similarity-score-unit { margin-left: 2px; font-size: 0.42em; letter-spacing: 0; color: var(--ink-soft); }
+.similarity-band { font: 600 var(--text-small)/1.2 var(--font-display); color: var(--band); white-space: nowrap; }
 
-/* ---- Sidebar caption ---- */
-.factor-sidebar .mode-toggle-option span, .factor-sidebar .factor-group, .factor-sidebar .control-label { color: var(--on-space-soft); }
-.factor-sidebar-intro { margin-top: -12px; font-size: 0.75rem; color: var(--on-space-soft); }
-
-/* ---- Output planets: each one clicked on the right becomes another globe in a row ---- */
-.workspace-stage:has(.targets-2) { grid-template-columns: minmax(0, 1fr) auto minmax(0, 1.5fr); }
-.workspace-stage:has(.targets-3) { grid-template-columns: minmax(0, 0.8fr) auto minmax(0, 2fr); }
-.target-globes { display: flex; justify-content: center; align-items: flex-start; gap: 12px; width: 100%; }
-.target-globe { position: relative; flex: 1 1 0; min-width: 0; display: grid; justify-items: center; animation: target-in 450ms var(--ease-out); }
-.targets-1 .target-globe .hovering-planet { width: min(100%, 360px, 40vh); }
-.targets-2 .target-globe .hovering-planet { width: min(100%, 300px, 34vh); }
-.targets-3 .target-globe .hovering-planet { width: min(100%, 240px, 28vh); }
-.target-globe:nth-child(2) .hovering-planet { animation-delay: -1.5s; }
-.target-globe:nth-child(3) .hovering-planet { animation-delay: -4.5s; }
-.target-globe .planet-globe { cursor: default; }
-.target-remove {
-  position: absolute; inset: 0; z-index: 2; display: grid; place-items: center; padding: 0; border: 0; border-radius: 50%;
-  background: rgb(0 0 0 / 0.5); color: #FFFFFF; cursor: pointer;
-  opacity: 0; transition: opacity 160ms ease;
-}
-.target-remove svg { width: 38%; height: 38%; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; filter: drop-shadow(0 2px 6px rgb(0 0 0 / 0.6)); transform: scale(0.85); transition: transform 200ms var(--ease-out); }
-.target-remove:hover, .target-remove:focus-visible { opacity: 1; }
-.target-remove:hover svg, .target-remove:focus-visible svg { transform: scale(1); }
-.target-remove:active svg { transform: scale(0.9); }
-/* Touch screens have no hover: show a small X badge in the corner instead of covering the planet. */
-@media (hover: none) {
-  .target-remove { inset: 4% 4% auto auto; width: 32px; height: 32px; opacity: 1; background: rgb(0 0 0 / 0.65); border: 1px solid rgb(255 255 255 / 0.35); }
-  .target-remove svg { width: 55%; height: 55%; transform: none; }
-}
-.other-planet.is-addable .other-planet-globe { position: relative; }
-.other-planet.is-addable:hover .other-planet-globe { box-shadow: inset -6px -5px 12px rgb(0 0 0 / 0.65), 0 0 0 2px #8FD3AE; }
-@keyframes target-in { from { opacity: 0; transform: scale(0.6); } }
-@media (max-width: 640px) {
-  .workspace-stage:has(.targets-2), .workspace-stage:has(.targets-3) { grid-template-columns: 1fr; }
-}
-@media (prefers-reduced-motion: reduce) { .target-globe { animation: none; } }
-
-
-/* ---- Coordinates: two compact readouts instead of one long mono string ---- */
-.coords { display: inline-flex; gap: 8px; font-family: var(--font-display); font-weight: 600; font-size: 0.875rem; letter-spacing: 0; color: inherit; white-space: nowrap; }
-.coord { display: inline-flex; align-items: baseline; gap: 2px; padding: 1px 7px; border-radius: 999px; background: rgb(255 255 255 / 0.08); font-variant-numeric: tabular-nums; }
-.coord-hemi { font-size: 0.6875rem; font-weight: 700; opacity: 0.6; }
-.planet-caption-detail { display: inline-flex; align-items: center; gap: 8px; }
-.caption-score { font-family: var(--font-display); color: #FFFFFF; }
-.compute-from .coords { margin-top: 2px; }
-.similarity .coord { background: var(--paper-raised); }
-
-/* "+ Add a factor" dropdown */
-.factor-add-select select {
-  width: 100%; min-height: 44px; padding: 10px 36px 10px 12px; appearance: none; cursor: pointer;
-  font: inherit; font-weight: 600; color: var(--on-space);
-  background: rgb(255 255 255 / 0.04) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%23FFFFFF' stroke-width='1.6'/%3E%3C/svg%3E") no-repeat right 12px center / 12px 8px;
-  border: 1px dashed rgb(255 255 255 / 0.4); border-radius: var(--radius-control);
-  transition: border-color 160ms ease, background-color 160ms ease;
-}
-.factor-add-select select:hover { border-color: #FFFFFF; background-color: rgb(255 255 255 / 0.07); }
-.factor-add-select option, .factor-add-select optgroup { color: #000000; background: #FFFFFF; }
-
-.score-ring-percent { font-size: 0.6em; margin-left: 1px; opacity: 0.7; }
-.similarity .score-ring-number { font-size: 1.125rem; }
-
-/* ---- Design pass (critique fixes) ---- */
-/* 1. A clear first step: a pulsing prompt over the input globe until a spot is picked */
-.pick-prompt {
-  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 2; pointer-events: none;
-  padding: 8px 14px; border-radius: 999px; background: rgb(0 0 0 / 0.65); border: 1px solid rgb(255 255 255 / 0.5);
-  font-family: var(--font-display); font-weight: 700; font-size: 0.9375rem; color: #FFFFFF; white-space: nowrap;
-  animation: prompt-pulse 1.8s ease-in-out infinite;
-}
-@keyframes prompt-pulse { 0%, 100% { box-shadow: 0 0 0 0 rgb(255 90 54 / 0.55); } 50% { box-shadow: 0 0 0 10px rgb(255 90 54 / 0); } }
-
-/* 2. Slider readouts are words; keep them in the display font */
-.factor-slider-head output { font-family: var(--font-display); font-weight: 600; font-size: 0.8125rem; min-width: 4.5ch; }
-
-
-/* 4. Result card: photo, summary, limits */
-.similarity-select { cursor: default; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 10px; width: 100%; }
-.similarity-photo { width: 64px; height: 64px; border-radius: 6px; overflow: hidden; background: var(--space); flex: none; }
-.similarity-photo img, .similarity-photo .body-photo { width: 100%; height: 100%; object-fit: cover; aspect-ratio: auto; display: block; }
-.similarity-score { display: grid; justify-items: center; gap: 2px; }
-.similarity-band { font-size: 0.75rem; font-weight: 600; color: var(--band); white-space: nowrap; }
-.similarity-rank { font-size: 0.75rem; color: var(--ink-soft); }
-.similarity-summary { font-size: 0.875rem; font-weight: 600; }
-.similarity-limits { font-size: 0.75rem; color: var(--ink-soft); }
+.similarity-summary { font-weight: 600; line-height: 1.5; }
+.similarity-limits { font-size: var(--text-small); color: var(--ink-soft); }
 .similarity-limits strong { color: var(--ink); font-weight: 600; }
+.similarity-note { font-size: var(--text-small); color: var(--warning); }
+.similarity-no-data { padding-left: 12px; border-left: 2px solid var(--band-yellow); font-size: var(--text-small); color: var(--ink-soft); }
 
-/* 5. Selection and markers use a neutral highlight; green/yellow/red are only for scores */
+/* One bar per scored factor: the name and the % on one line, the bar under them in the factor's band colour */
+.similarity-bars { list-style: none; display: grid; gap: 14px; padding-top: 16px; border-top: 1px solid var(--rule-on-space); }
+.similarity-bar { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 12px; row-gap: 6px; align-items: baseline; }
+.similarity-bar.band-green { --bar: var(--band-green); }
+.similarity-bar.band-yellow { --bar: var(--band-yellow); }
+.similarity-bar.band-red { --bar: var(--band-red); }
+.similarity-bar-name { grid-row: 1; grid-column: 1; display: flex; align-items: center; min-width: 0; font: 600 var(--text-small)/1.3 var(--font-display); }
+.similarity-bar-value { grid-row: 1; grid-column: 2; font: 500 var(--text-small)/1 var(--font-mono); text-align: right; }
+.similarity-bar-track { grid-row: 2; grid-column: 1 / -1; height: 4px; border-radius: 2px; background: rgb(255 255 255 / 0.12); overflow: hidden; }
+.similarity-bar-fill { display: block; height: 100%; width: 100%; transform-origin: left center; background: var(--bar); }
+.similarity-bar-real { grid-row: 3; grid-column: 1 / -1; font-size: var(--text-label); color: var(--ink-soft); }
+.similarity-bar.is-missing { color: var(--ink-soft); }
 
-/* 8. Nothing under 12px */
-.coord-hemi, .similarity-same, .compute-from .eyebrow { font-size: 0.75rem; }
-.similarity-footer, .similarity-caption { font-size: 0.75rem; }
-
-/* 9. Less motion once a result is showing */
-.workspace:has(.similarity-results) .hovering-planet { animation: none; }
-
-/* Failed search: the bar stops where it got to and turns red */
-.compute-bar.is-failed .compute-progress-fill { background: #D83933; box-shadow: none; }
-.compute-bar.is-failed .compute-progress-label { color: #FF9A8F; }
-
-
-/* 11. Phones: a slim bar with just the progress and the button */
-@media (max-width: 640px) {
-  .compute-bar { padding: 8px 12px; gap: 6px; }
-  .compute-summary, .compute-hint { display: none; }
-  .compute-button { min-height: 44px; }
+.similarity-footer {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; padding-top: 16px; border-top: 1px solid var(--rule-on-space);
+  font-size: var(--text-small); color: var(--ink-soft);
 }
-@media (prefers-reduced-motion: reduce) { .pick-prompt { animation: none; } }
+.similarity-footer .arrow-link { margin-left: auto; color: var(--ink); }
 
-/* ---- Layout: the first screen fits the window, results below it (scroll down) ----
-   The planets and the Compute bar fill the first screen. After Compute the results appear underneath at full size
-   and the page scrolls to them; the planets keep their size. The sliders stay pinned in the left column while the
-   page scrolls. The stage is a size container, so each globe is sized from the height it actually has and never
-   spills into the Compute bar. */
-@media (min-width: 641px) {
-  .workspace { grid-template-rows: auto auto auto; align-items: start; min-height: 0; }
-  .factor-sidebar { position: sticky; top: 0; height: 100dvh; max-height: 100dvh; align-self: start; overflow: hidden; padding-block: 16px; gap: 12px; }
-  .factor-slider-list { gap: 10px; }
-  .factor-groups { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding-right: 4px; margin-right: -4px; display: grid; gap: 10px; align-content: start; }
-  .factor-add-select { flex: none; }
-  .workspace-stage { height: calc(100dvh - var(--header-height) - 92px); min-height: 360px; container-type: size; overflow: hidden; padding-block: 12px; }
-  .hovering-planet,
-  .targets-1 .target-globe .hovering-planet { width: min(100%, 380px, calc(100cqh - 150px)); }
-  .targets-2 .target-globe .hovering-planet { width: min(100%, 320px, calc(100cqh - 150px)); }
-  .targets-3 .target-globe .hovering-planet { width: min(100%, 260px, calc(100cqh - 150px)); }
-  .hovering-planet { min-width: 80px; }
-  .compute-bar { position: static; }
-  .similarity-results { padding: 24px; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); scroll-margin-top: 8px; }
-}
-@media (max-width: 640px) {
-  .workspace { grid-template-areas: "stage" "compute" "result" "sidebar"; }
-  .compute-bar { position: static; }
-  .compute-summary, .compute-hint { display: none; }
-  .similarity-results { padding: 12px; }
-  .similarity-select { grid-template-columns: auto minmax(0, 1fr); }
-  .similarity-score { grid-column: 1 / -1; grid-auto-flow: column; justify-content: start; align-items: center; gap: 8px; }
-}
-
-/* ---- Precise picking: crosshair, live readout, zoom buttons, typed coordinates ---- */
-.planet-globe-wrap { position: absolute; inset: 0; }
-.planet-globe.is-pickable { cursor: crosshair; }
-.planet-globe.is-pickable:active { cursor: grabbing; }
-.globe-readout {
-  position: absolute; z-index: 3; transform: translate(14px, 14px); pointer-events: none; white-space: nowrap;
-  padding: 3px 8px; border-radius: 6px; background: rgb(0 0 0 / 0.75); border: 1px solid rgb(255 255 255 / 0.25);
-  font-family: var(--font-display); font-weight: 600; font-size: 0.75rem; color: #FFFFFF; font-variant-numeric: tabular-nums;
-}
+/* ---- Coordinates, the editable caption, and the readout that follows the cursor on the globe ---- */
+.coords { display: inline-flex; flex-wrap: wrap; gap: 2px 10px; font: 400 var(--text-small)/1.3 var(--font-mono); color: inherit; white-space: nowrap; }
+.coord { display: inline-flex; align-items: baseline; gap: 2px; font-variant-numeric: tabular-nums; }
+.coord-hemi { opacity: 0.7; }
 .coord-edit {
-  display: inline-flex; align-items: center; gap: 6px; padding: 2px 6px; border: 1px dashed transparent; border-radius: 8px;
-  background: none; color: inherit; font: inherit; cursor: text;
+  display: inline-flex; align-items: center; gap: 8px; min-height: 32px; padding: 4px 8px;
+  border: 1px solid transparent; border-radius: var(--radius-control); background: none; color: inherit; font: inherit; cursor: text;
+  transition: border-color 160ms ease;
 }
-.coord-edit:hover { border-color: rgb(255 255 255 / 0.35); }
-.coord-edit-icon { font-size: 0.75rem; opacity: 0.6; }
-.coord-input { display: grid; justify-items: center; gap: 2px; }
+.coord-edit-icon { font-size: var(--text-label); opacity: 0.6; }
+@media (hover: hover) and (pointer: fine) {
+  .coord-edit:hover { border-color: rgb(255 255 255 / 0.3); }
+}
+.coord-input { display: grid; justify-items: center; gap: 4px; }
 .coord-input input {
-  width: 13rem; padding: 6px 10px; border-radius: 8px; border: 1px solid rgb(255 255 255 / 0.5); background: rgb(0 0 0 / 0.6);
-  color: #FFFFFF; font-family: var(--font-display); font-size: 0.875rem; text-align: center;
+  width: 13rem; min-height: 36px; padding: 6px 10px; border: 1px solid rgb(255 255 255 / 0.5); border-radius: var(--radius-control);
+  background: var(--space); color: #FFFFFF; font: 400 var(--text-small)/1.2 var(--font-mono); text-align: center;
 }
 .coord-input input[aria-invalid="true"] { border-color: #FF9A8F; }
-.coord-input-hint { font-size: 0.75rem; color: var(--on-space-soft); }
-
-.workspace-arrow { cursor: default; pointer-events: none; }
-
-/* ---- Result cards: nothing overlaps ---- */
-.similarity { min-width: 0; }
-.similarity-select { grid-template-columns: 64px minmax(0, 1fr) auto; align-items: start; }
-.similarity-head-text { min-width: 0; }
-.similarity .coords { flex-wrap: wrap; white-space: normal; row-gap: 4px; }
-.similarity-score { min-width: 64px; }
-.similarity-bars { grid-template-columns: 1fr; gap: 8px; }
-.similarity-bar { grid-template-columns: minmax(0, 1fr) 3.25rem; }
-.similarity-bar-name { min-width: 0; }
-.similarity-bar-track { height: 8px; }
-/* Output-globe captions wrap instead of running into the next globe */
-.target-globe .planet-caption-detail { flex-wrap: wrap; justify-content: center; row-gap: 4px; }
-.target-globe .planet-caption { max-width: 100%; }
-
-/* Compute bar stays one row, so it always fits under the planets on the first screen */
-@media (min-width: 641px) {
-  .compute-bar { grid-template-columns: auto minmax(0, 1fr) auto; height: 92px; padding-block: 0; }
-  .compute-summary { min-width: 0; }
-  .compute-progress, .compute-hint { min-width: 0; }
+.coord-input-hint { font-size: var(--text-label); color: var(--on-space-soft); }
+.globe-readout {
+  position: absolute; z-index: 3; transform: translate(14px, 14px); pointer-events: none; white-space: nowrap;
+  padding: 4px 8px; border-radius: var(--radius-control); background: rgb(0 0 0 / 0.82); border: 1px solid rgb(255 255 255 / 0.2);
+  font: 400 var(--text-label)/1.4 var(--font-mono); color: #FFFFFF;
 }
-@media (min-width: 641px) and (max-width: 1000px) {
-  .compute-hint { display: none; }
-  .compute-to { display: none; }
-  .compute-summary { gap: 10px; }
-  .compute-from:last-child { display: none; }
-  .compute-button { min-width: 0; padding-inline: 16px; }
-}
-/* Zoom buttons in the globe square's lower-left corner: clear of the planet's edge and of the arrow */
-@media (min-width: 641px) {
-  .compute-button { grid-column: 3; justify-self: end; }
-  /* Header stays at the top while scrolling; the sliders column sits right under it and fits the rest of the window. */
-  .site-header { position: sticky; top: 0; z-index: 20; }
-  .factor-sidebar { top: var(--header-height); height: calc(100dvh - var(--header-height)); max-height: calc(100dvh - var(--header-height)); }
-  .similarity-results { scroll-margin-top: calc(var(--header-height) + 8px); }
-}
-.factor-add-select select { font-size: 0.875rem; padding-left: 10px; padding-right: 30px; background-position: right 10px center; }
+.globe-readout.is-site { display: grid; gap: 2px; border-color: rgb(255 200 90 / 0.6); }
+.globe-readout-site { font: 600 var(--text-small)/1.2 var(--font-display); color: #FFC85A; }
 
-/* After Compute the output globes can be turned and zoomed, so the remove X shrinks to a corner button that
-   doesn't sit on top of the globe and catch every drag. */
-.planet-globe.is-draggable { cursor: grab; }
-.planet-globe.is-draggable:active { cursor: grabbing; }
-.target-globe.has-result .planet-globe { cursor: grab; }
-.target-globe.has-result .target-remove {
-  inset: 2% 2% auto auto; width: 28px; height: 28px; background: rgb(0 0 0 / 0.65); border: 1px solid rgb(255 255 255 / 0.35);
+/* ---- Narrower screens ---- */
+@media (max-width: 1100px) {
+  .compute-hint, .compute-to, .compute-summary .compute-from:last-child { display: none; }
 }
-.target-globe.has-result .target-remove svg { width: 55%; height: 55%; transform: none; }
-.target-globe.has-result:hover .target-remove { opacity: 1; }
-
-/* Name of a picked notable site, above its coordinates */
-.picked-site-name { display: block; font-family: var(--font-display); font-weight: 700; font-size: 0.875rem; color: #FFBE9F; }
-.planet-column-input .planet-caption-detail { flex-direction: column; gap: 2px; }
-
-/* Coordinate box next to Compute */
-.compute-actions { grid-column: 3; justify-self: end; display: flex; align-items: center; gap: 8px; }
-.compute-actions .compute-button { grid-column: auto; }
-.compute-coords input {
-  width: 9.5rem; min-height: 44px; padding: 8px 12px; border-radius: var(--radius-control);
-  border: 1px solid rgb(255 255 255 / 0.3); background: rgb(255 255 255 / 0.06); color: #FFFFFF;
-  font-family: var(--font-display); font-size: 0.9375rem;
+@media (max-width: 860px) {
+  .compute-summary { display: none; }
+  .compute-bar { grid-template-columns: minmax(0, 1fr) auto; }
+  .compute-progress { grid-column: 1; }
 }
-.compute-coords input::placeholder { color: var(--on-space-soft); }
-.compute-coords input:focus { outline: none; border-color: #FFFFFF; }
-.compute-coords input[aria-invalid="true"] { border-color: #FF9A8F; }
-@media (max-width: 640px) {
-  .compute-actions { grid-column: auto; justify-self: stretch; }
-  .compute-coords { flex: 1; }
+
+/* Phones and small tablets: one column. Globes first, then the sliders (folded), then a Compute bar that stays in reach. */
+@media (max-width: 767px) {
+  .workspace { grid-template-columns: minmax(0, 1fr); grid-template-areas: "stage" "sidebar" "compute" "results"; }
+  .factor-sidebar { position: static; height: auto; overflow: visible; padding: 16px; border-right: 0; border-top: 1px solid var(--rule-on-space); }
+  .factor-sidebar-toggle { display: inline-flex; color: var(--on-space); border-color: rgb(255 255 255 / 0.35); }
+  .factor-sidebar-body:not(.is-open) { display: none; }
+  .workspace-stage,
+  .workspace-stage:has(.targets-2) { height: auto; min-height: 0; grid-template-columns: minmax(0, 1fr); gap: 4px; padding: 20px 16px; container-type: normal; }
+  .globe-frame { width: min(100%, 280px); }
+  .targets-2 .target-globe .globe-frame { width: min(100%, 160px); }
+  /* The arc turns to point down, in a box as tall as it is drawn wide, so nothing overlaps it */
+  .transfer-arc { width: 64px; height: 64px; display: grid; place-items: center; }
+  .transfer-arc svg { width: 64px; transform: rotate(90deg); }
+  .compute-bar { position: sticky; bottom: 0; z-index: 10; height: auto; padding: 10px 12px; grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  .compute-actions { display: grid; grid-template-columns: minmax(0, 1fr) auto; }
   .compute-coords input { width: 100%; }
+  .compute-button { min-width: 0; }
+  .similarity-results { padding: 24px 12px 40px; gap: 16px; }
+  .similarity { padding: 16px; }
+  .similarity-head { grid-template-columns: 64px minmax(0, 1fr); }
+  .similarity-photo { width: 64px; height: 64px; }
+  .similarity-score { grid-column: 1 / -1; grid-auto-flow: column; justify-content: start; align-items: baseline; gap: 12px; text-align: left; }
 }
 
-/* Hovering a notable-site dot: its name on top of the coordinates */
-.globe-readout.is-site { display: grid; gap: 1px; border-color: rgb(255 200 90 / 0.6); }
-.globe-readout-site { color: #FFC85A; font-size: 0.8125rem; }
-.planet-globe.is-pickable { cursor: crosshair; }
-.similarity-no-data { margin: 8px 0 0; padding: 6px 10px; border-left: 3px solid var(--band-yellow, currentColor); font-size: 0.875rem; }
+@media (prefers-reduced-motion: reduce) {
+  .pick-prompt::after, .target-globe { animation: none; }
+  .similarity { animation: similarity-fade 200ms ease both; }
+  .transfer-arc-probe { display: none; }
+  .other-planet:active .other-planet-globe { transform: none; }
+}
+@keyframes similarity-fade { from { opacity: 0; } }

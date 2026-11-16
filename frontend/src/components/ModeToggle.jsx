@@ -1,18 +1,22 @@
-// Absolute / Relative: how the factors are compared. Two real radio buttons, each with its one-sentence meaning.
+// Absolute / Relative: how the factors are compared. A two-way segmented control on real radio buttons, with the
+// one-sentence meaning of the chosen mode underneath.
 import { MODE_INFO } from "../content/labels.js";
 import { MODES } from "../data/similarity.js";
 
 export default function ModeToggle({ mode, onChange, name = "score-mode" }) {
+  const sentenceId = `${name}-sentence`;
   return (
-    <fieldset className="mode-toggle">
+    <fieldset className="mode-toggle" aria-describedby={sentenceId}>
       <legend className="control-label">How to compare</legend>
-      {MODES.map((id) => (
-        <label className="mode-toggle-option" key={id}>
-          <input type="radio" name={name} value={id} checked={id === mode} onChange={() => onChange(id)} />
-          <strong>{MODE_INFO[id].label}</strong>
-          <span>{MODE_INFO[id].sentence}</span>
-        </label>
-      ))}
+      <div className="segmented">
+        {MODES.map((id) => (
+          <label className="segmented-option" key={id}>
+            <input type="radio" name={name} value={id} checked={id === mode} onChange={() => onChange(id)} />
+            <span>{MODE_INFO[id].label}</span>
+          </label>
+        ))}
+      </div>
+      <p id={sentenceId} className="mode-toggle-sentence">{MODE_INFO[mode]?.sentence}</p>
     </fieldset>
   );
 }

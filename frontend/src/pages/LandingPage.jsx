@@ -1,18 +1,17 @@
-// Landing workspace, laid out like the team's paper sketch: the mode toggle and the nine factor sliders down the left
-// (grouped weather / ground), two hovering planets joined by an animated arrow, small "other planets" buttons above
-// side, and a Compute bar along the bottom. Clicking a small planet on the right adds it as another output globe;
-// one Compute searches every output planet from the picked spot (its own planet too), shows a short loading bar, then
-// one similarity vector per output planet.
+// Landing workspace, laid out like the team's paper sketch: the mode toggle and the five factor sliders down the left,
+// the input planet and the output planets joined by a transfer arc, small "other planets" buttons above each side, and
+// a Compute bar along the bottom. Clicking a small planet on the right adds it as another output globe; one Compute
+// searches every output planet from the picked spot (its own planet too), then shows the best match on each.
 import { useCallback, useMemo, useState, useEffect } from "react";
 import { loadTargets, loadWeights } from "../data/api.js";
 import { EXTRA_SITES, isPickableSite, shortSiteName } from "../content/notableSites.js";
 import { useLoaded } from "../data/useLoaded.js";
 import { useTileSearch } from "../data/useTileSearch.js";
-import { FACTORS } from "../data/scoring.js";
-import { BODY_RADIUS_KM, SAME_BODY_MIN_KM } from "../data/ranking.js";
-import { BODY_NAMES } from "../content/labels.js";
+import { FACTORS, SCORED_FACTORS } from "../data/scoring.js";
+import { BODY_NAMES, FACTOR_SHORT_NAMES } from "../content/labels.js";
 import PlanetGlobe, { GLOBE_TEXTURES } from "../components/PlanetGlobe.jsx";
 import FactorSidebar from "../components/FactorSidebar.jsx";
+import TransferArc from "../components/TransferArc.jsx";
 import Coordinates from "../components/Coordinates.jsx";
 import CoordinateInput from "../components/CoordinateInput.jsx";
 import ComputeBar from "../components/ComputeBar.jsx";
@@ -21,8 +20,14 @@ import { MODES } from "../data/similarity.js";
 import "../styles/landing.css";
 
 const BODIES = ["earth", "moon", "mars"];
+// A body's name inside a sentence ("Best match on the Moon").
+const IN_SENTENCE = { earth: "Earth", moon: "the Moon", mars: "Mars" };
+// What a planet is compared with when it becomes the starting planet and was the only output: never itself.
+const DEFAULT_OUTPUT = { earth: "mars", moon: "earth", mars: "earth" };
 const PICK_COLOR = "#FF5A36"; // the picked spot
 const MATCH_COLOR = "#7CC8FF"; // each output planet's best match (blue: green is kept for good scores)
+// The preset's most-weighted factor starts at Medium on its slider; the others keep their proportion to it.
+const STARTING_SLIDER_LEVEL = 50;
 
 export default function LandingPage() {
   const presetsState = useLoaded(loadWeights, []);
@@ -35,7 +40,6 @@ export default function LandingPage() {
   // Sliders start from the Balanced preset; the preset picker was removed, so people only move the sliders.
   const presetId = presetsState.data?.default_preset ?? "balanced";
   const [weights, setWeights] = useState(null); // 0–100 per factor; null until presets load
-  const [shownFactors, setShownFactors] = useState(FACTORS);
   // Absolute or relative scoring; until a person picks one, the weights file's default.
   const [pickedMode, setPickedMode] = useState(null);
   const mode = pickedMode ?? (MODES.includes(presetsState.data?.default_mode) ? presetsState.data.default_mode : "absolute");
@@ -46,7 +50,7 @@ export default function LandingPage() {
 
   useEffect(() => {
     if (weights || !presets[presetId]) return;
-    setWeights(toPercent(presets[presetId].weights));
+    setWeights(toSliderValues(presets[presetId].weights));
   }, [presets, presetId, weights]);
 
   // One search per output planet, all from the same picked spot. Planets that weren't added get no selection, so
@@ -59,8 +63,7 @@ export default function LandingPage() {
   };
   const results = Object.fromEntries(BODIES.map((body) => {
     const search = searches[body];
-    // The ranking already skips these tiles; this guards the fallbacks.
-    const matches = (search.data ?? []).filter((match) => !(request && body === request.inputBody && distanceKm(match, search.searchPoint ?? request.point, body) < SAME_BODY_MIN_KM));
+    const matches = search.data ?? [];
     return [body, { search, matches, best: matches[0] ?? null }];
   }));
 
@@ -78,7 +81,7 @@ export default function LandingPage() {
   useEffect(() => {
     if (request && isSettled && failedBodies.length > 0 && canAutoRetry) setRequest((current) => ({ ...current, attempt: current.attempt + 1 }));
   }, [request, isSettled, failedBodies.length, canAutoRetry]);
-  const settingsKey = JSON.stringify([weights, shownFactors, targets, mode]);
+  const settingsKey = JSON.stringify([weights, targets, mode]);
   const isStale = Boolean(request) && (request.point !== point || request.inputBody !== inputBody || request.settingsKey !== settingsKey);
   const isShowingResult = (status === "done" || status === "failed") && !isStale;
 
@@ -91,10 +94,16 @@ export default function LandingPage() {
 
   const bestOn = (body) => (isShowingResult ? results[body].best : null);
 
+  // A planet is never compared with itself: starting from a planet that was an output drops it from the outputs (and
+  // brings in another planet if it was the only one).
   function pickInputBody(body) {
     if (body === inputBody) return;
     setInputBody(body);
     setPoint(null);
+    setTargets((current) => {
+      const others = current.filter((target) => target !== body);
+      return others.length > 0 ? others : [DEFAULT_OUTPUT[body]];
+    });
   }
 
   // A new pick after a result goes back to the first screen: results cleared, globes full size, ready to compute.
@@ -106,18 +115,6 @@ export default function LandingPage() {
     }
   }
 
-  // Re-added factors go back to their usual place in the list, with a starting weight if theirs was 0 so they count.
-  function showFactor(factor) {
-    setShownFactors((current) => FACTORS.filter((other) => current.includes(other) || other === factor));
-    setWeights((current) => (current[factor] ? current : { ...current, [factor]: 20 }));
-  }
-
-  // At least one factor always stays.
-  function hideFactor(factor) {
-    if (shownFactors.length <= 1) return;
-    setShownFactors((current) => current.filter((shown) => shown !== factor));
-  }
-
   // Changing the mode reruns the search at once when a result is on screen; otherwise Compute uses it later.
   function changeMode(nextMode) {
     setPickedMode(nextMode);
@@ -125,6 +122,7 @@ export default function LandingPage() {
   }
 
   function addTarget(body) {
+    if (body === inputBody) return;
     setTargets((current) => (current.includes(body) ? current : BODIES.filter((other) => current.includes(other) || other === body)));
   }
 
@@ -137,11 +135,12 @@ export default function LandingPage() {
     const spot = typedPoint ? { lat: typedPoint.lat, lon: typedPoint.lon, name: null } : point;
     if (!spot || !weights) return;
     if (typedPoint) setPoint(spot);
-    const scoredWeights = Object.fromEntries(FACTORS.map((factor) => [factor, shownFactors.includes(factor) ? weights[factor] / 100 : 0]));
+    // Only the five scored factors count; the other four are always 0.
+    const scoredWeights = Object.fromEntries(FACTORS.map((factor) => [factor, SCORED_FACTORS.includes(factor) ? weights[factor] / 100 : 0]));
     setStartedAt(performance.now());
     // After a failure, Compute is a retry: a new attempt number reloads the files and restarts the search workers.
     const attempt = (request?.attempt ?? 0) + (status === "failed" ? 1 : 0);
-    setRequest({ point: spot, inputBody, targets, selection: { body: inputBody, lat: spot.lat, lon: spot.lon }, weights: scoredWeights, mode: nextMode, settingsKey: JSON.stringify([weights, shownFactors, targets, nextMode]), attempt, firstAttempt: attempt });
+    setRequest({ point: spot, inputBody, targets, selection: { body: inputBody, lat: spot.lat, lon: spot.lon }, weights: scoredWeights, mode: nextMode, settingsKey: JSON.stringify([weights, targets, nextMode]), attempt, firstAttempt: attempt });
   }
 
   // Notable sites on the input planet: the project's named sites plus well-known landmarks. Clicking one picks it.
@@ -157,19 +156,17 @@ export default function LandingPage() {
   // The picked spot: a bright marker with a pulsing ring.
   const pickMarkers = useMemo(() => (point ? [{ lat: point.lat, lon: point.lon, color: PICK_COLOR }] : []), [point]);
 
-  const inputTile = request?.inputBody === inputBody && request?.point === point ? searches[inputBody].tile : null;
+  // Every output's search starts from the same picked tile, so the first one's tile is the one to outline.
+  const inputTile = request?.inputBody === inputBody && request?.point === point ? searches[request.targets[0]].tile : null;
+  const addableBodies = BODIES.filter((other) => other !== inputBody && !targets.includes(other));
 
   return (
-    <div className="workspace">
+    <div className="workspace theme-space">
       <FactorSidebar
         weights={weights}
-        groups={presetsState.data?.groups}
         mode={mode}
         onChangeMode={changeMode}
         onChangeWeight={(factor, value) => setWeights((current) => ({ ...current, [factor]: value }))}
-        shownFactors={shownFactors}
-        onShowFactor={showFactor}
-        onHideFactor={hideFactor}
       />
 
       <section className="workspace-stage" aria-label="Pick a spot, then compare">
@@ -193,21 +190,14 @@ export default function LandingPage() {
           {!point && <span className="pick-prompt" aria-hidden="true">Click a spot to start</span>}
         </PlanetColumn>
 
-        <div className="workspace-arrow-wrap">
-          <div className={`workspace-arrow is-${status}`} aria-hidden="true">
-            <svg viewBox="0 0 160 60">
-              <path className="workspace-arrow-line" d="M8 38 C 50 6, 110 6, 146 30" />
-              <path className="workspace-arrow-head" d="M134 18 L148 31 L130 36" />
-            </svg>
-          </div>
-        </div>
+        <TransferArc status={isStale ? "stale" : status} />
 
         <div className={`planet-column planet-column-target targets-${targets.length}`}>
           <div className="other-planets" role="group" aria-label="Add an output planet">
-            <span className="eyebrow other-planets-label">{targets.length < BODIES.length ? "Compare to · click to add" : "Comparing to all three"}</span>
+            <span className="eyebrow other-planets-label">{addableBodies.length > 0 ? "Compare with" : "Comparing with both"}</span>
             <div className="other-planets-row">
-              {BODIES.filter((other) => !targets.includes(other)).map((other) => (
-                <button key={other} type="button" className="other-planet is-addable" onClick={() => addTarget(other)} title={`Add ${BODY_NAMES[other]}`}>
+              {addableBodies.map((other) => (
+                <button key={other} type="button" className="other-planet is-addable" onClick={() => addTarget(other)} aria-label={`Also compare with ${IN_SENTENCE[other]}`}>
                   <span className="other-planet-globe" style={{ backgroundImage: `url(${GLOBE_TEXTURES[other].url})` }} aria-hidden="true" />
                   <span className="other-planet-name">+ {BODY_NAMES[other]}</span>
                 </button>
@@ -220,7 +210,6 @@ export default function LandingPage() {
                 key={body}
                 body={body}
                 best={bestOn(body)}
-                isSamePlanet={body === inputBody}
                 onRemove={targets.length > 1 ? () => removeTarget(body) : null}
               />
             ))}
@@ -245,29 +234,36 @@ export default function LandingPage() {
       />
 
       {isShowingResult && (
-        <section className="similarity-results" aria-label="Similarity on each output planet">
-          {request.targets.map((body) => (
-            <SimilarityVector
-              key={body}
-              body={body}
-              isSameBody={body === request.inputBody}
-              match={results[body].best}
-              matchCount={results[body].matches.length}
-              error={results[body].search.error}
-              hasNoData={results[body].search.hasNoData}
-              isApproximate={results[body].search.isApproximate}
-              inputBody={request.inputBody}
-              weights={request.weights}
-              mode={request.mode}
-              clickedVector={results[body].search.clickedVector}
-              layout={results[body].search.layout}
-              snapKm={results[body].search.snapKm}
-              nearestScored={results[body].search.nearestScored}
-              // The nearest-spot button is the same on every card: offer it on the first card only.
-              onUseNearest={body === request.targets[0] ? (lat, lon) => compute({ lat, lon }) : null}
-              exploreLink={body === request.inputBody ? null : `/explore/${request.inputBody}?to=${body}&at=${request.point.lat.toFixed(2)},${request.point.lon.toFixed(2)}&preset=${presetId}&mode=${request.mode}`}
-            />
-          ))}
+        <section className="similarity-results" aria-labelledby="similarity-results-title">
+          <header className="similarity-results-header">
+            <h2 id="similarity-results-title" className="similarity-results-title">
+              {request.targets.length === 1 ? `Best match on ${IN_SENTENCE[request.targets[0]]}` : "Best match on each planet"}
+            </h2>
+            <p className="similarity-results-lede">Scored on {joinWords(SCORED_FACTORS.map((factor) => FACTOR_SHORT_NAMES[factor]))}.</p>
+          </header>
+          <div className="similarity-cards">
+            {request.targets.map((body) => (
+              <SimilarityVector
+                key={body}
+                body={body}
+                match={results[body].best}
+                matchCount={results[body].matches.length}
+                error={results[body].search.error}
+                hasNoData={results[body].search.hasNoData}
+                isApproximate={results[body].search.isApproximate}
+                inputBody={request.inputBody}
+                weights={request.weights}
+                mode={request.mode}
+                clickedVector={results[body].search.clickedVector}
+                layout={results[body].search.layout}
+                snapKm={results[body].search.snapKm}
+                nearestScored={results[body].search.nearestScored}
+                // The nearest-spot button is the same on every card: offer it on the first card only.
+                onUseNearest={body === request.targets[0] ? (lat, lon) => compute({ lat, lon }) : null}
+                exploreLink={`/explore/${request.inputBody}?to=${body}&at=${request.point.lat.toFixed(2)},${request.point.lon.toFixed(2)}&preset=${presetId}&mode=${request.mode}`}
+              />
+            ))}
+          </div>
         </section>
       )}
     </div>
@@ -288,7 +284,7 @@ function PlanetColumn({ side, body, choices, onPickBody, caption, children }) {
           ))}
         </div>
       </div>
-      <div className="hovering-planet">{children}</div>
+      <div className="globe-frame">{children}</div>
       <div className="planet-caption">
         <span className="planet-caption-name">{BODY_NAMES[body]}</span>
         <span className="planet-caption-detail">{caption}</span>
@@ -298,13 +294,13 @@ function PlanetColumn({ side, body, choices, onPickBody, caption, children }) {
 }
 
 // One output globe. The best-match label and focus are memoised so the globe only flies when the result changes.
-function TargetGlobe({ body, best, isSamePlanet, onRemove }) {
+function TargetGlobe({ body, best, onRemove }) {
   const sites = useMemo(() => (best ? [{ target_id: "best", name: `${Math.round(best.score)}%`, lat: best.lat, lon: best.lon }] : []), [best]);
   const focus = useMemo(() => (best ? { lat: best.lat, lon: best.lon } : null), [best]);
   const markers = useMemo(() => (best ? [{ lat: best.lat, lon: best.lon, color: MATCH_COLOR }] : []), [best]);
   return (
     <div className={`target-globe body-${body}${best ? " has-result" : ""}`}>
-      <div className="hovering-planet">
+      <div className="globe-frame">
         <PlanetGlobe body={body} isDraggable={Boolean(best)} isSpinning={!best} sites={sites} markers={markers} focus={focus} label={`Globe of ${BODY_NAMES[body]}, an output planet.`} />
         {/* Hovering the planet shows a big X over it; clicking the planet removes it (at least one always stays). */}
         {onRemove && (
@@ -315,7 +311,7 @@ function TargetGlobe({ body, best, isSamePlanet, onRemove }) {
       </div>
       <div className="planet-caption">
         <span className="planet-caption-name">{BODY_NAMES[body]}</span>
-        <span className="planet-caption-detail">{best ? <><strong className="caption-score">{Math.round(best.score)}%</strong> <Coordinates lat={best.lat} lon={best.lon} /></> : isSamePlanet ? "Same planet" : "Every tile"}</span>
+        <span className="planet-caption-detail">{best ? <><strong className="caption-score">{Math.round(best.score)}%</strong> <Coordinates lat={best.lat} lon={best.lon} /></> : "Every tile"}</span>
       </div>
     </div>
   );
@@ -325,12 +321,19 @@ function formatList(names) {
   return names.length < 3 ? names.join(" & ") : `${names.slice(0, -1).join(", ")} & ${names[names.length - 1]}`;
 }
 
-function toPercent(presetWeights) {
-  return Object.fromEntries(FACTORS.map((factor) => [factor, Math.round((presetWeights[factor] ?? 0) * 100)]));
+/** "temperature, slope and water ice" */
+function joinWords(words) {
+  return words.length < 2 ? words.join("") : `${words.slice(0, -1).join(", ")} and ${words[words.length - 1]}`;
 }
 
-function distanceKm(a, b, body) {
-  const toRadians = (degrees) => (degrees * Math.PI) / 180;
-  const h = Math.sin(toRadians(b.lat - a.lat) / 2) ** 2 + Math.cos(toRadians(a.lat)) * Math.cos(toRadians(b.lat)) * Math.sin(toRadians(b.lon - a.lon) / 2) ** 2;
-  return 2 * BODY_RADIUS_KM[body] * Math.asin(Math.sqrt(h));
+/**
+ * Slider values (0–100) from a preset's weights. Only the ratios between weights change a score, so the top factor is
+ * set to Medium rather than to its raw 15%: five equal weights read as five Mediums, not five Lows.
+ */
+function toSliderValues(presetWeights) {
+  const topWeight = Math.max(...SCORED_FACTORS.map((factor) => presetWeights[factor] ?? 0));
+  return Object.fromEntries(FACTORS.map((factor) => [
+    factor,
+    topWeight > 0 && SCORED_FACTORS.includes(factor) ? Math.round(((presetWeights[factor] ?? 0) / topWeight) * STARTING_SLIDER_LEVEL) : 0,
+  ]));
 }

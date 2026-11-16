@@ -2,6 +2,7 @@
 import { lazy, Suspense } from "react";
 import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import SiteHeader from "./components/SiteHeader.jsx";
+import SiteFooter from "./components/SiteFooter.jsx";
 import RouteErrorBoundary from "./components/RouteErrorBoundary.jsx";
 const LandingPage = lazy(() => import("./pages/LandingPage.jsx"));
 const ExplorePage = lazy(() => import("./pages/ExplorePage.jsx"));
@@ -35,6 +36,7 @@ export default function App() {
           </Suspense>
         </RouteErrorBoundary>
       </main>
+      <SiteFooter />
     </>
   );
 }
