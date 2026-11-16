@@ -1,4 +1,5 @@
-// Ranked table of Discover candidates in their live order. Each place name is a button that shows that candidate on the map.
+// Ranked table of Discover candidates in their live order. Each place name is a button that shows that candidate on
+// the map. On phones each row restacks into a block (discover.css), so the table never scrolls sideways.
 import ScoreRing from "./ScoreRing.jsx";
 import { EnvironmentTag } from "./SiteTags.jsx";
 import { BODY_NAMES } from "../content/labels.js";
@@ -13,6 +14,9 @@ const SCORE_RING_SIZE = 44;
  *           onSelect: (candidate: object) => void }} props
  */
 export default function DiscoveryTable({ candidates, targetsById, selectedId, onSelect }) {
+  // The published list has no environment types yet; a column of blanks would only add noise.
+  const hasEnvironments = candidates.some((candidate) => candidate.env_type);
+
   return (
     <table className="discover-table">
       <caption className="visually-hidden">Candidate places, best score first under the chosen weights</caption>
@@ -20,7 +24,7 @@ export default function DiscoveryTable({ candidates, targetsById, selectedId, on
         <tr>
           <th scope="col">Rank</th>
           <th scope="col">Place</th>
-          <th scope="col">Environment</th>
+          {hasEnvironments && <th scope="col">Environment</th>}
           <th scope="col">Best Moon or Mars match</th>
           <th scope="col">Score</th>
           <th scope="col">Nearest known test site</th>
@@ -34,6 +38,7 @@ export default function DiscoveryTable({ candidates, targetsById, selectedId, on
             candidate={candidate}
             target={targetsById[candidate.best_target_id]}
             isSelected={candidate.published_rank === selectedId}
+            hasEnvironment={hasEnvironments}
             onSelect={onSelect}
           />
         ))}
@@ -43,7 +48,7 @@ export default function DiscoveryTable({ candidates, targetsById, selectedId, on
 }
 
 /** One candidate. The data-label attributes become the visible field names when rows restack on phones. */
-function DiscoveryRow({ candidate, target, isSelected, onSelect }) {
+function DiscoveryRow({ candidate, target, isSelected, hasEnvironment, onSelect }) {
   const body = candidate.body ?? target?.body;
   const rowClassName = ["discover-row", body && `discover-for-${body}`, isSelected && "is-selected"].filter(Boolean).join(" ");
   const distanceKm = candidate.km_to_nearest_known_analog;
@@ -61,20 +66,22 @@ function DiscoveryRow({ candidate, target, isSelected, onSelect }) {
         </button>
         <span className="discover-coordinates">{formatCoordinates(candidate.lat, candidate.lon)}</span>
       </th>
-      <td data-label="Environment">
-        <EnvironmentTag envType={candidate.env_type} />
-      </td>
-      <td data-label="Best Moon or Mars match">
+      {hasEnvironment && (
+        <td className="discover-cell-environment" data-label="Environment">
+          <EnvironmentTag envType={candidate.env_type} />
+        </td>
+      )}
+      <td className="discover-cell-match" data-label="Best match">
         <span className="discover-target-name">{target?.name ?? candidate.best_target_id}</span>
         {body && <span className="discover-body">{BODY_NAMES[body] ?? body}</span>}
       </td>
       <td className="discover-cell-score">
         <ScoreRing score={candidate.score} size={SCORE_RING_SIZE} />
       </td>
-      <td data-label="Nearest known test site">
+      <td className="discover-cell-distance" data-label="Nearest test site">
         {typeof distanceKm === "number" ? `${formatKm(distanceKm)} away` : "Not measured"}
       </td>
-      <td data-label="Why it stands out">
+      <td className="discover-cell-why" data-label="Why it stands out">
         {candidate.why?.length > 0 && (
           <ul className="discover-why">
             {candidate.why.map((reason) => <li key={reason}>{reason}</li>)}

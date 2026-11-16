@@ -1,73 +1,85 @@
-// One discovery written up for the Findings page: where it is, what it stands in for, what matches, where the
-// analogy breaks and how it could help exploration, with the factor numbers on request.
+// One discovery written up for the Findings page: where it is, what it stands in for, its score and distance from the
+// nearest known test site, then what matches, where the analogy breaks and how it could help exploration, with the
+// five factor scores on request.
 import { useId } from "react";
 import ScoreRing from "./ScoreRing.jsx";
 import FactorBars from "./FactorBars.jsx";
 import { EnvironmentTag } from "./SiteTags.jsx";
 import { FINDINGS_EXPLORATION_USES } from "../content/about.js";
-import { FACTOR_LABELS } from "../content/labels.js";
+import { BAND_LABELS, FACTOR_LABELS } from "../content/labels.js";
 import { formatCoordinates, formatKm } from "../data/format.js";
-import { FACTORS } from "../data/scoring.js";
+import { SCORED_FACTORS, scoreBand } from "../data/scoring.js";
 
 /** How many of the closest and of the weakest factors each finding names. */
 const NAMED_FACTOR_COUNT = 2;
+// Below this a factor can't be a match reason (tileSearch.js uses the same 0.6), so it counts as where the analogy breaks.
+const WEAK_FACTOR_MAX = 0.6;
 const MAX_EXPLORATION_USES = 2;
+const SCORE_RING_SIZE = 64;
 const BODY_PLACES = { moon: "the Moon", mars: "Mars" };
 
-/** One discovery written up: where it is, what it stands in for, the three questions, and the numbers on request. */
 export default function FindingCard({ finding, target }) {
   const headingId = useId();
   const rankedFactors = rankFactors(finding.breakdown);
   const closestFactors = rankedFactors.slice(0, NAMED_FACTOR_COUNT);
-  const weakestFactors = rankedFactors.slice(NAMED_FACTOR_COUNT).slice(-NAMED_FACTOR_COUNT).reverse();
+  const weakestFactors = rankedFactors
+    .slice(NAMED_FACTOR_COUNT)
+    .filter((factor) => finding.breakdown[factor] < WEAK_FACTOR_MAX)
+    .slice(-NAMED_FACTOR_COUNT)
+    .reverse();
   const place = BODY_PLACES[finding.body] ?? "another world";
   const distanceKm = finding.km_to_nearest_known_analog;
+  const band = scoreBand(finding.score);
 
   return (
     <article className={`findings-item findings-for-${finding.body}`} aria-labelledby={headingId}>
       <header className="findings-item-header">
-        <div className="findings-item-title">
-          <h2 id={headingId} className="findings-item-name">{finding.name}</h2>
-          <p className="findings-item-meta">
-            <span>{formatCoordinates(finding.lat, finding.lon)}</span>
-            <EnvironmentTag envType={finding.env_type} />
-          </p>
-          <p className="findings-item-target">
-            Stands in for {target ? <strong>{target.name}</strong> : "a site"} on {place}
-          </p>
+        <h2 id={headingId} className="findings-item-name">{finding.name}</h2>
+        <p className="findings-item-coordinates">{formatCoordinates(finding.lat, finding.lon)}</p>
+        <EnvironmentTag envType={finding.env_type} />
+        <p className="findings-item-target">
+          Stands in for {target ? <strong>{target.name}</strong> : "a site"} on {place}
+        </p>
+        <div className="findings-item-readouts">
+          <div className="findings-item-score">
+            <ScoreRing score={finding.score} size={SCORE_RING_SIZE} />
+            <span className={`band-text band-${band}`}>{BAND_LABELS[band]}</span>
+          </div>
           {typeof distanceKm === "number" && (
-            <p className="findings-item-distance"><strong>{formatKm(distanceKm)}</strong> from the nearest known analog site</p>
+            <p className="stat">
+              <span className="stat-value">{formatKm(distanceKm)}</span>
+              <span className="stat-label">from the nearest known test site</span>
+            </p>
           )}
         </div>
-        <ScoreRing score={finding.score} size={72} />
       </header>
 
-      <div className="findings-item-parts">
-        <div className="findings-item-part">
+      <div className="findings-item-body">
+        <section className="findings-item-part">
           <h3 className="findings-item-part-title">What matches</h3>
           <PhraseList phrases={finding.why} />
           <FactorList label="Closest factors" factors={closestFactors} />
-        </div>
-        <div className="findings-item-part">
+        </section>
+        <section className="findings-item-part">
           <h3 className="findings-item-part-title">Where the analogy breaks</h3>
           <FactorList label="Weakest factors" factors={weakestFactors} />
           <PhraseList phrases={finding.cant_reproduce} />
-        </div>
-        <div className="findings-item-part">
+        </section>
+        <section className="findings-item-part">
           <h3 className="findings-item-part-title">How it helps exploration</h3>
           <p>{describeExplorationUse(finding.tags, target, place)}</p>
-        </div>
-      </div>
+        </section>
 
-      <details className="findings-item-details">
-        <summary>Show all nine factor scores</summary>
-        <FactorBars breakdown={finding.breakdown} isShowingNumbers />
-      </details>
+        <details className="findings-item-details">
+          <summary>Show the five factor scores</summary>
+          <FactorBars breakdown={finding.breakdown} isShowingNumbers />
+        </details>
+      </div>
     </article>
   );
 }
 
-/** A short bullet list of plain phrases, or nothing when there are none. */
+/** A short list of plain phrases, or nothing when there are none. */
 function PhraseList({ phrases }) {
   if (!phrases?.length) return null;
   return <ul className="findings-phrases">{phrases.map((phrase) => <li key={phrase}>{phrase}</li>)}</ul>;
@@ -91,9 +103,9 @@ function FactorList({ label, factors }) {
   );
 }
 
-/** Factors that have a score, closest match first (ties keep the usual factor order). */
+/** Scored factors that have a score, closest match first (ties keep the usual factor order). */
 function rankFactors(breakdown) {
-  return FACTORS.filter((factor) => typeof breakdown?.[factor] === "number")
+  return SCORED_FACTORS.filter((factor) => typeof breakdown?.[factor] === "number")
     .sort((first, second) => breakdown[second] - breakdown[first]);
 }
 

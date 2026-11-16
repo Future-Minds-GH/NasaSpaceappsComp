@@ -1,141 +1,161 @@
-/* Discover mode: ranking controls, filter bar, candidate map with its legend, and the ranked table (restacked as
-   blocks on phones). */
+/* Discover: the ranking console (mission types beside the five sliders), the black map stage with the Moon or Mars
+   filter, and the ranked list, which restacks into labelled blocks on phones. */
 
-/* Mission type and the Details panel with the weight sliders */
-.discover-weights { display: grid; gap: 8px; margin-top: 28px; }
-.discover-weights-bar { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px; }
-.discover-details-toggle[aria-expanded="true"] { border-color: var(--ink); }
-.discover-weights-summary { max-width: 70ch; font-size: 0.9375rem; color: var(--ink-soft); }
-.discover-weights-details {
-  display: grid; gap: 14px; max-width: 44rem; margin-top: 4px; padding: 16px;
-  border: 1px solid var(--rule); border-radius: var(--radius-frame); background: var(--paper-raised);
-  animation: discover-reveal 200ms var(--ease-out);
+/* ---- Ranking console ---- */
+.discover-section-intro { display: grid; gap: 8px; }
+.discover-console { gap: 24px; padding: clamp(20px, 3vw, 32px); }
+.discover-mission { display: grid; align-content: start; gap: 12px; min-width: 0; }
+/* Seven long mission names wrap raggedly in one boxed strip, so they sit as an even list; the chosen one is filled */
+.discover-mission .segmented {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 12rem), 1fr));
+  gap: 2px; padding: 0; border: 0; background: none;
 }
-.discover-weights-intro { font-size: 0.9375rem; color: var(--ink-soft); }
-/* Slider rows, scoped here so Discover keeps its layout whatever other screens do with WeightSliders */
-.discover-weights .weight-sliders { display: grid; gap: 6px; }
-.discover-weights .weight-row {
-  display: grid; grid-template-columns: 9.5rem minmax(0, 1fr) 3rem; gap: 10px; align-items: center;
-  font-size: 0.875rem; font-weight: 600;
+.discover-mission .segmented-option span { padding: 8px 12px; }
+.discover-mission-summary { max-width: 40ch; font-size: var(--text-small); line-height: 1.5; color: var(--ink-soft); }
+@media (hover: hover) and (pointer: fine) {
+  .discover-mission .segmented-option input:not(:checked):hover + span { background: color-mix(in srgb, var(--ink) 6%, transparent); }
 }
-.discover-weights .weight-row input[type="range"] { width: 100%; accent-color: var(--factor-color); }
-.discover-weights .weight-row output { text-align: right; }
-.discover-weights .weight-sliders .button { justify-self: start; margin-top: 6px; }
-@keyframes discover-reveal {
-  from { opacity: 0; transform: translateY(-4px); }
-}
-@media (max-width: 640px) {
-  .discover-weights .weight-row { grid-template-columns: 6.5rem minmax(0, 1fr) 2.75rem; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .discover-weights-details { animation: none; }
+@media (min-width: 900px) {
+  .discover-console { grid-template-columns: minmax(14rem, 17rem) minmax(0, 1fr); column-gap: 48px; }
+  .discover-console .weight-sliders { grid-template-columns: minmax(0, 1fr); max-width: 44rem; }
 }
 
-/* Filters and the live count of candidates shown */
-.discover-filter-bar {
-  display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px 24px; margin-top: 28px;
+/* ---- Map stage: an always-black band (theme-space) between the console and the list ---- */
+.discover-stage { margin-top: clamp(48px, 7vw, 88px); padding-block: clamp(32px, 5vw, 56px); background: var(--space); }
+/* minmax(0, 1fr): the map's min-height plus 2:1 aspect ratio would otherwise widen an auto track past a phone screen */
+.discover-stage-inner {
+  display: grid; grid-template-columns: minmax(0, 1fr); gap: 24px;
+  width: min(100% - 2 * var(--gutter), var(--content-width)); margin-inline: auto;
 }
-.discover-filters {
-  flex: 1 1 32rem; max-width: 44rem;
-  display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); gap: 12px 16px;
-}
+.discover-stage-bar { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 20px 40px; }
+.discover-stage-intro { display: grid; gap: 6px; }
+.discover-count { font: 600 var(--text-small)/1.4 var(--font-display); color: var(--ink-soft); }
+.discover-filters { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 16px 24px; }
 .discover-filter { min-width: 0; }
-.discover-filter .select { width: 100%; }
-.discover-count { font-weight: 650; padding-bottom: 8px; }
+.discover-filter .select { min-width: 12rem; }
 
-/* Map. Pins and legend swatches share one colour per body, set through --pin-color. */
-.discover-map { margin-top: 16px; scroll-margin-top: 16px; }
-.discover-map .earth-map-frame { border: 1px solid var(--rule); border-radius: var(--radius-frame); overflow: hidden; }
+/* The sticky header covers the top of the page, so a table pick scrolls the map in below it */
+.discover-map { scroll-margin-top: calc(var(--header-height) + 16px); }
 .discover-map .earth-map { width: 100%; aspect-ratio: 2 / 1; min-height: 220px; }
+
+/* Pins and legend dots share one colour per body, set through --pin-color; white rims keep them clear on the imagery */
 .discover-for-moon { --pin-color: var(--moon); }
 .discover-for-mars { --pin-color: var(--mars); }
-.discover-pin { fill: var(--pin-color, var(--earth)); stroke: var(--paper-raised); }
+.discover-pin { fill: var(--pin-color, var(--earth)); stroke: var(--on-space); }
+
+/* Leaflet's controls and labels, redrawn for the black stage: square, flat, no shadows */
+.discover-map .leaflet-bar { border: 1px solid var(--rule-on-space); border-radius: var(--radius-control); box-shadow: none; }
+.discover-map .leaflet-bar a,
+.discover-map .leaflet-bar a:focus { background: var(--space-raised); color: var(--on-space); border-bottom-color: var(--rule-on-space); }
+.discover-map .leaflet-bar a.leaflet-disabled { background: var(--space-raised); color: var(--on-space-soft); opacity: 0.5; }
+.discover-map .leaflet-control-attribution { background: rgb(0 0 0 / 0.7); color: var(--on-space-soft); }
+.discover-map .leaflet-control-attribution a { color: var(--on-space); }
+.discover-map .leaflet-tooltip {
+  padding: 4px 8px; border: 1px solid var(--rule-on-space); border-radius: var(--radius-control); box-shadow: none;
+  background: var(--space); color: var(--on-space); font: 600 0.8125rem/1.3 var(--font-display);
+}
+.discover-map .leaflet-tooltip-top::before { border-top-color: var(--space); }
+@media (hover: hover) and (pointer: fine) {
+  .discover-map .leaflet-bar a:hover { background: var(--on-space); color: var(--space); }
+}
 
 .discover-map-notes {
-  display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 20px;
-  margin-top: 8px; font-size: 0.875rem; color: var(--ink-soft);
+  display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 24px;
+  margin-top: 12px; font-size: var(--text-small); color: var(--ink-soft);
 }
-.discover-legend { list-style: none; display: flex; flex-wrap: wrap; gap: 4px 16px; }
-.discover-legend li { display: inline-flex; align-items: center; gap: 6px; }
-.discover-legend li::before,
-.discover-place-button::before {
+.discover-legend { list-style: none; display: flex; flex-wrap: wrap; gap: 4px 20px; }
+.discover-legend li { display: inline-flex; align-items: center; gap: 8px; }
+.discover-legend li::before {
   content: ""; flex: none; width: 12px; height: 12px; border-radius: 50%;
-  background: var(--pin-color, var(--earth)); border: 2px solid var(--paper-raised); box-shadow: 0 0 0 1px var(--rule);
+  background: var(--pin-color); border: 2px solid var(--on-space);
 }
+.discover-selection { max-width: 72ch; }
 
-/* Heading of the ranked list, with the full-list downloads beside it */
-.discover-list-header {
-  display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px 24px;
-  margin-top: 40px; margin-bottom: 8px;
-}
-.discover-downloads { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
-.discover-download-note { flex-basis: 100%; font-size: 0.8125rem; color: var(--ink-soft); }
+/* ---- Ranked list: heading with the full-list downloads beside it ---- */
+.discover-list-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 20px 48px; }
+.discover-list-intro { display: grid; gap: 8px; }
+.discover-downloads { display: grid; gap: 8px; max-width: 30rem; }
+.discover-download-buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+.discover-download-note { font-size: 0.8125rem; line-height: 1.5; color: var(--ink-soft); }
 
-/* Ranked table */
+/* ---- Ranked table ---- */
 .discover-table { width: 100%; border-collapse: collapse; font-size: 0.9375rem; }
 .discover-table th,
-.discover-table td { padding: 12px 10px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--rule-soft); }
+.discover-table td { padding: 16px 12px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--rule); }
 .discover-table thead th {
-  padding-top: 8px; padding-bottom: 8px; vertical-align: bottom;
-  font-size: 0.8125rem; font-weight: 700; color: var(--ink-soft); border-bottom-color: var(--rule);
+  padding-block: 0 10px; vertical-align: bottom; border-bottom-color: var(--ink);
+  font: 600 0.8125rem/1.3 var(--font-display); color: var(--ink-soft);
 }
 .discover-table tbody th { font-weight: inherit; }
-.discover-row.is-selected { background: color-mix(in srgb, var(--earth) 12%, transparent); }
+.discover-row { transition: background-color 160ms ease; }
+.discover-row.is-selected { background: color-mix(in srgb, var(--focus) 10%, transparent); }
 
-/* Rank in a box, like a numbered locality on a geologic map; filled in when selected */
-.discover-rank {
-  display: inline-grid; place-items: center; min-width: 2rem; height: 2rem; padding: 0 6px;
-  border: 1px solid var(--ink); border-radius: 4px; font-weight: 750; font-family: var(--font-display);
-}
-.discover-row.is-selected .discover-rank { background: var(--ink); color: var(--paper); }
-/* How far the sliders moved a place from its published rank */
-.discover-rank-change { display: block; margin-top: 4px; font-size: 0.75rem; font-weight: 650; color: var(--ink-soft); white-space: nowrap; }
+/* Rank as a mono readout, with how far the sliders moved it from the published list */
+.discover-cell-rank { width: 5rem; }
+.discover-rank { display: block; font: 400 1.5rem/1 var(--font-mono); letter-spacing: -0.03em; }
+.discover-rank-change { display: block; margin-top: 6px; font: 500 var(--text-label)/1.2 var(--font-mono); color: var(--ink-soft); white-space: nowrap; }
 
 /* Place name: a real button with the same dot as its map pin */
 .discover-place-button {
-  display: flex; align-items: flex-start; gap: 8px; min-height: 32px; padding: 4px 0;
-  border: 0; border-radius: 4px; background: none; color: inherit; cursor: pointer;
-  font: inherit; font-weight: 700; text-align: left;
-  text-decoration: underline; text-decoration-color: var(--rule); text-underline-offset: 3px;
+  display: inline-flex; align-items: flex-start; gap: 10px; min-height: 32px; padding: 2px 0;
+  border: 0; border-radius: var(--radius-control); background: none; color: inherit; cursor: pointer;
+  font: 600 1rem/1.35 var(--font-display); text-align: left;
+  text-decoration: underline; text-decoration-color: var(--rule); text-underline-offset: 4px;
+  transition: text-decoration-color 160ms ease;
 }
-.discover-place-button::before { margin-top: 0.3em; }
-.discover-row.is-selected .discover-place-button::before { box-shadow: 0 0 0 2px var(--ink); }
-.discover-coordinates { display: block; padding-left: 20px; font-size: 0.8125rem; color: var(--ink-soft); }
+.discover-place-button::before {
+  content: ""; flex: none; width: 10px; height: 10px; margin-top: 0.38em; border-radius: 50%;
+  background: var(--pin-color, var(--earth));
+}
+.discover-row.is-selected .discover-place-button::before { box-shadow: 0 0 0 2px var(--paper), 0 0 0 4px var(--ink); }
+.discover-coordinates { display: block; padding-left: 20px; font: 400 0.8125rem/1.5 var(--font-mono); color: var(--ink-soft); }
 @media (hover: hover) and (pointer: fine) {
   .discover-place-button:hover { text-decoration-color: var(--ink); }
 }
 
 .discover-target-name,
 .discover-body { display: block; }
-.discover-target-name { font-weight: 650; }
-.discover-body { font-size: 0.875rem; font-weight: 700; color: var(--pin-color, var(--ink-soft)); }
+.discover-target-name { font: 600 0.9375rem/1.35 var(--font-display); }
+.discover-body { margin-top: 2px; font: 600 var(--text-small)/1.3 var(--font-display); color: var(--pin-color, var(--ink-soft)); }
+.discover-cell-score { width: 4.5rem; }
 .discover-table .score-ring-number { font-size: 0.875rem; }
-.discover-why { display: grid; gap: 2px; padding-left: 1.1em; font-size: 0.875rem; }
+.discover-cell-distance { font-family: var(--font-mono); white-space: nowrap; }
+.discover-why { list-style: none; display: grid; gap: 2px; font-size: var(--text-small); line-height: 1.45; }
 
 /* No candidates left after filtering */
 .discover-empty { display: grid; justify-items: start; gap: 12px; padding: 24px 0; color: var(--ink-soft); }
 
-/* Under the table: the next page of the list, and what the downloads hold */
-.discover-more { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; padding-top: 16px; color: var(--ink-soft); }
-.discover-table-note { max-width: 70ch; margin-top: 16px; font-size: 0.8125rem; color: var(--ink-soft); }
+/* Under the table: the next page of the list */
+.discover-more { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; padding-top: 20px; color: var(--ink-soft); }
 
 /* Phones: each row becomes a block (rank, place and score on top, then labelled fields), so nothing scrolls sideways */
 @media (max-width: 720px) {
+  /* The header wraps to two rows here (about 108px), taller than --header-height */
+  .discover-map { scroll-margin-top: 124px; }
   .discover-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   .discover-table,
   .discover-table tbody { display: block; }
   .discover-row {
-    display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px 12px;
-    padding: 16px 4px; border-bottom: 1px solid var(--rule-soft);
+    display: grid; grid-template-columns: 2.5rem minmax(0, 1fr) minmax(0, 1fr) auto; gap: 12px;
+    padding: 18px 0; border-bottom: 1px solid var(--rule);
   }
+  .discover-row.is-selected { margin-inline: -8px; padding-inline: 8px; }
   .discover-table .discover-row > th,
-  .discover-table .discover-row > td { display: block; padding: 0; border: 0; }
-  .discover-cell-rank { grid-area: 1 / 1; }
-  .discover-cell-place { grid-area: 1 / 2; }
-  .discover-cell-score { grid-area: 1 / 3; }
-  .discover-row > [data-label] { grid-column: 1 / -1; }
+  .discover-table .discover-row > td { display: block; width: auto; min-width: 0; padding: 0; border: 0; }
+  .discover-cell-rank { grid-column: 1; grid-row: 1; }
+  .discover-cell-place { grid-column: 2 / 4; grid-row: 1; }
+  .discover-cell-score { grid-column: 4; grid-row: 1; }
+  .discover-cell-environment,
+  .discover-cell-why { grid-column: 2 / -1; }
+  .discover-cell-match { grid-column: 2; }
+  .discover-cell-distance { grid-column: 3 / -1; white-space: normal; }
+  .discover-rank { font-size: 1.25rem; }
   .discover-row > [data-label]::before {
     content: attr(data-label); display: block; margin-bottom: 2px;
-    font-size: 0.8125rem; font-weight: 700; color: var(--ink-soft);
+    font: 600 var(--text-label)/1.3 var(--font-display); color: var(--ink-soft);
   }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .discover-row { transition: none; }
 }
