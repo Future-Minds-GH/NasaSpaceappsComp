@@ -3,7 +3,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { decideEarthSnap, noScoreNote, snapNote } from "../src/data/earthSnap.js";
-import { EARTH_SNAP_KM, earthKmBetween } from "../src/data/characterizeReport.js";
+import { EARTH_SNAP_KM } from "../src/data/characterizeReport.js";
+import { distanceKm } from "../src/data/ranking.js";
 
 // Three scored tiles on the equator: 0°, 1° (about 111 km east) and 20° east.
 const lats = Float32Array.from([0, 0, 0]);
@@ -16,7 +17,7 @@ test("a scored pin uses its own tile at 0 km", () => {
 test("an unscored pin within the limit snaps to the nearest tile with its distance", () => {
   const decision = decideEarthSnap(-1, 0, 2, lats, lons);   // 1° (about 111 km) east of tile 1
   assert.equal(decision.row, 1);
-  assert.ok(Math.abs(decision.km - earthKmBetween(0, 2, 0, 1)) < 1e-6);
+  assert.ok(Math.abs(decision.km - distanceKm(0, 2, 0, 1)) < 1e-6);
   assert.ok(decision.km <= EARTH_SNAP_KM);
 });
 
@@ -28,7 +29,7 @@ test("an unscored pin beyond the limit gets no row and the nearest tile at any d
 });
 
 test("a tile just inside the limit snaps, and an empty tile list gives no nearest", () => {
-  const edge = decideEarthSnap(-1, 0, 0, Float32Array.from([0]), Float32Array.from([0.99 * EARTH_SNAP_KM / earthKmBetween(0, 0, 0, 1)]));
+  const edge = decideEarthSnap(-1, 0, 0, Float32Array.from([0]), Float32Array.from([0.99 * EARTH_SNAP_KM / distanceKm(0, 0, 0, 1)]));
   assert.equal(edge.row, 0);
   assert.deepEqual(decideEarthSnap(-1, 0, 0, new Float32Array(0), new Float32Array(0)), { row: null, nearest: null });
 });

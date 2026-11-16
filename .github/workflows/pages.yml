@@ -1,5 +1,4 @@
 # Builds frontend/ and publishes it to GitHub Pages on every push to main.
-# If frontend/public/data/weights.json is missing, the job builds the sample data, and the site shows its "sample data" note.
 name: Deploy site to GitHub Pages
 
 on:
@@ -26,14 +25,8 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
       - run: npm ci
-      - name: Sample data if the real data is not committed yet
-        run: |
-          if [ ! -f public/data/weights.json ]; then
-            echo "::warning::No real data in frontend/public/data. Building SAMPLE data."
-            npm run sample-data
-          fi
       - run: npm test
       - run: npm run build
       - uses: actions/upload-pages-artifact@v3

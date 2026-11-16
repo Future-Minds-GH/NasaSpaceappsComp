@@ -7,8 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "node --test tests/data.test.mjs tests/matcher.test.mjs tests/real_data.test.mjs tests/validation.test.mjs tests/site_data.test.mjs tests/characterize_spot.test.mjs tests/earth_snap.test.mjs tests/default_factors.test.mjs",
-    "sample-data": "node scripts/make-sample-data.mjs && node scripts/make-sample-vectors.mjs && node scripts/make-sample-search-files.mjs"
+    "test": "node --test"
   },
   "dependencies": {
     "globe.gl": "2.46.2",
@@ -16,7 +15,7 @@
     "react": "18.3.1",
     "react-dom": "18.3.1",
     "react-leaflet": "4.2.1",
-    "react-router-dom": "6.30.1"
+    "react-router-dom": "6.30.6"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "4.7.0",
