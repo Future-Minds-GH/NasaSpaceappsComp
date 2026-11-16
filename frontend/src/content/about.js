@@ -1,35 +1,54 @@
 // Words and lists for the About page (the method, Role 3's figures, data credits by agency, the team roles) and for
 // the Findings page (what each kind of place lets teams rehearse).
+import { SCORED_FACTORS } from "../data/scoring.js";
 
-/** The whole method in five plain sentences, grouped by pipeline stage. */
+/**
+ * The method as pipeline stages, in order. A stage with `factors` lists those factors under its sentences. The scoring
+ * stage names the factors in SCORED_FACTORS (data/scoring.js) in words too: change the two together.
+ */
 export const METHOD_STAGES = [
   {
-    title: "Tiles and vectors",
+    title: "Cut three worlds into tiles",
     sentences: [
       "We cut the Moon, Mars and Earth into equal-area HEALPix tiles about 27 km across, so a 27 km crater looks the same size on all three.",
-      "Every tile becomes one vector of numbers in nine parts: temperature (day and night), day-night swing, sunlight, slope, roughness, relative elevation, surface type, minerals and water ice. Each is stored in real units (kelvin, W/m², degrees, metres), plus a rank within its own planet.",
+    ],
+  },
+  {
+    title: "Measure nine factors per tile",
+    sentences: [
+      "Every tile becomes one vector of nine measured factors: temperature (day and night), day-night swing, sunlight, slope, roughness, relative elevation, surface type, minerals and water ice. Each is stored in real units (kelvin, W/m², degrees, metres), plus a rank within its own planet.",
       "There is no machine learning in the score: every number is measured or derived from measured data (slope and roughness from elevation models), and estimated minerals are marked.",
     ],
   },
   {
-    title: "The search",
+    title: "Score five of them",
     sentences: [
-      "When you click a Moon or Mars tile, your browser compares its vector with every Earth tile, scores the nine factors from 0 to 1 (1 minus the gap divided by a tolerance, such as 40 K for temperature), and combines them with a weighted average. A factor with no data on either tile is left out. In Relative mode each factor compares ranks within its own planet instead of real units.",
+      "The site scores five of the nine measured factors: temperature, slope, roughness, minerals and water ice, the five the Balanced preset weights highest. The other four (day-night swing, sunlight, relative elevation and surface type) stay in the data files but count for nothing in any score.",
+    ],
+    factors: SCORED_FACTORS,
+  },
+  {
+    title: "Compare every Earth tile",
+    sentences: [
+      "When you click a Moon or Mars tile, your browser compares its vector with every Earth tile, scores the five factors from 0 to 1 (1 minus the gap divided by a tolerance, such as 40 K for temperature), and combines them with a weighted average. A factor with no data on either tile is left out. In Relative mode each factor compares ranks within its own planet instead of real units.",
     ],
   },
   {
-    title: "Where it runs",
+    title: "Run without a server",
     sentences: [
       "All vectors are computed in Google Colab ahead of time and published as static files, so this site needs no server and the mission sliders re-rank live.",
     ],
   },
 ];
 
-/** Why Absolute-mode scores for the Moon and Mars are often yellow or red (about 50 to 65). Matches data/schema.json tolerances and similarity.js. */
+/**
+ * Why Absolute-mode scores for the Moon and Mars are often yellow or red. Matches the tolerances in data/schema.json,
+ * similarity.js and the score range in discoveries.json.
+ */
 export const LOW_SCORE_NOTE = [
-  "Moon and Mars scores in Absolute mode are often yellow or red. The new Earth places in the Discover list score 44 to 71.",
-  "In our data, the warmest Mars night (197 K) is colder than the coldest Earth night (210 K). The median Moon night is 99 K. The median Mars day-night swing is 87 K; the largest on Earth is 45 K.",
-  "Absolute mode compares real values with fixed tolerances, such as 40 K for temperature and 30 K for the day-night swing. A gap larger than the tolerance scores 0 for that factor.",
+  "Moon and Mars scores in Absolute mode are often yellow or red. The new Earth places in the Discover list score 51 to 78.",
+  "In our data, the warmest Mars night (197 K) is colder than the coldest Earth night (210 K). The median Moon night is 99 K.",
+  "Absolute mode compares real values with fixed tolerances, such as 40 K for temperature and 5 degrees for slope. A gap larger than the tolerance scores 0 for that factor.",
   "Relative mode compares ranks within each planet instead, so it usually scores higher.",
 ];
 

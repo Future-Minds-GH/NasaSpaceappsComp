@@ -17,11 +17,11 @@ export default function ModelCheck() {
   if (blocks.length === 0 || isSamplePlaceholder(blocks)) return null;
 
   return (
-    <section className="about-section" aria-labelledby="about-model-check-heading">
+    <section className="page-section" aria-labelledby="about-model-check-heading">
       <h2 id="about-model-check-heading" className="section-heading">Model check</h2>
       <div className="about-model-check">
         {blocks.map((block, index) => {
-          if (block.type === "heading") return <h3 key={index} className="about-model-check-heading">{block.text}</h3>;
+          if (block.type === "heading") return <h3 key={index} className="about-subheading">{block.text}</h3>;
           if (block.type === "list") return <ul key={index}>{block.items.map((item, itemIndex) => <li key={itemIndex}>{item}</li>)}</ul>;
           return <p key={index}>{block.text}</p>;
         })}
