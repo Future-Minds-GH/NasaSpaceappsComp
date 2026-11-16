@@ -1,4 +1,4 @@
-/* About page: method stages, the validation number and tests, Role 3's model check and figures, data credits and the team roles. */
+/* About page: method stages, the validation number and tests, Role 3's figures, data credits and the team roles. */
 
 .about { display: grid; gap: 44px; }
 .about-section { display: grid; gap: 14px; padding-top: 20px; border-top: 1px solid var(--rule); }
@@ -27,15 +27,6 @@
 }
 .about-validation-out-of { font-size: 0.5em; font-weight: 700; color: var(--ink-soft); }
 .about-validation-summary { max-width: 60ch; }
-
-/* Figures */
-.about-figures { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 22rem), 1fr)); gap: 20px; }
-.about-figure { display: grid; align-content: start; gap: 8px; }
-.about-figure img {
-  width: 100%; height: auto; border: 1px solid var(--rule); border-radius: var(--radius-control);
-  background: var(--paper-raised);
-}
-.about-figure figcaption { font-size: 0.875rem; color: var(--ink-soft); }
 
 /* Credits: agency groups flow into balanced columns so NASA's long list doesn't leave gaps */
 .about-credits { columns: 3 16rem; column-gap: 32px; }
@@ -86,11 +77,3 @@
 @media (min-width: 560px) {
   .validation-test { grid-template-columns: 7rem minmax(0, 1fr); align-items: baseline; }
 }
-
-/* Role 3's model check: plain text in a raised box, like the notes panel beside a map plate */
-.about-model-check {
-  display: grid; gap: 10px; max-width: 72ch; padding: 16px 18px;
-  border: 1px solid var(--rule); border-radius: var(--radius-control); background: var(--paper-raised);
-}
-.about-model-check-heading { font-size: 1rem; font-weight: 750; }
-.about-model-check ul { display: grid; gap: 4px; padding-left: 1.25rem; }

@@ -5,11 +5,11 @@
 // one similarity vector per output planet.
 import { useCallback, useMemo, useState, useEffect } from "react";
 import { loadTargets, loadWeights } from "../data/api.js";
-import { EXTRA_SITES, isPickableSite, shortSiteName } from "../content/notableSites.js";
+import { EXTRA_SITES, shortSiteName } from "../content/notableSites.js";
 import { useLoaded } from "../data/useLoaded.js";
 import { useTileSearch } from "../data/useTileSearch.js";
 import { FACTORS } from "../data/scoring.js";
-import { BODY_RADIUS_KM, SAME_BODY_MIN_KM } from "../data/ranking.js";
+import { BODY_RADIUS_KM, SAME_BODY_MIN_KM, distanceKm } from "../data/ranking.js";
 import { BODY_NAMES, DEFAULT_SHOWN_FACTORS } from "../content/labels.js";
 import PlanetGlobe, { GLOBE_TEXTURES } from "../components/PlanetGlobe.jsx";
 import FactorSidebar from "../components/FactorSidebar.jsx";
@@ -61,7 +61,7 @@ export default function LandingPage() {
   const results = Object.fromEntries(BODIES.map((body) => {
     const search = searches[body];
     // The ranking already skips these tiles; this guards the fallbacks.
-    const matches = (search.data ?? []).filter((match) => !(request && body === request.inputBody && distanceKm(match, search.searchPoint ?? request.point, body) < SAME_BODY_MIN_KM));
+    const matches = (search.data ?? []).filter((match) => !(request && body === request.inputBody && kmApart(match, search.searchPoint ?? request.point, body) < SAME_BODY_MIN_KM));
     return [body, { search, matches, best: matches[0] ?? null }];
   }));
 
@@ -148,7 +148,7 @@ export default function LandingPage() {
 
   // Notable sites on the input planet: the project's named sites plus well-known landmarks. Clicking one picks it.
   const notableSites = useMemo(
-    () => [...(targetsState.data ?? []).filter(isPickableSite), ...EXTRA_SITES]
+    () => [...(targetsState.data ?? []), ...EXTRA_SITES]
       .filter((site) => site.body === inputBody)
       .map((site) => ({ ...site, name: shortSiteName(site.name) }))
       // Sites within 2° of one already shown (e.g. the three Dry Valleys sites) would stack into one blob: keep the first.
@@ -331,8 +331,4 @@ function toPercent(presetWeights) {
   return Object.fromEntries(FACTORS.map((factor) => [factor, Math.round((presetWeights[factor] ?? 0) * 100)]));
 }
 
-function distanceKm(a, b, body) {
-  const toRadians = (degrees) => (degrees * Math.PI) / 180;
-  const h = Math.sin(toRadians(b.lat - a.lat) / 2) ** 2 + Math.cos(toRadians(a.lat)) * Math.cos(toRadians(b.lat)) * Math.sin(toRadians(b.lon - a.lon) / 2) ** 2;
-  return 2 * BODY_RADIUS_KM[body] * Math.asin(Math.sqrt(h));
-}
+const kmApart = (a, b, body) => distanceKm(a.lat, a.lon, b.lat, b.lon, BODY_RADIUS_KM[body]);

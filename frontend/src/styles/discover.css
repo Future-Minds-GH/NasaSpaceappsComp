@@ -4,14 +4,7 @@
 /* Mission type and the Details panel with the weight sliders */
 .discover-weights { display: grid; gap: 8px; margin-top: 28px; }
 .discover-weights-bar { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px; }
-.discover-details-toggle[aria-expanded="true"] { border-color: var(--ink); }
 .discover-weights-summary { max-width: 70ch; font-size: 0.9375rem; color: var(--ink-soft); }
-.discover-weights-details {
-  display: grid; gap: 14px; max-width: 44rem; margin-top: 4px; padding: 16px;
-  border: 1px solid var(--rule); border-radius: var(--radius-frame); background: var(--paper-raised);
-  animation: discover-reveal 200ms var(--ease-out);
-}
-.discover-weights-intro { font-size: 0.9375rem; color: var(--ink-soft); }
 /* Slider rows, scoped here so Discover keeps its layout whatever other screens do with WeightSliders */
 .discover-weights .weight-sliders { display: grid; gap: 6px; }
 .discover-weights .weight-row {
@@ -21,14 +14,8 @@
 .discover-weights .weight-row input[type="range"] { width: 100%; accent-color: var(--factor-color); }
 .discover-weights .weight-row output { text-align: right; }
 .discover-weights .weight-sliders .button { justify-self: start; margin-top: 6px; }
-@keyframes discover-reveal {
-  from { opacity: 0; transform: translateY(-4px); }
-}
 @media (max-width: 640px) {
   .discover-weights .weight-row { grid-template-columns: 6.5rem minmax(0, 1fr) 2.75rem; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .discover-weights-details { animation: none; }
 }
 
 /* Filters and the live count of candidates shown */
