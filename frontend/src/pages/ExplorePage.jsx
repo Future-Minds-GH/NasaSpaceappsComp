@@ -7,7 +7,7 @@ import { loadBodyMeta, loadTargets, loadWeights } from "../data/api.js";
 import { useLoaded } from "../data/useLoaded.js";
 import { useTileSearch } from "../data/useTileSearch.js";
 import { MODES } from "../data/similarity.js";
-import { describeSelection, parsePoint } from "../data/exploreSelection.js";
+import { describeSelection, parsePoint, pickPresetId } from "../data/exploreSelection.js";
 import { nearestButtonLabel, noScoreNote } from "../data/earthSnap.js";
 import { BODY_NAMES } from "../content/labels.js";
 import PlanetGlobe, { GLOBE_TEXTURES } from "../components/PlanetGlobe.jsx";
@@ -24,7 +24,6 @@ const ON_BODY = { earth: "Earth", moon: "the Moon", mars: "Mars" };
 export default function ExplorePage() {
   const { body } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
-  const [isShowingCaves, setIsShowingCaves] = useState(false);
   // Slider weights belong to one planet: they are stored with their body, so each body starts again from the preset.
   const [customState, setCustomState] = useState(null);
   const customWeights = customState?.body === body ? customState.weights : null;
@@ -39,7 +38,6 @@ export default function ExplorePage() {
   const requestedTarget = searchParams.get("to");
   const targetBody = BODIES.includes(requestedTarget) && requestedTarget !== body ? requestedTarget : DEFAULT_TARGET[body];
   const bodySites = (targetsState.data ?? []).filter((site) => site.body === body);
-  const shownSites = bodySites.filter((site) => site.track !== "cave" || isShowingCaves);
   const namedSite = bodySites.find((site) => site.target_id === searchParams.get("site")) ?? null;
   const pickedPoint = useMemo(() => parsePoint(searchParams.get("at")), [searchParams]);
   const selection = useMemo(() => {
@@ -48,8 +46,7 @@ export default function ExplorePage() {
   }, [body, namedSite, pickedPoint]);
 
   const presets = presetsState.data?.presets ?? {};
-  const requestedPresetId = searchParams.get("preset");
-  const presetId = requestedPresetId in presets ? requestedPresetId : presetsState.data?.default_preset ?? Object.keys(presets)[0];
+  const presetId = pickPresetId(presets, searchParams.get("preset"), presetsState.data?.default_preset);
   const weights = customWeights ?? presets[presetId]?.weights;
   const requestedMode = searchParams.get("mode");
   const mode = MODES.includes(requestedMode) ? requestedMode : (MODES.includes(presetsState.data?.default_mode) ? presetsState.data.default_mode : "absolute");
@@ -75,7 +72,7 @@ export default function ExplorePage() {
         <PlanetGlobe
           body={body}
           isInteractive
-          sites={shownSites}
+          sites={bodySites}
           selectedTile={search.tile}
           focus={focus}
           onPick={(lat, lon) => updateSearchParams({ at: `${lat.toFixed(2)},${lon.toFixed(2)}`, site: null })}
@@ -95,17 +92,11 @@ export default function ExplorePage() {
           ))}
         </nav>
         <div className="explore-sites" role="group" aria-label="Named sites">
-          {shownSites.map((site) => (
+          {bodySites.map((site) => (
             <button key={site.target_id} type="button" className="site-chip" aria-pressed={site.target_id === namedSite?.target_id} onClick={() => handleSelectSite(site)}>
               {site.name}
             </button>
           ))}
-          {bodySites.some((site) => site.track === "cave") && (
-            <label className="cave-toggle">
-              <input type="checkbox" checked={isShowingCaves} onChange={(event) => setIsShowingCaves(event.target.checked)} />
-              Show caves
-            </label>
-          )}
         </div>
       </section>
 

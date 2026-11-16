@@ -1,10 +1,9 @@
-// About page: the method in plain sentences, the validation tests, Role 3's model check and comparison figures, data
+// About page: the method in plain sentences, the validation tests, Role 3's comparison figures, data
 // credits and the team.
 import { loadValidation } from "../data/api.js";
 import { useLoaded } from "../data/useLoaded.js";
 import { ValidationSummary } from "../components/ValidationGrid.jsx";
-import ModelCheck from "../components/ModelCheck.jsx";
-import { DATA_CREDITS, FIGURES, LOW_SCORE_NOTE, FULL_CREDITS_NOTE, METHOD_STAGES, TEAM_ROLES } from "../content/about.js";
+import { DATA_CREDITS, LOW_SCORE_NOTE, FULL_CREDITS_NOTE, METHOD_STAGES, TEAM_ROLES } from "../content/about.js";
 import "../styles/about.css";
 
 export default function AboutPage() {
@@ -46,11 +45,10 @@ export default function AboutPage() {
         <p className="about-text">{LOW_SCORE_NOTE.join(" ")}</p>
       </section>
 
-      <ModelCheck />
-
       <section className="about-section" aria-labelledby="about-figures-heading">
         <h2 id="about-figures-heading" className="section-heading">Comparison figures</h2>
-        <FigureGallery figures={FIGURES} />
+        {/* shortcut: placeholder only, no figures exist yet; render them here when Role 3 ships images in public/figures/. */}
+        <p className="about-text">Comparison figures will appear here.</p>
       </section>
 
       <section className="about-section" aria-labelledby="about-credits-heading">
@@ -99,20 +97,4 @@ function ValidationResult() {
     return <p className="about-text" role="alert">The validation check could not be loaded. Check your connection and reload the page.</p>;
   }
   return <ValidationSummary validation={validation} />;
-}
-
-/** Role 3's figures from content/about.js, or one line saying they are still to come. */
-function FigureGallery({ figures }) {
-  if (figures.length === 0) return <p className="about-text">Comparison figures will appear here.</p>;
-
-  return (
-    <div className="about-figures">
-      {figures.map((figure) => (
-        <figure key={figure.file} className="about-figure">
-          <img src={`${import.meta.env.BASE_URL}figures/${figure.file}`} alt={figure.caption ?? ""} loading="lazy" decoding="async" />
-          {figure.caption && <figcaption>{figure.caption}</figcaption>}
-        </figure>
-      ))}
-    </div>
-  );
 }

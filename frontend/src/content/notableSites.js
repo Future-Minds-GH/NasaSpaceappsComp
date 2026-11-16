@@ -18,8 +18,5 @@ export const EXTRA_SITES = [
   { body: "earth", target_id: "svalbard", name: "Svalbard (Bockfjord)", lat: 79.4, lon: 13.3 },
 ];
 
-/** The project's control sites (forest, cities) are for validation, not for picking. */
-export const isPickableSite = (site) => !/negative control/i.test(site.name);
-
 /** Shorter labels for the globe: drop the parenthesised notes from the project's long site names. */
 export const shortSiteName = (name) => name.replace(/\s*\(.*?\)\s*/g, " ").replace(/\s+,/g, ",").trim();

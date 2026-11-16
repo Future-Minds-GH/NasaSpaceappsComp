@@ -1,6 +1,6 @@
 // Discover mode: strong Earth stand-ins far from every known test site, re-ranked live by mission type and weight sliders.
 import { useRef, useState } from "react";
-import DiscoveryFilters, { NO_FILTERS, buildFilterOptions, filterCandidates } from "../components/DiscoveryFilters.jsx";
+import DiscoveryFilters, { NO_FILTERS, filterCandidates } from "../components/DiscoveryFilters.jsx";
 import DiscoveryTable from "../components/DiscoveryTable.jsx";
 import DiscoveryMap, { inDrawOrder } from "../components/DiscoveryMap.jsx";
 import DiscoveryWeights, { useLiveRanking } from "../components/DiscoveryWeights.jsx";
@@ -71,7 +71,7 @@ function DiscoveryCatalogue({ discoveries, targets, weightsFile }) {
       )}
 
       <div className="discover-filter-bar">
-        <DiscoveryFilters filters={filters} optionsByFilter={buildFilterOptions(discoveries)} onChange={setFilters} />
+        <DiscoveryFilters filters={filters} onChange={setFilters} />
         <p className="discover-count" aria-live="polite">{describeCount(shownCandidates.length, discoveries.length)}</p>
       </div>
 
