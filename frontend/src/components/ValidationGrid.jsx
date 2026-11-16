@@ -67,7 +67,7 @@ function ValidationTests({ tests }) {
 }
 
 /** One row per target, one column per known analog, each cell that analog's Earth rank (the share of Earth it beats). */
-export default function ValidationGrid({ specificity }) {
+function ValidationGrid({ specificity }) {
   if (!specificity?.rows?.length) return null;
   return (
     <div className="validation-grid-scroll">

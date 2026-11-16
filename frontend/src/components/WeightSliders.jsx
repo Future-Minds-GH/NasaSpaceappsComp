@@ -1,6 +1,6 @@
 // One slider per factor. The nine weights always sum to 1: moving one slider rescales the others in proportion,
 // and a slider at 0 leaves that factor out of the score. Each move re-ranks the matches live.
-import { FACTORS, normaliseWeights, rebalanceWeights } from "../data/scoring.js";
+import { normaliseWeights, rebalanceWeights } from "../data/scoring.js";
 import { DEFAULT_GROUPS, FACTOR_LABELS, GROUP_LABELS } from "../content/labels.js";
 
 const SLIDER_STEP = 0.01;

@@ -33,12 +33,6 @@ export const LOW_SCORE_NOTE = [
   "Relative mode compares ranks within each planet instead, so it usually scores higher.",
 ];
 
-/**
- * Role 3's comparison figures. Put each image in frontend/public/figures/ and add it here:
- * { file: "atacama_vs_jezero.png", caption: "One sentence saying what the figure shows." }
- */
-export const FIGURES = [];
-
 /** Only sources that feed a scored factor, the land filter or the known-analog list (earth_sources.md, moon_mars_sources.md). */
 export const DATA_CREDITS = [
   {
@@ -79,15 +73,3 @@ export const TEAM_ROLES = [
   { name: "AI/Terrain", role: "Role 3", work: "Turns elevation into slope and roughness, and makes the comparison figures." },
   { name: "Frontend & Demo", role: "Role 4", work: "Builds the globes, the live search and this site, and the demo." },
 ];
-
-/**
- * Findings page: what each discovery tag lets teams rehearse on Earth, joined into one sentence per finding.
- * Tags not listed (hydrothermal, aeolian, ice dynamics) add nothing; a finding with no listed tag gets a general sentence.
- */
-export const FINDINGS_EXPLORATION_USES = {
-  volcanic: "cave and regolith-handling tests",
-  permafrost: "ice-drilling trials",
-  "hyperarid soil": "trials of life-detection instruments",
-  evaporite: "sample-collection rehearsals",
-  sedimentary: "sample-collection rehearsals",
-};

@@ -63,11 +63,3 @@ export const GROUP_LABELS = { weather: "Weather", geology: "Ground" };
  * in the score, and come in from "+ Add a factor". Keep this in the order of FACTORS (data/scoring.js); a test checks it.
  */
 export const DEFAULT_SHOWN_FACTORS = ["temp", "slope", "rough", "elev", "minerals"];
-
-export const ENVIRONMENT_LABELS = {
-  desert: "Desert",
-  polar: "Polar",
-  volcanic: "Volcanic",
-  arid: "Arid",
-  cave: "Lava cave",
-};
