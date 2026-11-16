@@ -14,10 +14,9 @@
   --space-raised: #17171B;
   --on-space: #FFFFFF;
   --on-space-soft: #B8B8BC;
-  /* Primary action red, its pressed/hover shade, and the deep blue used for highlighted bands */
+  /* Primary action red and its pressed/hover shade */
   --accent: #D83933;
   --accent-strong: #AF1108;
-  --deep-blue: #0B3D91;
   --mars: #A4492A;
   --moon: #4E5C6B;
   --earth: #2F6B4F;
@@ -40,12 +39,6 @@
   --band-yellow: #D9A400;
   --band-red: #D83933;
 
-  --environment-desert: #C8A464;
-  --environment-arid: #B07A4F;
-  --environment-polar: #8FB7CF;
-  --environment-volcanic: #5B4A44;
-  --environment-cave: #3D3A4F;
-
   --font: "Public Sans", "Helvetica Neue", Arial, sans-serif;
   --font-display: "Inter", "Helvetica Neue", Arial, sans-serif;
   --font-mono: "DM Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
@@ -62,7 +55,6 @@
     --paper: #17171B; --paper-raised: #2E2E32; --ink: #F6F6F6; --ink-soft: #B8B8BC; --rule: #4E4E52;
     --space-raised: #2E2E32;
     --mars: #D9744F; --moon: #9FB0C2; --earth: #63B08A; --focus: #73B3E7; --warning: #E0A345;
-    --environment-volcanic: #8C7A72; --environment-cave: #8A86A8;
     color-scheme: dark;
   }
 }
@@ -70,7 +62,6 @@
   --paper: #17171B; --paper-raised: #2E2E32; --ink: #F6F6F6; --ink-soft: #B8B8BC; --rule: #4E4E52;
   --space-raised: #2E2E32;
   --mars: #D9744F; --moon: #9FB0C2; --earth: #63B08A; --focus: #73B3E7; --warning: #E0A345;
-  --environment-volcanic: #8C7A72; --environment-cave: #8A86A8;
   color-scheme: dark;
 }
 
@@ -149,18 +140,6 @@ fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
 /* Legend swatch, like a map unit box */
 .factor-swatch { display: inline-block; width: 14px; height: 10px; margin-right: 8px; border-radius: 3px; background: var(--factor-color); }
 
-/* Environment tag: a unit box plus the word */
-.environment-tag {
-  display: inline-flex; align-items: center; gap: 6px; padding: 2px 8px 2px 6px;
-  border: 1px solid var(--rule); border-radius: 999px; font-size: 0.8125rem; font-weight: 650;
-}
-.environment-tag::before { content: ""; width: 10px; height: 10px; border-radius: 2px; background: var(--environment-color, var(--ink-soft)); }
-.environment-desert { --environment-color: var(--environment-desert); }
-.environment-arid { --environment-color: var(--environment-arid); }
-.environment-polar { --environment-color: var(--environment-polar); }
-.environment-volcanic { --environment-color: var(--environment-volcanic); }
-.environment-cave { --environment-color: var(--environment-cave); }
-
 /* Badges carry their own explanation, so they read without hovering */
 .site-badges { list-style: none; display: grid; gap: 6px; }
 .badge { display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: baseline; padding: 6px 10px; border-radius: var(--radius-control); font-size: 0.875rem; border-left: 4px solid; background: var(--paper-raised); }
@@ -235,10 +214,4 @@ fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
 .weight-panel .weight-row output { text-align: right; font-variant-numeric: tabular-nums; }
 @media (max-width: 480px) {
   .weight-panel .weight-row { grid-template-columns: 7rem minmax(0, 1fr) 2.75rem; }
-}
-
-/* Outline button for black backgrounds (the landing hero) */
-.button-on-space { border-color: var(--on-space); color: var(--on-space); }
-@media (hover: hover) and (pointer: fine) {
-  .button-on-space:hover:not(:disabled) { background: var(--on-space); color: var(--space); }
 }

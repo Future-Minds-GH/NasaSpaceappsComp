@@ -5,7 +5,6 @@
 //   showcase.json    { results: { "<tile id>": { name, preset, matches: [result cards] } } }: the demo's showcase
 //                    clicks, used only when the live search fails.
 // Both files, and the pools below, are made for the default mode (absolute). In relative mode the site uses the live search.
-// Run after make-sample-vectors.mjs.
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';

@@ -6,14 +6,14 @@
 //   controls  total of each input against each negative-control place (wrong places must score red, below 60)
 //   regions   top-10 tiles that fall inside a negative-control place (must be 0)
 //   grid      per input and known Earth analog: the best Earth rank (%) of a tile near that analog (absolute mode)
-// Run after build_vectors.py and make_weights.py (assemble_site.sh does). It writes sample: true if any input is sample data.
+// Run after build_vectors.py and make_weights.py (README step 4). It writes sample: true if any input is sample data.
 import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { baseCellOf, latLonToTile } from '../src/data/healpix.js';
 import { MODES, combineAll, readLayout, scoreAllEarthTiles } from '../src/data/similarity.js';
-import { BODY_RADIUS_KM, rankTopRows } from '../src/data/ranking.js';
-import { clickedTileVector, readEarthTiles } from '../src/data/tileSearch.js';
+import { distanceKm, rankTopRows } from '../src/data/ranking.js';
+import { clickedTileVector, readEarthTiles, tileCentres } from '../src/data/tileSearch.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const DATA_DIR = join(HERE, '..', 'public', 'data');
@@ -45,8 +45,7 @@ if (controlVectors.length !== earthLists.controls.length * layout.bytesPerTile) 
 const controlRow = (index) => controlVectors.subarray(index * layout.bytesPerTile, (index + 1) * layout.bytesPerTile);
 const isSample = [weightsFile, earthLists, json('tiles/moon_meta.json'), json('tiles/mars_meta.json')].some((file) => file.sample !== false);
 
-const lats = Float32Array.from(earthTiles, (tile) => tile.lat);
-const lons = Float32Array.from(earthTiles, (tile) => tile.lon);
+const { lats, lons } = tileCentres(earthTiles);
 
 const earthSites = known.sites.filter((candidate) => candidate.body === 'earth' && candidate.role === 'site');
 const inputs = known.pairs.flatMap((pair) => pair.inputs.map((id) => ({ pair, site: site(id), vector: inputVector(site(id)) })));
@@ -92,7 +91,6 @@ const summarise = (mode) => {
 const absolute = summarise('absolute');
 const relative = summarise('relative');
 
-const hitText = (result, mode) => `${result.input.site.name} ${result[mode].hitRank === null ? 'misses' : `rank ${result[mode].hitRank}`}`;
 const bar = Math.ceil(inputs.length / 2);
 const controlTileCounts = earthLists.controls.map((control) => `${control.name.replace(' (negative control)', '')} ${earthTiles.reduce((count, _, row) => count + (kmFrom(control, row) <= control.radius_km ? 1 : 0), 0)}`).join(', ');
 const knownText = (result) => `${result.input.site.name} ${result.absolute.bestKnownRank < 0 ? 'no data' : `${result.absolute.bestKnownRank}%`}`;
@@ -178,10 +176,7 @@ function bestRankNear(totals, target) {
 }
 
 function kmFrom(place, row) {
-  const toRadians = (degrees) => (degrees * Math.PI) / 180;
-  const h = Math.sin(toRadians(lats[row] - place.lat) / 2) ** 2
-    + Math.cos(toRadians(place.lat)) * Math.cos(toRadians(lats[row])) * Math.sin(toRadians(lons[row] - place.lon) / 2) ** 2;
-  return 2 * BODY_RADIUS_KM.earth * Math.asin(Math.sqrt(h));
+  return distanceKm(place.lat, place.lon, lats[row], lons[row]);
 }
 
 function round1(value) {

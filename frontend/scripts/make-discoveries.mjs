@@ -10,11 +10,11 @@
 import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { FACTORS } from '../src/data/scoring.js';
-import { rankTopRows } from '../src/data/ranking.js';
+import { distanceKm, rankTopRows } from '../src/data/ranking.js';
 import { typicalFactorsOf } from '../src/data/similarity.js';
 import { buildMatches } from '../src/data/tileSearch.js';
 import { coordinateLabel } from '../src/data/characterizeReport.js';
-import { DATA_DIR, kmBetween, loadSiteData, round } from './site-data-common.mjs';
+import { DATA_DIR, loadSiteData, round } from './site-data-common.mjs';
 
 const PER_TARGET = 10;
 const MIN_SEPARATION_KM = 250;   // ranking.js default
@@ -34,7 +34,7 @@ for (const target of data.targets) {
 // 2. Best first; drop a spot within 250 km of a better one (two targets can pick neighbouring tiles).
 const chosen = [];
 for (const pick of [...bestByRow.values()].sort((first, second) => second.total - first.total)) {
-  if (chosen.every((other) => kmBetween(data.lats[other.row], data.lons[other.row], data.lats[pick.row], data.lons[pick.row]) >= MIN_SEPARATION_KM)) chosen.push(pick);
+  if (chosen.every((other) => distanceKm(data.lats[other.row], data.lons[other.row], data.lats[pick.row], data.lons[pick.row]) >= MIN_SEPARATION_KM)) chosen.push(pick);
 }
 
 // 3. Cards from the app's own builder.
