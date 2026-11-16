@@ -11,6 +11,11 @@ export function parsePoint(value) {
   return { lat, lon };
 }
 
+/** The ?preset= id when it names a real preset (own key: "toString" must not match), else the default, else the first. */
+export function pickPresetId(presets, requested, defaultId) {
+  return requested && Object.hasOwn(presets, requested) ? requested : defaultId ?? Object.keys(presets)[0];
+}
+
 /** The picked tile described like a named site, so the results header and compare view show it the same way. */
 export function describeSelection({ body, targetBody, namedSite, selection, tile, meta, sites }) {
   const tileLine = `Tile ${tile.id}, ${formatCoordinates(selection.lat, selection.lon)}.`;
